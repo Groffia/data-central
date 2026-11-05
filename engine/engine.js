@@ -1187,6 +1187,84 @@ function liveSampleCheck(state) {
   };
 }
 
+// ===== SECTION: access log, subject footprint, erasure (v1.9) =====
+// The patient id a row payload carries (snake_case or camelCase key), or null when it has none that is a string.
+function rowSubject(payload) {
+  if (!isObj(payload)) return null;
+  const v = payload.patient_id !== undefined && payload.patient_id !== null ? payload.patient_id : payload.patientId;
+  return typeof v === "string" ? v : null;
+}
+const unionPhi = (payloads) => {
+  const have = new Set();
+  payloads.forEach((p) => phiFields(p).forEach((f) => have.add(f)));
+  return PHI_FIELDS.filter((f) => have.has(f));
+};
+const cohortIds = () => new Set(buildPatientPool().map((p) => p.patient_id));
+
+// One subject's rows in a state's mutable layers: staging, Silver (production), the dead-letter queue, and dim_patient
+// (1 once the subject has a published row). `phi` lists the sensitive fields those rows hold.
+function subjectRowsInState(state, patientId) {
+  const mine = (p) => rowSubject(p) === patientId;
+  const staging = (state.staging || []).filter(mine);
+  const silver = (state.productionData || []).filter(mine);
+  const dead = (state.dlq || []).filter((d) => mine(d.payload));
+  return {
+    staging: staging.length, silver: silver.length, deadLetter: dead.length, dimPatient: silver.length > 0 ? 1 : 0,
+    phi: unionPhi([...staging, ...silver, ...dead.map((d) => d.payload)]),
+  };
+}
+
+// A simulated access log: one entry per data movement the reducer actually made, built in a single replay pass from the
+// reducer's before and after states. `erasures` is the list of erased patient ids (strings, no times); each distinct id
+// in the cohort adds one ERASE entry, appended after every pipeline entry so it is the newest, stamped with the clock of
+// the state shown. Pure; null for a bad action list or erasures; an unknown scenario throws, as elsewhere.
+function accessLog(scenario, actions, erasures) {
+  assertScenario(scenario);
+  if (!Array.isArray(actions)) return null;
+  if (erasures !== undefined && (!Array.isArray(erasures) || erasures.some((x) => typeof x !== "string"))) return null;
+  const out = [];
+  const add = (iso, actor, action, object, rows, phi, purpose) => out.push({ seq: out.length + 1, iso, actor, action, object, rows, phiFields: phi, purpose });
+  let before = replay(scenario, [], undefined);
+  for (const action of actions) {
+    const after = reduce(before, action, undefined);
+    const iso = after.clock.iso;
+    if (after.batchesRun === before.batchesRun + 1) {
+      const gen = before.faultExports ? { faultExports: before.faultExports } : undefined;
+      const rows = generateExport(after.batchesRun, scenario, gen).rows;
+      const phi = unionPhi(rows);
+      add(iso, "svc-ingest", "WRITE", "bronze_tamsworth_vitals", rows.length, phi, "Land the export");
+      add(iso, "svc-dq-gate", "READ", "bronze_tamsworth_vitals", rows.length, phi, "Run quality tests");
+      const published = after.productionData.length - before.productionData.length;
+      if (published > 0) {
+        add(iso, "svc-silver-load", "WRITE", "silver_vital_observation", published, unionPhi(after.productionData.slice(before.productionData.length)), "Publish passing rows");
+      }
+      const quarantined = after.dlq.slice(before.dlq.length);
+      if (quarantined.length > 0) add(iso, "svc-dq-gate", "WRITE", "dead_letter_queue", quarantined.length, unionPhi(quarantined.map((d) => d.payload)), "Quarantine failing rows");
+      const held = after.staging.slice(before.staging.length);
+      if (held.length > 0) add(iso, "svc-dq-gate", "WRITE", "staging", held.length, unionPhi(held), "Hold passing rows");
+    } else {
+      const fresh = after.events.slice(before.events.length).map((e) => e.type);
+      if (action && action.type === "repairRow" && fresh.includes("ROW_REPAIRED")) {
+        const e = after.dlq.find((d) => d.dlqId === action.dlqId);
+        add(iso, "operator", "MODIFY", "dead_letter_queue", 1, phiFields(e && e.payload), "Repair quarantined row");
+      } else if (action && action.type === "discardRow" && fresh.includes("ROW_DISCARDED")) {
+        const e = before.dlq.find((d) => d.dlqId === action.dlqId);
+        add(iso, "operator", "DELETE", "dead_letter_queue", 1, phiFields(e && e.payload), action.reason);
+      }
+    }
+    before = after;
+  }
+  const cohort = cohortIds();
+  const seen = new Set();
+  for (const id of erasures || []) {
+    if (!cohort.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    const r = subjectRowsInState(before, id);
+    add(before.clock.iso, "privacy-office", "ERASE", "subject " + id, r.staging + r.silver + r.deadLetter + r.dimPatient, r.phi, "Carry out a deletion");
+  }
+  return out;
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -1199,7 +1277,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, metricSeries, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  phiFields, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  phiFields, accessLog, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
