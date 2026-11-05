@@ -222,4 +222,43 @@
   vm.testMatrix = testMatrix;
   vm.gateDecision = gateDecision;
   vm.rowView = rowView;
+
+  // ----- Task 9: dead-letter view, medallion flow -----
+
+  // Same rule as HQ: null/undefined read "null", everything else is its JSON text (strings keep their quotes).
+  function observedText(v) { return v === null || v === undefined ? 'null' : JSON.stringify(v); }
+
+  function dlqView(state, hqLink) {
+    const href = typeof hqLink === 'string' ? hqLink : '';
+    return (state.dlq || []).map(function (d) {
+      return {
+        id: d.dlqId, anchor: d.dlqId, failedTests: (d.failedTests || []).slice(), column: d.column,
+        observedValueText: observedText(d.observedValue), reason: d.reason,
+        repairable: !!d.repairable, status: d.status, hqHref: href
+      };
+    });
+  }
+
+  function medallion(state) {
+    const F = Shared.format;
+    const c = Engine.getContract();
+    const bronze = state.bronzeRows || 0;
+    const staging = (state.staging || []).length;
+    const silver = state.productionRows || 0;
+    function unit(n) { return n + ' ' + F.plural(n, 'row', 'rows'); }
+    return {
+      bronze: bronze, staging: staging, silver: silver,
+      labels: { bronze: 'Bronze rows landed', staging: 'Held in staging', silver: 'Silver rows in production' },
+      texts: { bronze: unit(bronze), staging: unit(staging), silver: unit(silver) },
+      bronzeTable: c.names.bronze,
+      silverTable: c.names.silver,
+      gold: {
+        text: "Gold KPI inputs are the 120-day pre-aggregated daily history plus today's published exports",
+        tables: c.names.gold.slice()
+      }
+    };
+  }
+
+  vm.dlqView = dlqView;
+  vm.medallion = medallion;
 })();
