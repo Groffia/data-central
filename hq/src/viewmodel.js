@@ -166,4 +166,76 @@
       return { iso: e.iso, timeText: HQ.format.clockLabel(e.iso), type: e.type, detail: e.detail };
     });
   };
+
+  vm.businessCase = function businessCase(state) {
+    const f = HQ.format;
+    if (!(state.dlq || []).length) {
+      return {
+        hasIncident: false,
+        placeholder: 'No incident yet. Switch to Incident to see what the gate prevents.',
+        headline: null, rowsStopped: null, droppedList: [], invalidList: [],
+        timeToDetect: null, phiText: null, storage: null, secondary: null
+      };
+    }
+    const b = state.businessCase;
+    return {
+      hasIncident: true,
+      placeholder: null,
+      headline: 'Without the gate: ' + b.rowsSilentlyDropped + ' rows vanish silently and ' +
+        b.invalidRowsReachingDashboard + ' impossible readings reach the dashboard.',
+      rowsStopped: b.rowsStopped,
+      droppedList: (b.silentlyDroppedRows || []).map(function (r) { return { dlqId: r.dlqId, reason: r.reason }; }),
+      invalidList: (b.invalidRowsListing || []).map(function (r) {
+        return { dlqId: r.dlqId, summary: 'patient ' + r.patient_id + ', code ' + r.vital_code +
+          ', value ' + r.vital_value + ' ' + r.unit };
+      }),
+      timeToDetect: {
+        withGate: 'With the gate: caught at the batch (at most ' + b.minutesToDetectWithGate + ' simulated minutes).',
+        withoutGate: 'Without it: next scheduled review, assumed ' + b.hoursToDetectWithoutGate + ' hours (an assumption).'
+      },
+      phiText: 'Rows containing PHI quarantined for review: ' + b.phiRowsQuarantined,
+      storage: {
+        headline: f.pct1(b.storageSavedVsWarmPct) + ' saved versus keeping everything in warm storage',
+        secondary: f.pct1(b.storageSavedVsHotPct) + ' saved versus keeping everything in hot storage',
+        label: 'Illustrative figures for comparison, not vendor quotes'
+      },
+      secondary: 'Abnormal Vital Rate change measured on ' + f.batchLabel(b.distortionBatchId) +
+        ' under naive rules (rows without a usable patient ID dropped at the join): ' +
+        f.signedPts1(b.distortionAvoidedPts) + ' (secondary)'
+    };
+  };
+
+  const VENDOR_ROWS = [
+    ['Batch ingestion', 'Auto Loader / Lakeflow Connect', 'Snowpipe / Fivetran', 'Data Factory pipelines'],
+    ['Landing (Bronze)', 'Delta table', 'Snowflake or Iceberg table', 'OneLake lakehouse'],
+    ['Cleaning (Silver, Gold)', 'Lakeflow Pipelines (formerly Delta Live Tables) or dbt', 'dbt or Dynamic Tables', 'Dataflows or dbt'],
+    ['Quality gate', 'Pipeline expectations / dbt tests', 'Data metric functions / dbt tests', 'dbt tests'],
+    ['Alerting', 'Databricks SQL alerts', 'Snowflake alerts', 'Fabric Activator'],
+    ['Lineage and catalog', 'Unity Catalog', 'Horizon / Atlan', 'Purview'],
+    ['Metrics layer', 'Unity Catalog metric views', 'dbt Semantic Layer', 'Power BI semantic model'],
+    ['Orchestration', 'Lakeflow Jobs / Airflow', 'Tasks / Airflow', 'Pipelines / Airflow']
+  ];
+
+  vm.vendorTable = function vendorTable() {
+    return {
+      columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
+      rows: VENDOR_ROWS.map(function (r) { return r.slice(); })
+    };
+  };
+
+  vm.buildViewModel = function buildViewModel(state, ui, ctx) {
+    const u = ui || {};
+    return {
+      chips: vm.stageChips(state, ctx),
+      status: vm.statusRow(state),
+      tiles: vm.kpiTiles(state),
+      today: vm.todaySoFar(state),
+      incident: vm.incidentPanel(state),
+      timeline: vm.timeline(state),
+      business: vm.businessCase(state),
+      vendor: vm.vendorTable(),
+      notice: u.notice === undefined ? null : u.notice,
+      error: u.error === undefined ? null : u.error
+    };
+  };
 })();
