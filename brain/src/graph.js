@@ -4,7 +4,7 @@
 
   // Geometry of the lineage graph, in viewBox units: five fixed columns (source fields, Bronze, Silver, Gold, KPI tiles),
   // each column centred vertically, laid out by this code (no graph library).
-  const NODE_W = 172, NODE_H = 28, ROW = 34, PAD = 8, COL_STEP = 200, LEFT = 4, LAYERS = 5;
+  const NODE_W = 188, NODE_H = 28, ROW = 34, PAD = 8, COL_STEP = 206, LEFT = 4, LAYERS = 5;
 
   const round1 = function (v) { return Number(v.toFixed(1)); };
   const validLayer = function (l) { return Number.isInteger(l) && l >= 0 && l < LAYERS; };
@@ -44,5 +44,5 @@
     return { left: p(box.x, width), top: p(box.y, height), width: p(box.w, width), height: p(box.h, height) };
   }
 
-  Brain.graph = { NODE_W: NODE_W, NODE_H: NODE_H, layout: layout, edgePath: edgePath, percent: percent };
+  Brain.graph = { layout: layout, edgePath: edgePath, percent: percent };
 })();

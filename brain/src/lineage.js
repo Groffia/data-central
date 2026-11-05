@@ -95,9 +95,7 @@
     return finish(seen);
   }
 
-  const feeds = (id) => (has(id) ? finish(new Set(out.get(id).map((e) => e[1]))) : []);
-  const fedBy = (id) => (has(id) ? finish(new Set(into.get(id).map((e) => e[0]))) : []);
   const kpisFor = (id) => downstream(id).filter((x) => byId.get(x).layer === 4);
 
-  Brain.lineage = { nodes: nodes, edges: edges, feeds: feeds, fedBy: fedBy, downstream: downstream, upstream: upstream, kpisFor: kpisFor };
+  Brain.lineage = { nodes: nodes, edges: edges, downstream: downstream, upstream: upstream, kpisFor: kpisFor };
 })();

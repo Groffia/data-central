@@ -237,9 +237,6 @@
     return '<p>' + esc(vm && vm.footer ? vm.footer : 'All data is synthetic and generated deterministically (seed 42). Company names are fictional.') + '</p>';
   }
 
-  const render = { header: header, contract: contract, phi: phi, lineage: lineage, access: access, retention: retention, erasure: erasure, vendor: vendor, notice: notice, footer: footer, safeHref: safeHref };
-  render.all = function all(vm) {
-    return ['header', 'notice', 'contract', 'phi', 'lineage', 'access', 'retention', 'erasure', 'vendor', 'footer'].map(function (k) { return render[k](vm); }).join('\n');
-  };
+  const render = { header: header, contract: contract, phi: phi, lineage: lineage, access: access, retention: retention, erasure: erasure, vendor: vendor, notice: notice, footer: footer };
   Brain.render = render;
 })();

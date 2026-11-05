@@ -8,7 +8,6 @@ const raw = L.Brain.lineage;
 // Arrays made inside the vm context are another realm's: copy them so deepStrictEqual compares plain values.
 const lin = {
   nodes: Array.from(raw.nodes), edges: Array.from(raw.edges).map((e) => Array.from(e)),
-  feeds: (x) => Array.from(raw.feeds(x)), fedBy: (x) => Array.from(raw.fedBy(x)),
   downstream: (x) => Array.from(raw.downstream(x)), upstream: (x) => Array.from(raw.upstream(x)), kpisFor: (x) => Array.from(raw.kpisFor(x)),
 };
 const contract = L.Engine.getContract();
@@ -93,10 +92,7 @@ test('upstream and downstream agree: a is upstream of b exactly when b is downst
   }));
 });
 
-test('feeds and fedBy are the direct neighbours; kpisFor lists the affected KPIs', () => {
-  assert.deepStrictEqual(lin.feeds('patient_id'), [NAMES.bronze]);
-  assert.deepStrictEqual(lin.fedBy(NAMES.bronze).length, FIELDS.length);
-  assert.deepStrictEqual(sorted(lin.feeds('fct_census_daily')), sorted(['Avg Length of Stay', 'Bed Occupancy', '30-Day Readmission Rate']));
+test('kpisFor lists the affected KPIs', () => {
   assert.deepStrictEqual(lin.kpisFor('vital_value'), ['Abnormal Vital Rate']);
   assert.deepStrictEqual(lin.kpisFor('cipher_suite'), []);
   assert.deepStrictEqual(sorted(lin.kpisFor(NAMES.silver)), sorted(kpiIds));
@@ -107,7 +103,7 @@ test('results are fresh sorted arrays; an unknown id gives empty lists', () => {
   const a = lin.downstream('patient_id');
   a.push('x');
   assert.ok(!lin.downstream('patient_id').includes('x'));
-  [lin.downstream, lin.upstream, lin.feeds, lin.fedBy, lin.kpisFor].forEach((fn) => {
+  [lin.downstream, lin.upstream, lin.kpisFor].forEach((fn) => {
     assert.deepStrictEqual(fn('nope'), []);
     assert.deepStrictEqual(fn(undefined), []);
     assert.deepStrictEqual(fn(null), []);

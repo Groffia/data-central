@@ -109,9 +109,9 @@ select { font: inherit; color: var(--text); background: var(--panel); border: 1p
 .edge-plain { stroke: var(--text-2); }
 .edge-hot { stroke: var(--indigo); stroke-width: 3; }
 .edge-dim { stroke: var(--grey); stroke-dasharray: 3 3; }
-.node { position: absolute; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 8px; font-size: 12px; overflow: hidden; white-space: nowrap; }
+.node { position: absolute; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 8px; font-size: 11px; overflow: hidden; white-space: nowrap; }
 .node-label { overflow: hidden; text-overflow: ellipsis; }
-.node .badge { font-size: .65rem; padding: 0 6px; }
+.node .badge { font-size: .6rem; padding: 0 5px; }
 .node-downstream { border: 2px solid var(--indigo); }
 .node-dimmed { color: var(--text-2); background: var(--panel); border-style: dashed; }
 .impact { margin: 8px 0; padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; }

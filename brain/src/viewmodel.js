@@ -79,8 +79,6 @@
     };
   }
 
-  function stepLabel(steps) { return typeof steps.label === 'string' ? steps.label : 'Step ' + steps.n + ' of ' + steps.m; }
-
   // ----- A: data contract and ownership -----
 
   // The only invented content on the page: one fictional owning team per layer.
@@ -402,6 +400,5 @@
     }
   }
 
-  vm.stepLabel = stepLabel;
   vm.buildViewModel = buildViewModel;
 })();
