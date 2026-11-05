@@ -476,7 +476,9 @@ function reduce(state, action, opts) {
 
 function replay(scenario, actions, opts) {
   assertScenario(scenario);
-  return (actions || []).reduce((s, a) => reduce(s, a, opts), initialState(scenario));
+  const start = initialState(scenario);
+  if (opts && Array.isArray(opts.faultExports)) start.faultExports = opts.faultExports.slice();
+  return (actions || []).reduce((s, a) => reduce(s, a, opts), start);
 }
 
 // ===== SECTION: KPI history, facility profile, tiering =====
@@ -576,6 +578,95 @@ function tieringCost(settings) {
   return { monthlyCost, allHotCost, savedPct: ((allHotCost - monthlyCost) / allHotCost) * 100 };
 }
 
+// ===== SECTION: public interface, business case, auto-play, link params =====
+const PHI_FIELDS = ["patient_id", "patient_name", "patient_zip5", "birth_date", "encounter_epoch"];
+const PATIENT_ID_RE = /^SGH-P-\d{6}$/;
+const runBatchAct = () => ({ type: "runBatch" });
+
+const PRELUDE = { healthy: [], incident: [runBatchAct(), runBatchAct()] };
+const AUTOPLAY = {
+  healthy: [runBatchAct(), runBatchAct(), runBatchAct(), runBatchAct()],
+  incident: [
+    runBatchAct(), runBatchAct(), runBatchAct(),
+    ...["dlq-3-2", "dlq-3-6", "dlq-3-10", "dlq-3-15", "dlq-3-19"].map((dlqId) => ({ type: "repairRow", dlqId })),
+    ...["dlq-3-4", "dlq-3-9", "dlq-3-13", "dlq-3-17"].map((dlqId) => ({ type: "discardRow", dlqId, reason: "unrepairable" })),
+    { type: "ackAlert" }, { type: "resolveRetry" }, runBatchAct(), { type: "resolveAlert" },
+  ],
+};
+
+// Models a pipeline with no gate. Returns a percent 0..100.
+// NOTE: this follows Stephen's rules literally. A camelCased row also loses patient_id and vital_code,
+// so a stricter pipeline would drop it or fail to classify it.
+function naiveAbnormalRate(rows) {
+  let counted = 0, abnormal = 0;
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const r = isObj(row) ? row : {};
+    if ("patientId" in r) { // renamed columns: vital_value dropped -> null -> shown as 0
+      counted++;
+      if (isAbnormal({ vital_code: r.vitalCode, vital_value: 0 })) abnormal++;
+      return;
+    }
+    if ("patient_id" in r && (typeof r.patient_id !== "string" || !PATIENT_ID_RE.test(r.patient_id))) return; // dim_patient join drops it
+    counted++;
+    if (typeof r.vital_value === "number" && isAbnormal(r)) abnormal++;
+  });
+  return counted ? (abnormal / counted) * 100 : 0;
+}
+
+const snakeKey = (k) => k.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
+
+function holdsPhi(payload) {
+  return Object.entries(isObj(payload) ? payload : {}).some(([k, v]) => PHI_FIELDS.includes(snakeKey(k)) && v !== null && v !== undefined);
+}
+
+function computeBusinessCase(state) {
+  const dlq = state.dlq;
+  const first = dlq.length ? dlq[0] : null;
+  let distortionAvoidedPts = 0, distortionBatchId = null;
+  if (first) {
+    distortionBatchId = first.batchId;
+    const n = Number(first.batchId.slice(6));
+    const rows = generateExport(n, state.scenario, { faultExports: state.faultExports ?? undefined }).rows;
+    const failed = errorFailures(rows, [], exportRunEpoch(n));
+    distortionAvoidedPts = naiveAbnormalRate(rows) - naiveAbnormalRate(rows.filter((r, i) => !failed.has(i)));
+  }
+  return {
+    rowsStopped: dlq.length,
+    distortionAvoidedPts,
+    distortionBatchId,
+    minutesToDetectWithGate: dlq.length ? 15 : null, // export cadence, an upper bound
+    hoursToDetectWithoutGate: 24, // assumption: a next-day report review would catch it
+    phiRowsQuarantined: dlq.filter((d) => holdsPhi(d.payload)).length,
+    storageSavedPct: tieringCost().savedPct,
+  };
+}
+
+function getState(scenario, actions, opts) {
+  const state = replay(scenario, actions, opts);
+  const history = getHistory();
+  return {
+    ...state,
+    kpis: computeKpis(history),
+    held: state.gate === "OPEN",
+    facility: facilityProfile(history),
+    businessCase: computeBusinessCase(state),
+  };
+}
+
+const getTimeline = (scenario, actions, opts) => getState(scenario, actions, opts).events;
+
+function parseLinkParams(search) {
+  const out = { scenario: "healthy", step: 0 };
+  if (typeof search !== "string") return out;
+  search.replace(/^\?/, "").split("&").forEach((pair) => {
+    const i = pair.indexOf("=");
+    const k = i < 0 ? pair : pair.slice(0, i), v = i < 0 ? "" : pair.slice(i + 1);
+    if (k === "scenario" && (v === "healthy" || v === "incident")) out.scenario = v;
+    if (k === "step" && /^\d+$/.test(v)) out.step = Number(v);
+  });
+  return out;
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -588,6 +679,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost,
+  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate,
 };
 
 // ===== EXPORT =====
