@@ -81,3 +81,35 @@ test('release.yml: tag trigger, permissions, release command', () => {
   assert.ok(t.includes('gh release create "$GITHUB_REF_NAME" site/hq/hq-single.html --title "HQ $GITHUB_REF_NAME" --notes "Single-file HQ demo (open it from disk or attach it to an email), built from this tag. Source and notes: README.md in the hq folder."'));
   assert.ok(t.indexOf(BUILD) < t.indexOf('gh release create'));
 });
+
+// YAML regression guard (no parser available in the repo, so a cheap line check). A single-line `run:` value is a
+// YAML plain scalar unless it starts with a quote or a block indicator; a plain scalar must not contain ": "
+// (even inside shell quotes) or " #", or GitHub rejects the whole workflow file ("mapping values are not allowed here").
+function plainRunProblems(text) {
+  const problems = [];
+  text.split('\n').forEach((line, i) => {
+    const m = /^\s*(?:- )?run:[ \t]+(.*)$/.exec(line);
+    if (!m) return;
+    const value = m[1].trim();
+    if (value === '' || /^[|>]/.test(value) || /^["']/.test(value)) return;
+    if (value.includes(': ') || /:$/.test(value) || / #/.test(value)) {
+      problems.push('line ' + (i + 1) + ': single-line run value contains ": " or " #" (use "run: |")');
+    }
+  });
+  return problems;
+}
+
+test('workflow files: no single-line run value that YAML would reject', () => {
+  for (const f of fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n))) {
+    assert.deepStrictEqual(plainRunProblems(read(f)), [], f);
+  }
+});
+
+test('the YAML guard flags the broken line that failed on GitHub, and passes the block form', () => {
+  const broken = '        run: gh release create "$GITHUB_REF_NAME" f.html --notes "Single-file demo. Source and notes: README.md in the hq folder."';
+  assert.strictEqual(plainRunProblems(broken).length, 1);
+  assert.strictEqual(plainRunProblems('        run: |\n          gh release create x --notes "a: b"').length, 0);
+  assert.strictEqual(plainRunProblems("        run: 'echo a: b'").length, 0);
+  assert.strictEqual(plainRunProblems('      - run: cd engine && node --test tests/').length, 0);
+  assert.strictEqual(plainRunProblems('        run: echo done # comment').length, 1);
+});
