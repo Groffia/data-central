@@ -333,7 +333,7 @@
     try { return vendorSubset(); } catch (e) { return { columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'], rows: [] }; }
   }
 
-  // Never throws. ctx = { scenario, actions, step, defState, links: { hqBase, pipelineBase }, openTables }.
+  // Never throws. ctx = { scenario, actions, step, defState, links: { hqBase, pipelineBase }, openTables, explainOpen }.
   function buildViewModel(ctx) {
     const c = ctx && typeof ctx === 'object' ? ctx : {};
     let scenario = 'healthy';
@@ -364,7 +364,7 @@
         trends: tiles.map(function (t) { return trendOf(t, history, trendDef[t.name], c.openTables); }),
         compare: compare(state, naive),
         definitions: definitionsModel(ds, history),
-        check: checkPanel(state),
+        check: Object.assign(checkPanel(state), { explainOpen: c.explainOpen === true }),
         vendor: vendorSubset(),
         notice: notice,
         footer: FOOTER_TEXT

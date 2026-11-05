@@ -3,7 +3,7 @@
   const Value = (globalThis.Value = globalThis.Value || {});
 
   // Task 10: pure definition state machine. State is plain data and is never mutated.
-  const CONSUMERS = ['Dashboard tile', 'Trend chart', 'Board deck export', 'Weekly operations email'];
+  const CONSUMERS = ['Dashboard tile', 'Trend chart'];
   const NON_TILE = CONSUMERS.slice(1);
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const names = () => Object.keys(Engine.METRIC_DEFINITIONS);
@@ -75,7 +75,7 @@
       const s = clone(s0);
       if (!known(action.metric)) { s.message = type === 'publish' ? 'Nothing to publish' : 'Nothing to roll back'; return s; }
       const m = s.metrics[action.metric];
-      const n = s.governed ? 4 : 1;
+      const n = s.governed ? CONSUMERS.length : 1;
       if (type === 'publish') {
         if (m.selected === m.published) { s.message = 'Nothing to publish'; return s; }
         const old = m.published;
@@ -154,5 +154,5 @@
     return s.log.map((e) => ({ version: e.version, text: e.text })).reverse();
   }
 
-  Value.definitions = { CONSUMERS: CONSUMERS, initial: initial, reduce: reduce, consumers: consumers, published: published, yamlPreview: yamlPreview, changelog: changelog };
+  Value.definitions = { initial: initial, reduce: reduce, consumers: consumers, published: published, yamlPreview: yamlPreview, changelog: changelog };
 })();

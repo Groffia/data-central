@@ -168,7 +168,7 @@ test('definitions: labelled selects, buttons with names, version badge, yaml, co
   has(d, '<pre class="yaml"');
   has(d, '# illustrative, in the style of dbt MetricFlow, not a working config');
   has(d, '    numerator: abnormal_obs_standard');
-  ['Dashboard tile', 'Trend chart', 'Board deck export', 'Weekly operations email'].forEach((c) => has(d, '<th scope="row">' + c + '</th>'));
+  ['Dashboard tile', 'Trend chart'].forEach((c) => has(d, '<th scope="row">' + c + '</th>'));
   has(d, '>Reset definitions</button>');
   has(d, 'data-cmd="mode" data-governed="true" aria-pressed="true">One governed definition</button>');
   has(d, 'data-cmd="mode" data-governed="false" aria-pressed="false">Hardcoded in the report</button>');
@@ -188,7 +188,7 @@ test('conflict banner: present only in conflict, no role alert, listing both val
   const d = R.definitions(m);
   assert.strictEqual(count(d, 'role="alert"'), 0);
   assert.strictEqual(count(d, 'class="conflict"'), 1);
-  assert.match(d, /<p class="conflict">Definition conflict: 3 reports disagree \(values: \d+\.\d%, \d+\.\d%\)<\/p>/);
+  assert.match(d, /<p class="conflict">Definition conflict: 1 report disagrees \(values: \d+\.\d%, \d+\.\d%\)<\/p>/);
   has(d, 'aria-pressed="true">Hardcoded in the report</button>');
   has(d, 'v2: Abnormal Vital Rate: standard_thresholds -&gt; strict_thresholds, 1 consumer changed');
   // governed publish: no banner
@@ -209,6 +209,8 @@ test('check: title, number lines, verdict with level and a text cue, explain dis
   has(c, '7 of 75 = 9.3% (without them; this is the number the verdict uses)');
   has(c, '<p class="verdict" data-level="ok"><span aria-hidden="true">✓</span> Within the expected range</p>');
   has(c, '<details class="explain"><summary>How this check works</summary>');
+  const opened = J(m); opened.check.explainOpen = true;
+  has(R.check(opened), '<details class="explain" open><summary>How this check works</summary>');
   has(c, 'The five hand-picked edge-case rows are left out');
   has(R.check(model('healthy', 1)), 'data-level="neutral"');
   has(R.check(model('healthy', 1)), 'Not enough data yet (fewer than 30 readings)');

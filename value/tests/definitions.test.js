@@ -8,7 +8,7 @@ const D = Value.definitions;
 const plain = (o) => JSON.parse(JSON.stringify(o));
 const AVR = 'Abnormal Vital Rate';
 const RDM = '30-Day Readmission Rate';
-const CONSUMERS = ['Dashboard tile', 'Trend chart', 'Board deck export', 'Weekly operations email'];
+const CONSUMERS = ['Dashboard tile', 'Trend chart'];
 const history = Engine.getHistory();
 const txt = (metric, id) => (Engine.computeMetric(history, metric, id).value * 100).toFixed(1) + '%';
 const STD = txt(AVR, 'standard_thresholds');
@@ -44,7 +44,7 @@ test('governed publish', () => {
   assert.ok(c.rows.every((r) => r.valueText === STRICT && r.definitionId === 'strict_thresholds'));
   assert.strictEqual(c.conflict, null);
   assert.strictEqual(s.metrics[AVR].version, 2);
-  assert.deepStrictEqual(plain(D.changelog(s)), [{ version: 2, text: 'Abnormal Vital Rate: standard_thresholds -> strict_thresholds, 4 consumers changed' }]);
+  assert.deepStrictEqual(plain(D.changelog(s)), [{ version: 2, text: 'Abnormal Vital Rate: standard_thresholds -> strict_thresholds, 2 consumers changed' }]);
   assert.strictEqual(s.message, 'Published Abnormal Vital Rate v2');
 });
 
@@ -57,8 +57,8 @@ test('rollback restores exactly', () => {
   assert.deepStrictEqual(plain(D.consumers(s, history)), plain(D.consumers(init, history)));
   assert.strictEqual(s.message, 'Rolled back Abnormal Vital Rate to v1');
   assert.deepStrictEqual(plain(D.changelog(s)).map((e) => e.text), [
-    'Abnormal Vital Rate: rolled back strict_thresholds -> standard_thresholds, 4 consumers changed',
-    'Abnormal Vital Rate: standard_thresholds -> strict_thresholds, 4 consumers changed']);
+    'Abnormal Vital Rate: rolled back strict_thresholds -> standard_thresholds, 2 consumers changed',
+    'Abnormal Vital Rate: standard_thresholds -> strict_thresholds, 2 consumers changed']);
 });
 
 test('hardcoded publish, then back to governed', () => {
@@ -68,8 +68,8 @@ test('hardcoded publish, then back to governed', () => {
   assert.strictEqual(avr(s).conflict, null);
   s = run(s, { type: 'select', metric: AVR, definitionId: 'strict_thresholds' }, { type: 'publish', metric: AVR });
   const c = avr(s);
-  assert.deepStrictEqual(c.rows.map((r) => r.valueText), [STRICT, STD, STD, STD]);
-  assert.deepStrictEqual(c.conflict, { text: 'Definition conflict: 3 reports disagree', values: [STRICT, STD] });
+  assert.deepStrictEqual(c.rows.map((r) => r.valueText), [STRICT, STD]);
+  assert.deepStrictEqual(c.conflict, { text: 'Definition conflict: 1 report disagrees', values: [STRICT, STD] });
   assert.strictEqual(D.changelog(s)[0].text, 'Abnormal Vital Rate: standard_thresholds -> strict_thresholds, 1 consumer changed');
   s = run(s, { type: 'mode', governed: true });
   assert.strictEqual(s.message, 'One governed definition: all reports agree');
@@ -83,7 +83,7 @@ test('hardcoded conflict on the other metric; no conflict at start', () => {
   let s = run(D.initial(), { type: 'mode', governed: false });
   s = run(s, { type: 'select', metric: RDM, definitionId: 'unplanned_only' }, { type: 'publish', metric: RDM });
   const c = plain(D.consumers(s, history)).find((x) => x.metric === RDM);
-  assert.strictEqual(c.conflict.text, 'Definition conflict: 3 reports disagree');
+  assert.strictEqual(c.conflict.text, 'Definition conflict: 1 report disagrees');
   assert.ok(D.consumers(D.initial(), history).every((x) => x.conflict === null));
 });
 

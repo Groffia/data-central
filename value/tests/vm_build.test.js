@@ -47,7 +47,7 @@ test('check verdict is whatever liveSampleCheck returns', () => {
   const st = Engine.getState('incident', actions);
   const c = Engine.liveSampleCheck(st);
   const m = build('incident', 3);
-  assert.deepStrictEqual(J(m.check), J(V.checkPanel(st)));
+  assert.deepStrictEqual(J(m.check), Object.assign(J(V.checkPanel(st)), { explainOpen: false }));
   assert.strictEqual(m.check.verdict, c.verdict);
   const h = build('healthy', 4);
   assert.strictEqual(h.check.verdict, Engine.liveSampleCheck(Engine.getState('healthy', Engine.actionsForStep('healthy', 4))).verdict);
@@ -120,7 +120,7 @@ test('hardcoded mode gives a conflict on the published metric only', () => {
   assert.strictEqual(m.definitions.governed, false);
   const abn = m.definitions.metrics.find((x) => x.name === 'Abnormal Vital Rate');
   const re = m.definitions.metrics.find((x) => x.name === '30-Day Readmission Rate');
-  assert.strictEqual(abn.conflict.text, 'Definition conflict: 3 reports disagree');
+  assert.strictEqual(abn.conflict.text, 'Definition conflict: 1 report disagrees');
   assert.strictEqual(abn.conflict.values.length, 2);
   assert.strictEqual(re.conflict, null);
 });
@@ -132,7 +132,7 @@ test('definitions metrics: options, yaml, selected id', () => {
   assert.deepStrictEqual(J(re.options), [{ id: 'all_cause', label: 'All-cause readmissions' }, { id: 'unplanned_only', label: 'Unplanned readmissions only' }]);
   assert.strictEqual(re.yaml, D.yamlPreview('30-Day Readmission Rate', 'all_cause'));
   assert.strictEqual(re.selectedId, 'all_cause');
-  assert.strictEqual(re.consumers.length, 4);
+  assert.strictEqual(re.consumers.length, 2);
 });
 
 test('vendor: the Metrics layer and Dashboards rows with the column heads', () => {

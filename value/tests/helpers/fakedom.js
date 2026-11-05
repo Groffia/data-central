@@ -231,7 +231,6 @@ function boot(options) {
     Engine: Engine, document: document, controller: function () { return lastController; }, Value: function () { return ctx.Value; }, log: log, timers: timers, handlers: handlers, regionKeys: REGION_KEYS,
     html: function (k) { return regionHtml['region-' + k]; },
     caption: function () { return els.caption.textContent; },
-    defLive: function () { return els['def-live'].textContent; },
     q: function (s) { return all(s)[0] || null; },
     qa: all,
     // Click the rendered control matching the selector (like a user would); returns the element.
@@ -242,25 +241,7 @@ function boot(options) {
       return e;
     },
     click: function (attrs, disabled) { fire('click', fakeButton(attrs, disabled)); },
-    change: function (el) { fire('change', el); },
-    input: function (el) { fire('input', el); },
-    // A user pressing a control: blur fires change on a dirty focused input first (like a browser), then the click is
-    // delivered only if the control was not replaced in between. Returns { lost, el }.
-    press: function (s) {
-      const el = all(s)[0];
-      if (!el) throw new Error('no element for ' + s);
-      const a = document.activeElement;
-      if (a && a.hasAttribute && a.hasAttribute('data-field') && a.value !== a.getAttribute('value')) fire('change', a);
-      if (el.detached) return { lost: true, el: el };
-      fire('click', el);
-      return { lost: false, el: el };
-    },
-    // Simulate typing without any event: sets value and caret.
-    typeInto: function (el, text, start, end) {
-      el.focus();
-      el.value = text;
-      el.setSelectionRange(start === undefined ? text.length : start, end === undefined ? (start === undefined ? text.length : start) : end);
-    }
+    change: function (el) { fire('change', el); }
   };
 }
 

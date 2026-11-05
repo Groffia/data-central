@@ -38,8 +38,6 @@ Requires engine tag `engine-v1.8`.
 
 ## Not done / parked
 
-- The "How this check works" disclosure closes on any re-render of the check panel (for example when a step changes it).
-- `styles.css` contains unused rules copied from Pipeline.
 - Axis widening for huge spikes.
 
 ## Vendor names checked

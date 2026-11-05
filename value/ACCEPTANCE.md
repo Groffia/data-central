@@ -1,6 +1,6 @@
 # Value page: acceptance record
 
-Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/value-v1` (commit 2b2a5fb; rows 5 to 7 and 9 updated after fix rounds A and B), served locally with `node hq/scripts/serve.js site` and read in the built-in browser pane at 1024 px over http. Engine `engine-v1.8`. Spec: Page Spec v1 - Value (kept outside this repo). This is a local record; live acceptance is added after release.
+Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/value-v1` (commit 2b2a5fb; rows 5 to 7 and 9 updated after fix rounds A and B; rows 5, 6 and 9 updated again when the two mock consumers were removed, checked by automated tests only, not re-run in the browser), served locally with `node hq/scripts/serve.js site` and read in the built-in browser pane at 1024 px over http. Engine `engine-v1.8`. Spec: Page Spec v1 - Value (kept outside this repo). This is a local record; live acceptance is added after release.
 
 | # | Item | Result | Observed |
 |---|---|---|---|
@@ -8,11 +8,11 @@ Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/value-v1` 
 | 2 | Opening state (`/value/`) | Pass | "Step 1 of 4", batch-1 text; no Held badge; panel C 20 readings, 5 abnormal, 25.0% on both sides, 0 rows dropped; panel E "2 of 15 = 13.3%", range up to 20.0%, verdict `Not enough data yet (fewer than 30 readings)`. |
 | 3 | `?scenario=incident&step=3#kpi-abnormal-vital-rate` | Pass | Four tiles Held, "as of Batch 2, 14:45:00 UTC": 78.6% (-0.7%), 6.2% (+3.5%), 4.7 days (+3.1%), 13.4% (+0.6%), each "vs prior 7 days" with an arrow and the words up/down. Panel C: with the gate 40 readings, 5 abnormal, 12.5%; without 53 readings counted, 7 rows silently dropped (5 renamed columns, 1 null patient_id, 1 no dim_patient match), 2 invalid readings counted, 13.2%; explanation note shown. Panel E: 5 of 40 = 12.5% with the hand-picked rows, 2 of 35 = 5.7% without, range up to 14.3%, Within. Links to HQ and Pipeline `../hq/?scenario=incident&step=3`, `../pipeline/?scenario=incident&step=3`. |
 | 4 | `?scenario=incident&step=16` | Pass | Not Held; all tiles "as of Batch 4"; panel C 76 readings, 10 abnormal, 13.2% against 73 counted, 7 dropped; panel E 7 of 71 = 9.9%, range up to 12.7%, Within. |
-| 5 | Definitions, governed | Pass | Select strict_thresholds and Publish: Abnormal Vital Rate tile 3.6%, badge v2, all four consumers 3.6%, message "Published Abnormal Vital Rate v2". Roll back: 6.2%, v1, message "Rolled back Abnormal Vital Rate to v1". |
-| 6 | Definitions, hardcoded | Pass | Hardcoded mode, then publish strict: tile 3.6%, the other three consumers 6.2%, banner "Definition conflict: 3 reports disagree (values: 3.6%, 6.2%)" (visible, announced once through the hidden live line). The Trend chart consumer keeps 6.2%, and panel B's chart follows it (summary reads 6.2% as the 7-day value). Back to governed clears the banner. |
+| 5 | Definitions, governed | Pass | Select strict_thresholds and Publish: Abnormal Vital Rate tile 3.6%, badge v2, both consumers (Dashboard tile and Trend chart) 3.6%, message "Published Abnormal Vital Rate v2". Roll back: 6.2%, v1, message "Rolled back Abnormal Vital Rate to v1". |
+| 6 | Definitions, hardcoded | Pass | Hardcoded mode, then publish strict: tile 3.6%, the Trend chart consumer 6.2%, banner "Definition conflict: 1 report disagrees (values: 3.6%, 6.2%)" (visible, announced once through the hidden live line). Panel B's chart follows the Trend chart consumer (summary reads 6.2% as the 7-day value). Back to governed clears the banner. |
 | 7 | Trend charts | Pass | Four charts; summary "Bed Occupancy: daily 77.8% on 2026-11-03 (7-day 78.6%), daily range 72.5% to 82.0% over 120 days, weekends shaded" (the tile shows the 7-day 78.6%); the legend line under each chart carries "trailing window is shorter for the first six days"; "Show as table" renders one table. No last-good-date marker. |
 | 8 | HQ v1.2 links (`/hq/?scenario=healthy&step=4`) | Pass | Chip 6 reads "Expected-range check: Within the expected range" and links `../value/?scenario=healthy&step=4#stage-check`; chip 7 and the four KPI tiles link to `#kpi-...` anchors; no too-long note. |
-| 9 | Tests | Pass | engine 231, shared 15, hq 221, pipeline 238, value 223, scripts 31 (all passing after fix B). |
+| 9 | Tests | Pass | engine 231, shared 15, hq 221, pipeline 238, value 225, scripts 31 (all passing after the removal round). |
 
 ## Not tested by me
 
@@ -21,4 +21,4 @@ Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/value-v1` 
 
 ## Known gaps
 
-- Parked: the check's "How this check works" disclosure closes on re-render; `styles.css` carries unused Pipeline rules; the chart axis widens for a huge finite spike (real data has none).
+- Parked: the chart axis widens for a huge finite spike (real data has none).

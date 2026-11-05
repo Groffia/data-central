@@ -154,6 +154,14 @@
     handle(btn);
   });
 
+  // The "How this check works" disclosure: the browser toggles it, the controller remembers it so a re-render keeps it.
+  // The event does not bubble, so listen in the capture phase. No re-render here.
+  document.addEventListener('toggle', function (ev) {
+    const t = ev && ev.target;
+    if (!t || !t.classList || typeof t.classList.contains !== 'function' || !t.classList.contains('explain')) return;
+    controller.dispatch({ type: 'explainToggle', open: t.open === true });
+  }, true);
+
   // A select commits on change; nothing else listens for it.
   document.addEventListener('change', function (ev) {
     const t = ev && ev.target;

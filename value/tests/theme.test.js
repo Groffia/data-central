@@ -115,8 +115,7 @@ test('the daily and trailing lines differ in colour and in width, so colour is n
 });
 
 test('filled classes use a background token with its --on-* text token', () => {
-  ['.held-badge', '.conflict', '.verdict[data-level="ok"]', '.verdict[data-level="warn"]',
-    '.error'].forEach(function (sel) {
+  ['.held-badge', '.conflict', '.verdict[data-level="ok"]', '.verdict[data-level="warn"]'].forEach(function (sel) {
     const body = rule(sel);
     const bg = decl(body, 'background');
     const fg = decl(body, 'color');
@@ -248,9 +247,9 @@ test('ok, warn and neutral check levels carry a symbol and the verdict text', ()
 test('a conflict is a visible paragraph (no role=alert) that states the conflict and both values in words', () => {
   const { Value } = loadValue();
   const panel = { name: 'Abnormal Vital Rate', version: 2, publishedId: 'strict_thresholds', options: [], selectedId: '', consumers: [], yaml: '',
-    conflict: { text: 'Definition conflict: 3 reports disagree', values: ['9.0%', '6.2%'] } };
+    conflict: { text: 'Definition conflict: 1 report disagrees', values: ['9.0%', '6.2%'] } };
   const h = Value.render.definitions({ definitions: { governed: false, message: 'm', metrics: [panel], changelog: [] } });
-  assert.ok(/<p class="conflict">Definition conflict: 3 reports disagree \(values: 9\.0%, 6\.2%\)<\/p>/.test(h));
+  assert.ok(/<p class="conflict">Definition conflict: 1 report disagrees \(values: 9\.0%, 6\.2%\)<\/p>/.test(h));
   assert.ok(h.indexOf('role="alert"') < 0);
   const none = Value.render.definitions({ definitions: { governed: true, message: 'm', metrics: [Object.assign({}, panel, { conflict: null })], changelog: [] } });
   assert.ok(none.indexOf('class="conflict"') < 0);

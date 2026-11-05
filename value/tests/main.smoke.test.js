@@ -66,7 +66,7 @@ test('hardcoded mode after a publish shows the conflict banner (visible, no role
   s.value = 'strict_thresholds';
   p.change(s);
   p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
-  assert.ok(/<p class="conflict">Definition conflict: 3 reports disagree/.test(p.html('definitions')));
+  assert.ok(/<p class="conflict">Definition conflict: 1 report disagrees/.test(p.html('definitions')));
   assert.ok(p.html('definitions').indexOf('role="alert"') < 0);
   p.clickRendered('button[data-cmd="rollback"][data-metric="' + AVR + '"]');
   p.clickRendered('button[data-cmd="reset"]');
@@ -324,7 +324,7 @@ test('a conflict is announced once with the publish; choosing another definition
   const w = watchLive(p);
   p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
   assert.equal(w.writes, 1);
-  assert.match(w.text, /^Published Abnormal Vital Rate v2\. Definition conflict: 3 reports disagree$/);
+  assert.match(w.text, /^Published Abnormal Vital Rate v2\. Definition conflict: 1 report disagrees$/);
   assert.ok(/class="conflict"/.test(p.html('definitions')));
   const before = w.text;
   const s = p.q(SEL);
@@ -336,4 +336,27 @@ test('a conflict is announced once with the publish; choosing another definition
   assert.equal(w.writes, 1);
   assert.equal(w.text, before);
   assert.ok(/class="conflict"/.test(p.html('definitions')));
+});
+
+test('"How this check works" stays open across Next and Back once opened, and stays closed otherwise', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  const details = (open) => ({ classList: { contains: (c) => c === 'explain' }, open: open });
+  const fireToggle = (open) => p.handlers.toggle.forEach((fn) => fn({ type: 'toggle', target: details(open) }));
+  assert.ok(!/<details class="explain" open>/.test(p.html('check')));
+  fireToggle(true);
+  p.clickRendered('button[data-cmd="next"]');
+  assert.ok(/<details class="explain" open>/.test(p.html('check')), 'open after Next');
+  p.clickRendered('button[data-cmd="back"]');
+  assert.ok(/<details class="explain" open>/.test(p.html('check')), 'open after Back');
+  fireToggle(false);
+  p.clickRendered('button[data-cmd="next"]');
+  assert.ok(!/<details class="explain" open>/.test(p.html('check')), 'closed stays closed');
+  assertInSync(p, 'after toggle');
+});
+
+test('a toggle from any other element is ignored', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  p.handlers.toggle.forEach((fn) => fn({ type: 'toggle', target: { classList: { contains: () => false }, open: true } }));
+  p.clickRendered('button[data-cmd="next"]');
+  assert.ok(!/<details class="explain" open>/.test(p.html('check')));
 });

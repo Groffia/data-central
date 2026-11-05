@@ -218,7 +218,7 @@
       '<p class="check-without">' + esc(c.withoutHandPickedText) + '</p>' +
       '<p class="check-range">' + esc(c.rangeText) + '</p>' +
       '<p class="verdict"' + attr('data-level', level) + '><span aria-hidden="true">' + cue + '</span> ' + esc(c.verdict) + '</p>' +
-      '<details class="explain"><summary>How this check works</summary>' +
+      '<details class="explain"' + (c.explainOpen === true ? ' open' : '') + '><summary>How this check works</summary>' +
       arr(c.explain).map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</details>';
   }
 

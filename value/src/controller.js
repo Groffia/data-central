@@ -79,6 +79,7 @@
     }
     let defState = Value.definitions.initial();
     let openTables = {};
+    let explainOpen = false;
     const listeners = [];
 
     // Throws if the engine does; dispatch treats that as a broken engine.
@@ -91,7 +92,7 @@
       return Value.viewmodel.buildViewModel({
         scenario: scenario, actions: actions.slice(), step: stepNow(), defState: defState,
         links: { hqBase: links.hqBase, pipelineBase: links.pipelineBase },
-        openTables: Object.assign({}, openTables)
+        openTables: Object.assign({}, openTables), explainOpen: explainOpen
       });
     }
 
@@ -152,6 +153,7 @@
         actions = openingActions(Engine, scenario);
         defState = Value.definitions.initial();
         openTables = {};
+        explainOpen = false;
         focusTarget = '';
         return true;
       }
@@ -174,6 +176,11 @@
         if (typeof cmd.governed !== 'boolean') return false;
         defState = Value.definitions.reduce(defState, { type: 'mode', governed: cmd.governed });
         return true;
+      }
+      if (t === 'explainToggle') {
+        // The browser has already opened or closed the disclosure; remember it so later renders keep it. No re-render.
+        if (typeof cmd.open === 'boolean') explainOpen = cmd.open;
+        return false;
       }
       if (t === 'tableToggle') {
         if (typeof cmd.kpi !== 'string' || kpiIds().indexOf(cmd.kpi) < 0) return false;
