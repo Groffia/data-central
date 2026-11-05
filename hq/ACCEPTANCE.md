@@ -114,14 +114,15 @@ Built-in browser pane against `https://groffia.github.io/data-central/hq/`.
 
 ## Live acceptance (GitHub Pages, hq-v1.2 on commit 3c95e0a, 2026-11-05)
 
-Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Pages were opened at the link URLs the other pages produce; I did not click through each link by hand.
+Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Links were followed with real clicks (see the link rows); the console was read after the clicks on each page.
 
 | Item | Result | Observed |
 |---|---|---|
 | Deploy | Pass | Deploy site run 42118902271 green on main 3c95e0a (all suites and the engine tag check against `engine-v1.8`). |
 | `?scenario=healthy&step=4` chip 6 | Pass | Reads "Expected-range check: Within the expected range" and links `../value/?scenario=healthy&step=4#stage-check`. |
 | KPI links into Value | Pass | Four tile links plus the "KPIs current as of" link, each `../value/?scenario=...&step=...#kpi-<id>` (bed-occupancy, abnormal-vital-rate, avg-length-of-stay, 30-day-readmission-rate). |
+| Real clicks | Pass | Chip 6 opened `/value/?scenario=healthy&step=4#stage-check` (verdict "Within the expected range", section highlighted). The Bed Occupancy tile link opened `/value/?scenario=healthy&step=4#kpi-bed-occupancy` with the tile highlighted. Value's "Open this state in HQ" returned to `/hq/?scenario=healthy&step=4`. The "Open dlq-3-13 in Pipeline" link opened `/pipeline/?scenario=incident&step=3#dlq-3-13`, and Pipeline's "Open this state in HQ" returned to HQ with the banner "Incident in progress: gate open at Batch 3, production held at Batch 2." |
 | Links with `a=` | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r`: every Value and Pipeline link carries the same `a=`. |
 | Too-long-state notice | Pass | Starting from a 1,997-character `a=` and running two more batches shows "State too long to link; opens at the nearest step." and the Value link falls back to `&step=4#stage-check`. |
-| Console, network, layout | Pass | No console messages on the first page loaded; no external requests; no horizontal scroll. Console was not re-read after the long click run. |
-| Release asset | Pass | Release run 42119078221 green. `hq-single.html` (123,367 bytes, sha256 88e97797...) equals the file served on Pages. It equals my local build only after removing carriage returns: that working copy has CRLF in one source file, while CI builds from the LF checkout. |
+| Console, network, layout | Pass | No console messages on HQ or on the pages the clicks opened (Value, Pipeline, HQ again); no external requests; no horizontal scroll. |
+| Release asset | Pass | Release run 42119078221 green. `hq-single.html` (123,367 bytes, sha256 88e9e779...) equals the file served on Pages and the local build, byte for byte. |

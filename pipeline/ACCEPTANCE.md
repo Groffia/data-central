@@ -52,11 +52,12 @@ Parked for HQ v1.2: when an encoded state exceeds 2,000 characters, show a short
 
 ## Live acceptance (GitHub Pages, pipeline-v1.0.1 on commit 3c95e0a, 2026-11-05)
 
-Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Pages were opened at the link URLs the other pages produce; I did not click through each link by hand.
+Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Links were followed with real clicks (see the link rows); the console was read after the clicks on each page.
 
 | Item | Result | Observed |
 |---|---|---|
 | Deploy | Pass | Deploy site run 42118902271 green on main 3c95e0a (all suites and the engine tag check against `engine-v1.8`). |
+| Real clicks | Pass | HQ's "Open dlq-3-13 in Pipeline" opened `/pipeline/?scenario=incident&step=3#dlq-3-13` with the row highlighted; Pipeline's "Open this state in HQ" returned to HQ at incident step 3. |
 | Link from HQ with `a=` | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r#dlq-3-2` opens with the `dlq-3-2` anchor present and highlighted; all ten HQ links keep the same `a=`. |
 | Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
 | Release asset | Pass | Release run 42119219602 green. `pipeline-single.html` (123,518 bytes, sha256 23fec9bf...) equals the local build and the file served on Pages. |
