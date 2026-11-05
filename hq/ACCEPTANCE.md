@@ -33,10 +33,21 @@ Run by Claude in the built-in browser pane at 1024 px wide, driving the real but
 
 ## Test suites
 
-HQ suite (`node --test tests/` in `hq\`): 133 tests, 133 pass, 0 fail. Engine suite (in `engine\`): 173 tests, 173 pass, 0 fail.
+HQ suite (`node --test tests/` in `hq\`): 143 tests, 143 pass, 0 fail. Engine suite (in `engine\`): 173 tests, 173 pass, 0 fail.
 
 ## Known gaps
 
 - `file://` not exercised by the tester (see above); Stephen to open `dist\hq-single.html`.
 - Not tested: a phone-width viewport (out of scope; spec is 1024 px), a screen reader, high-contrast mode.
 - Screenshots: one screenshot timed out and one showed a stale frame while the page was rendering; the numbers above come from reading the page.
+
+## Re-check after the final-review fixes (commit e76e61f)
+
+The whole-branch review found three things a viewer would hit, and they were fixed and re-checked at 1024 x 768 in the pane (single file, served over http):
+
+- **Notice placement:** with the incident open and Run next batch scrolled to mid-screen, pressing Run showed "gate is OPEN: resolve the DLQ and retry first" at y 473 to 496 of 768, in view next to the controls.
+- **Keyboard focus:** after Repair on the first row, focus moved to the next control (the discard select of `dlq-3-4`) instead of falling to the page body.
+- **Auto-play scroll (Short cut):** the stage strip was in view at 2 s (Act 1); the incident panel was in view at 36 s and again in the recovery at 78 s; the business case was in view in Act 5. Scrolling is instant.
+- Vendor heading reads "In production this is…" and the new persistent notice container is present.
+
+Not re-run after the fixes: the full 4:30 Full version, and the broken-engine banner (the render change that disables every control on a failed self-test is covered by a unit test, not by a browser run).
