@@ -1065,6 +1065,60 @@ function selfTest() {
   return { passed: checks.every((c) => c.ok), checks };
 }
 
+// ===== SECTION: live sample check (v1.8) =====
+// Expected-range check for the live sample (Page Spec v1 - Value, 3E). Pure function of a state from getState.
+// The five hand-picked rows are the copies of CONTRACT.goldenRows that generateExport puts first in batch 1. They are
+// found in state.productionData by matching the contract rows themselves (no position arithmetic), so they count only
+// once published. Readings and abnormal counts exclude them. upperLimitPct is unrounded (100 * k / readings); the page
+// formats it. With no readings it is null (never NaN).
+const CHECK_MIN_READINGS = 30;
+const CHECK_TAIL = 0.025;
+
+// Smallest k with P(X > k) <= CHECK_TAIL for X ~ Binomial(n, p), summing the upper tail directly.
+function binomialUpperK(n, p) {
+  if (!(n > 0) || !(p > 0)) return 0;
+  if (!(p < 1)) return n;
+  const logFact = [0];
+  for (let i = 1; i <= n; i++) logFact.push(logFact[i - 1] + Math.log(i));
+  const pmf = [];
+  for (let j = 0; j <= n; j++) pmf.push(Math.exp(logFact[n] - logFact[j] - logFact[n - j] + j * Math.log(p) + (n - j) * Math.log(1 - p)));
+  for (let k = 0; k <= n; k++) {
+    let tail = 0;
+    for (let j = k + 1; j <= n; j++) tail += pmf[j];
+    if (tail <= CHECK_TAIL) return k;
+  }
+  return n;
+}
+
+function liveSampleCheck(state) {
+  if (!state || typeof state !== "object" || Array.isArray(state)) return null;
+  const published = state.publishedObservations;
+  if (typeof published !== "number" || !Number.isFinite(published) || published < 0) return null;
+  const abnormal = typeof state.publishedAbnormal === "number" && state.publishedAbnormal >= 0 ? state.publishedAbnormal : 0;
+  const data = Array.isArray(state.productionData) ? state.productionData : [];
+  const present = CONTRACT.goldenRows.filter((g) => {
+    const text = JSON.stringify(g);
+    return data.some((r) => JSON.stringify(r) === text);
+  });
+  const handPicked = present.length;
+  const handPickedAbnormal = present.filter((g) => isAbnormal(g)).length;
+  const readings = Math.max(0, published - handPicked);
+  const abnormalReadings = Math.max(0, abnormal - handPickedAbnormal);
+  const history = getHistory();
+  const baselineRate = history.reduce((s, r) => s + r.abnormal_obs_standard, 0) / history.reduce((s, r) => s + r.observations, 0);
+  const k = readings > 0 ? binomialUpperK(readings, baselineRate) : null;
+  let verdict;
+  if (readings < CHECK_MIN_READINGS) verdict = "Not enough data yet (fewer than 30 readings)";
+  else verdict = abnormalReadings > k ? "Above the expected range" : "Within the expected range";
+  return {
+    published, abnormal, handPicked, handPickedAbnormal, readings, abnormalReadings,
+    ratePct: readings > 0 ? (abnormalReadings / readings) * 100 : 0,
+    baselineRate,
+    upperLimitPct: k === null ? null : (100 * k) / readings,
+    verdict,
+  };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -1078,7 +1132,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
-  naiveAbnormalRate, naiveAbnormalStats,
+  naiveAbnormalRate, naiveAbnormalStats, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
