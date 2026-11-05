@@ -252,10 +252,13 @@
     };
   };
 
+  // Rows added to the shared constant for other pages (for example Dashboards, stage 7 on the Value page) are left out of HQ.
+  const VENDOR_EXCLUDED = ['Dashboards'];
+
   vm.vendorTable = function vendorTable() {
     return {
       columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
-      rows: Shared.vendor.rows.map(function (r) { return r.slice(); })
+      rows: Shared.vendor.rows.filter(function (r) { return VENDOR_EXCLUDED.indexOf(r[0]) < 0; }).map(function (r) { return r.slice(); })
     };
   };
 

@@ -10,7 +10,8 @@
     ['Alerting', 'Databricks SQL alerts', 'Snowflake alerts', 'Fabric Activator'],
     ['Lineage and catalog', 'Unity Catalog', 'Snowflake Horizon Catalog / Atlan', 'Microsoft Purview'],
     ['Metrics layer', 'Unity Catalog metric views', 'dbt Semantic Layer', 'Power BI semantic model'],
-    ['Orchestration', 'Lakeflow Jobs / Airflow', 'Tasks / Airflow', 'Pipelines / Airflow']
+    ['Orchestration', 'Lakeflow Jobs / Airflow', 'Tasks / Airflow', 'Pipelines / Airflow'],
+    ['Dashboards', 'AI/BI dashboards', 'Snowsight dashboards', 'Power BI reports and dashboards']
   ];
 
   globalThis.Shared.vendor = { rows: ROWS };
