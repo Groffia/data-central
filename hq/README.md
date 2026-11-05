@@ -2,6 +2,10 @@
 
 A demo page that shows how a data platform is run end to end: what healthy looks like, what happens when bad data arrives, and what the business gains from running it this way. Fictional company (Tamsworth Health), synthetic data generated in the browser (seed 42), no network access at runtime.
 
+## Release note: hq-v1.0.1
+
+Small release on top of hq-v1.0: the tenant is renamed to **Tamsworth Health** (header subtitle; requires `engine-v1.6`), and the "In production this is…" table uses the vendors' formal names "Snowflake Horizon Catalog" and "Microsoft Purview". No other behaviour changed. The hq-v1.0 tag marks the first release (it exists only in this repo's history).
+
 ## Release note: hq-v1.0
 
 **Covers Demo Acts 1 to 5**
@@ -12,7 +16,7 @@ A demo page that shows how a data platform is run end to end: what healthy looks
 - Act 5: business case. "Without this system" next to "With this system", every number computed from the run. Storage figures are labelled illustrative.
 - Also: a standalone "In production this is…" table (Databricks, Snowflake, Fabric). Watch (Short cut about 2:00, Full about 4:30) with captions, pause, skip and stop. Link parameters, for example `?scenario=incident&step=3`.
 
-**Requires** engine tag `engine-v1.5` (sibling folder `..\engine`, file `engine.js`). Engine and page tests must both pass.
+**Requires** engine tag `engine-v1.6` (hq-v1.0 was built against `engine-v1.5`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`. Engine and page tests must both pass.
 
 **Two output forms, one source**
 - `dist\hq-single.html`: one file, engine and page inlined. Opens from `file://`, can be emailed or attached.
@@ -45,4 +49,4 @@ The "In production this is…" table uses product names taken from the vendors' 
 - **Fabric:** [Fabric Activator](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction) (also names the Power BI semantic model, "formerly known as a dataset"); [Data Factory in Fabric: pipelines, Dataflow Gen2, dbt job, Apache Airflow jobs](https://learn.microsoft.com/en-us/fabric/data-factory/data-factory-overview); [Fabric overview and OneLake](https://learn.microsoft.com/en-us/fabric/fundamentals/microsoft-fabric-overview); [Microsoft Purview lineage from Fabric](https://learn.microsoft.com/en-us/purview/data-map-lineage-fabric).
 - **dbt:** [dbt Semantic Layer](https://docs.getdbt.com/docs/use-dbt-semantic-layer/dbt-sl).
 
-Two labels are shorter than the vendor's formal name and may be updated in a later release: "Horizon" (formally Snowflake Horizon Catalog) and "Purview" (formally Microsoft Purview). The Delta table, Snowflake table and OneLake lakehouse entries describe storage types and were not looked up page by page.
+The Delta table, Snowflake table and OneLake lakehouse entries describe storage types and were not looked up page by page.
