@@ -106,7 +106,16 @@ const CONTRACT = deepFreeze({
 
 const getContract = () => JSON.parse(JSON.stringify(CONTRACT));
 
+// A row is evaluable only with a known vital code and a finite numeric value (not a string, null or NaN).
+function isEvaluable(row) {
+  if (row === null || typeof row !== "object") return false;
+  const v = row.vital_value;
+  return CONTRACT.vitalCodes.some((c) => c.code === row.vital_code) && typeof v === "number" && Number.isFinite(v);
+}
+
+// Not-evaluable rows are never abnormal.
 function isAbnormal(row) {
+  if (!isEvaluable(row)) return false;
   const v = row.vital_value, t = CONTRACT.thresholds;
   switch (row.vital_code) {
     case "8867-4": return v > t.heart_rate.above || v < t.heart_rate.below;
@@ -342,7 +351,7 @@ const QUALITY_TESTS = {
       return ctx.refTime !== null && typeof e === "number" && Number.isFinite(e) && ctx.refTime - e > FRESHNESS_WINDOW;
     }) },
   abnormal_vital_flag: { severity: "warn", columns: ["vital_value"],
-    run: (rows) => rowsWhere(rows, (r) => typeof r.vital_value === "number" && isAbnormal(r)) },
+    run: (rows) => rowsWhere(rows, (r) => isEvaluable(r) && isAbnormal(r)) },
 };
 
 // refTime (unix seconds) is the simulation time freshness is measured against. Default: the latest
@@ -383,7 +392,7 @@ function initialState(scenario) {
     clock: { epoch: BASE_EPOCH, iso: isoFromEpoch(BASE_EPOCH) },
     batchesRun: 0, gate: "CLOSED", bronzeRows: 0, productionRows: 0, productionKeys: [],
     staging: [], dlq: [], alerts: [], lastGoodBatchId: null, events: [],
-    publishedObservations: 0, publishedAbnormal: 0,
+    publishedObservations: 0, publishedAbnormal: 0, publishedNotEvaluable: 0,
   };
 }
 
@@ -438,13 +447,25 @@ function runBatchAction(s, opts) {
   return failed.size === 0 ? publishBatch(next, batchId, exp.rows) : failBatch(next, batchId, n, exp.rows, failed);
 }
 
+// Counts for a list of published rows. observations includes not-evaluable rows.
+function summarizePublished(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  return {
+    observations: list.length,
+    abnormalCount: list.filter((r) => isAbnormal(r)).length,
+    notEvaluable: list.filter((r) => !isEvaluable(r)).length,
+  };
+}
+
 function publishBatch(s, batchId, rows) {
   const published = [...rows, ...s.staging];
+  const sum = summarizePublished(published);
   const wasTrial = s.gate === "HALF_OPEN";
   let next = {
     ...s, productionRows: s.productionRows + published.length,
-    publishedObservations: s.publishedObservations + published.length,
-    publishedAbnormal: s.publishedAbnormal + published.filter((r) => isAbnormal(r)).length,
+    publishedObservations: s.publishedObservations + sum.observations,
+    publishedAbnormal: s.publishedAbnormal + sum.abnormalCount,
+    publishedNotEvaluable: (s.publishedNotEvaluable || 0) + sum.notEvaluable,
     productionKeys: [...s.productionKeys, ...published.map(keyOf).filter((k) => k !== null)],
     staging: [], lastGoodBatchId: batchId, gate: "CLOSED",
   };
@@ -667,17 +688,24 @@ function naiveDropReason(row) {
   return null;
 }
 
-// Models a pipeline with no gate. Returns a percent 0..100.
-// Rows without a usable patient_id are dropped by the join; every other row is evaluated as-is (unit ignored).
-function naiveAbnormalRate(rows) {
-  let counted = 0, abnormal = 0;
+// Models a pipeline with no gate.
+// Rows without a usable patient_id are dropped by the join. Rows that pass the join but are not evaluable
+// (null, missing, NaN or string vital_value) are "not evaluable": excluded from both numerator and
+// denominator, so a missing reading is never treated as a normal one. Unit is ignored.
+function naiveAbnormalStats(rows) {
+  let dropped = 0, counted = 0, evaluable = 0, abnormal = 0;
   (Array.isArray(rows) ? rows : []).forEach((row) => {
-    if (naiveDropReason(row) !== null) return;
+    if (naiveDropReason(row) !== null) { dropped++; return; }
     counted++;
+    if (!isEvaluable(row)) return;
+    evaluable++;
     if (isAbnormal(row)) abnormal++;
   });
-  return counted ? (abnormal / counted) * 100 : 0;
+  return { dropped, counted, evaluable, notEvaluable: counted - evaluable, abnormal, ratePct: evaluable ? (abnormal / evaluable) * 100 : 0 };
 }
+
+// Returns a percent 0..100 (0 when nothing is evaluable).
+const naiveAbnormalRate = (rows) => naiveAbnormalStats(rows).ratePct;
 
 const snakeKey = (k) => k.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
 
@@ -731,7 +759,8 @@ function getState(scenario, actions, opts) {
   const held = state.gate === "OPEN";
   const asOfBatchId = state.lastGoodBatchId;
   const asOfIso = isoFromEpoch(asOfBatchId === null ? BASE_EPOCH : exportRunEpoch(Number(asOfBatchId.slice(6))));
-  const obs = state.publishedObservations, abnormal = state.publishedAbnormal;
+  const obs = state.publishedObservations, abnormal = state.publishedAbnormal, notEval = state.publishedNotEvaluable;
+  const evaluable = obs - notEval;
   return {
     ...state,
     kpis: computeKpis(history).map((k) => ({ ...k, asOfBatchId, asOfIso, held })),
@@ -739,7 +768,8 @@ function getState(scenario, actions, opts) {
     todaySoFar: {
       label: "Live sample: published exports today.",
       note: "The first five readings are hand-picked edge cases, so early batches run above the 7-day rate.",
-      observations: obs, abnormalCount: abnormal, abnormalVitalRate: obs ? (abnormal / obs) * 100 : 0,
+      observations: obs, abnormalCount: abnormal, notEvaluable: notEval,
+      abnormalVitalRate: evaluable > 0 ? (abnormal / evaluable) * 100 : 0,
     },
     facility: facilityProfile(history),
     businessCase: computeBusinessCase(state),
@@ -852,13 +882,13 @@ const Engine = {
   SEED, BASE_EPOCH,
   mulberry32, makeRng, isoFromEpoch,
   rngPick, rngRange, rngGauss, round,
-  PATIENT_POOL_SIZE, getContract, isAbnormal,
+  PATIENT_POOL_SIZE, getContract, isAbnormal, isEvaluable, summarizePublished,
   buildPatientPool, exportRunEpoch, generateExport, assertScenario,
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost,
-  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate,
+  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate, naiveAbnormalStats,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
 

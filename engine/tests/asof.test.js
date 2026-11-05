@@ -56,7 +56,7 @@ test("todaySoFar: healthy batches publish 20 rows each", () => {
   assert.deepStrictEqual(zero, {
     label: "Live sample: published exports today.",
     note: "The first five readings are hand-picked edge cases, so early batches run above the 7-day rate.",
-    observations: 0, abnormalCount: 0, abnormalVitalRate: 0,
+    observations: 0, abnormalCount: 0, notEvaluable: 0, abnormalVitalRate: 0,
   });
   const t1 = Engine.getState("healthy", run(1)).todaySoFar;
   const t2 = Engine.getState("healthy", run(2)).todaySoFar;
