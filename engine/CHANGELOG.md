@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.2 (2026-11-04)
+
+Branch feat/engine-v1.2. 172 tests (151 in v1.1).
+
+### Test hardening (closes the v1.1 known gaps)
+
+- `summarizePublished(rows)` now also returns `abnormalVitalRate` (percent over evaluable rows, 0 when none are evaluable). `getState().todaySoFar.abnormalVitalRate` uses the same formula, so it lives in one place.
+- `tests/not_evaluable.test.js` proves the evaluable denominator with `notEvaluable > 0`: 10 rows, 2 not evaluable, 3 abnormal gives 3/8*100 = 37.5, not 3/10*100 = 30; all rows not evaluable gives 0.
+- `tests/selftest.test.js` loads engine.js into a `vm` with a wrong `GENERATOR_HASH` literal, then a wrong `DETERMINISM_HASH` literal, and shows `selfTest` fails the `determinism_hash` check with the matching detail. Each replace is asserted to change the source.
+- `tests/heldstate.test.js` closing assertions: after the full `AUTOPLAY.incident`, staging is empty and every DLQ entry is repaired or discarded; one more `runBatch` gives 96 production rows, 96 observations and unique production keys. A `faultExports:[6]` scenario (five repairs, four discards, trial export 7) ends CLOSED with 136 observations and 14 abnormal, recomputed independently; a discarded row is abnormal, so counting discarded rows would be caught.
+- `publishedObservations`, `publishedAbnormal` and `publishedNotEvaluable` share one defensive default (`|| 0`) in the publish path and in `getState`. Tests cover an old-shaped state without the keys (`todaySoFar.notEvaluable` 0, finite rate).
+- Comments: `generateExport` depends on `HISTORY_DAYS` and `historyCache` (defined later), so a top-level call above them would throw; the salt list now includes salt 5 (study tokens, reserved for the Brain).
+
+### Added and changed
+
+- `Engine.actionsForStep(scenario, step)`: the one interpretation of the `step` link parameter. `scenario` goes through `assertScenario`. `step` is the number of `AUTOPLAY[scenario]` actions applied, clamped to `[PRELUDE[scenario].length, AUTOPLAY[scenario].length]` (floor 0 for healthy, 2 for incident). A non-integer, NaN, string or negative `step` gives the floor. Returns fresh copies, so changing the result never changes `AUTOPLAY`.
+- Per-action simulation clock: each ACCEPTED operator action (`repairRow`, `discardRow`, `resolveRetry`, `ackAlert`, `resolveAlert`) advances `state.clock` by 60 s, and its events carry the time after advancing. `runBatch` sets the clock to `max(current clock, that export's runEpoch)`. Rejected actions and no-op repeats do not advance the clock; a rejection event carries the unchanged time. Export data, run epochs, KPI `asOfIso`, `todaySoFar`, `businessCase` and the hashes are unchanged. Scripted incident: clock 15:11:00Z after `resolveRetry`, 15:15:00Z after the trial batch, 15:16:00Z (was 15:15:00Z) after `resolveAlert`.
+
+### Breaking changes for page authors
+
+- Event times and `state.clock` now advance with operator actions (the scripted incident ends at 15:16:00Z, not 15:15:00Z, and the repair, discard, acknowledge, retry and resolve events are 15:01 to 15:11 and 15:16 instead of all sharing their batch time). Nothing else changes.
+
 ## v1.1 (2026-11-04)
 
 Branch feat/engine-v1.1. 151 tests.
@@ -34,12 +56,9 @@ Branch feat/engine-v1.1. 151 tests.
 - `todaySoFar.abnormalVitalRate` now divides by evaluable rows (`observations - notEvaluable`).
 - Generated `vital_value`s differ from v1.0, so every pinned abnormal count or rate changes (`bytesPerRow` and `bytesPerMonth` happen to stay the same).
 
-### Known gaps carried out of the v1.1 review (none blocks merge; none changes engine behavior)
+### Known gaps carried out of the v1.1 review
 
-- `tests/not_evaluable.test.js` checks the evaluable-denominator rate only where `notEvaluable` is 0, so it cannot fail; the reducer cannot publish a non-evaluable row today. Fix: have `summarizePublished` return the rate and test it with `notEvaluable > 0`.
-- Nothing proves `selfTest` really checks `GENERATOR_HASH`; a test should load the engine with a wrong literal and expect `determinism_hash` to fail.
-- `tests/heldstate.test.js` lacks two closing assertions: `staging` empty with every DLQ entry repaired or discarded after recovery plus a next-batch double-publish check (96 production rows, unique keys), and a `faultExports:[6]` scenario whose discarded row is abnormal. Other tests already catch the staging bug.
-- `generateExport` depends on `HISTORY_DAYS` and `historyCache` (through `abnormalShare`), so a top-level call to it placed above them would throw; a comment should say so. Defaulting of `publishedNotEvaluable` differs between the publish path and `getState`. The salt comment omits salt 5.
+All four were closed in v1.2 (see Test hardening above).
 
 ## v1.0 (tag engine-v1.0, 2026-11-04)
 
