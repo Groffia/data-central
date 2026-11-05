@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5 (2026-11-05)
+
+Added `state.businessCase.invalidRowsInProduction`: the number of rows now in production that fail an error-severity contract test (the gate's own tests, run over the production rows). The reducer now keeps the published rows in `state.productionData` (new field; `productionKeys` and `productionRows` are unchanged). New exports: `Engine.invalidRowsInProduction(state)` and `Engine.computeBusinessCase(state)` (so a test can inject a bad row and watch the field fail).
+
+What moved (verified against engine-v1.4 on all 22 scripted prefixes, healthy and incident): only the two new fields. No pinned value, no hash (`DETERMINISM_HASH`, `GENERATOR_HASH`) and no test expectation changed; nothing in the suite hashes `businessCase`. The field is 0 in every scripted state; a state with one injected invalid row gives 1. 182 tests.
+
 ## v1.4 (2026-11-05)
 
 Added `Engine.DISCARD_REASONS` (frozen: Missing patient ID, Physiologically impossible value, Malformed or suspicious input, Wrong unit, source must resend, Other, see note) and `Engine.suggestedReason(dlqEntry)`, the single source for the engine and every page. `Engine.AUTOPLAY.incident` discards now carry the suggested reason of their own row instead of "unrepairable". The engine still accepts any reason string on `discardRow`; pages validate against `DISCARD_REASONS`.

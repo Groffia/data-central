@@ -394,7 +394,7 @@ function initialState(scenario) {
   return {
     scenario,
     clock: { epoch: BASE_EPOCH, iso: isoFromEpoch(BASE_EPOCH) },
-    batchesRun: 0, gate: "CLOSED", bronzeRows: 0, productionRows: 0, productionKeys: [],
+    batchesRun: 0, gate: "CLOSED", bronzeRows: 0, productionRows: 0, productionKeys: [], productionData: [],
     staging: [], dlq: [], alerts: [], lastGoodBatchId: null, events: [],
     publishedObservations: 0, publishedAbnormal: 0, publishedNotEvaluable: 0,
   };
@@ -483,6 +483,7 @@ function publishBatch(s, batchId, rows) {
     publishedAbnormal: (s.publishedAbnormal || 0) + sum.abnormalCount,
     publishedNotEvaluable: (s.publishedNotEvaluable || 0) + sum.notEvaluable,
     productionKeys: [...s.productionKeys, ...published.map(keyOf).filter((k) => k !== null)],
+    productionData: [...(s.productionData || []), ...published],
     staging: [], lastGoodBatchId: batchId, gate: "CLOSED",
   };
   next = withEvent(next, "BATCH_PUBLISHED", batchId + " published " + published.length + " rows to production");
@@ -745,6 +746,15 @@ function holdsPhi(payload) {
   return Object.entries(isObj(payload) ? payload : {}).some(([k, v]) => PHI_FIELDS.includes(snakeKey(k)) && v !== null && v !== undefined);
 }
 
+// How many rows now in production fail an error-severity contract test (the gate's own tests, run over the
+// production rows themselves). The gate should keep this at 0; a non-zero value means invalid data got through.
+function invalidRowsInProduction(state) {
+  const rows = (state && Array.isArray(state.productionData)) ? state.productionData : [];
+  if (!rows.length) return 0;
+  const refTime = state.clock && Number.isFinite(state.clock.epoch) ? state.clock.epoch : undefined;
+  return errorFailures(rows, [], refTime).size;
+}
+
 function computeBusinessCase(state) {
   const dlq = state.dlq;
   const first = dlq.length ? dlq[0] : null;
@@ -774,6 +784,7 @@ function computeBusinessCase(state) {
     silentlyDroppedRows,
     invalidRowsReachingDashboard: invalidRowsListing.length,
     invalidRowsListing,
+    invalidRowsInProduction: invalidRowsInProduction(state),
     // SECONDARY: signed (naive minus valid), can be negative, so it must not be headlined.
     distortionAvoidedPts,
     distortionBatchId,
@@ -930,7 +941,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep,naiveAbnormalRate, naiveAbnormalStats,
-  DISCARD_REASONS, suggestedReason,
+  DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
 
