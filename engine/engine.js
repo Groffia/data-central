@@ -647,7 +647,7 @@ function facilityProfile(history) {
   return { bedsStaffed, patientsInHouse, obsPerDay, obsPer15Min: obsPerDay / 96, obsPerMonth, bytesPerRow, bytesPerMonth: obsPerMonth * bytesPerRow };
 }
 
-// Prices are illustrative, not vendor quotes (Build File 2, B3).
+// Prices are illustrative, not vendor quotes.
 const TIER_STORAGE = { hot: 0.080, warm: 0.023, cold: 0.002 }; // $/GB-month
 const TIER_RETRIEVAL = { hot: 0, warm: 0, cold: 0.020 }; // $/GB
 const TIERING_DEFAULTS = Object.freeze({ hotToWarmDays: 30, warmToColdDays: 180, retentionDays: 2555, dailyGB: 18, halfLifeDays: 45 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5.1 (2026-11-05)
+
+Comment-only change before publication: removed a reference to a private working document from a source comment. No behavior change; hashes and every test unchanged (182).
+
 ## v1.5 (2026-11-05)
 
 Added `state.businessCase.invalidRowsInProduction`: the number of rows now in production that fail an error-severity contract test (the gate's own tests, run over the production rows). The reducer now keeps the published rows in `state.productionData` (new field; `productionKeys` and `productionRows` are unchanged). New exports: `Engine.invalidRowsInProduction(state)` and `Engine.computeBusinessCase(state)` (so a test can inject a bad row and watch the field fail).
