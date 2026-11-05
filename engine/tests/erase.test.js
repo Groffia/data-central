@@ -39,7 +39,7 @@ test("erasing one subject at incident step 3 removes their rows from staging, Si
   assert.strictEqual(r.reason, null);
   assert.deepStrictEqual(r.erased, [id]);
   assert.deepStrictEqual(r.ignored, []);
-  assert.deepStrictEqual(r.footprints, [f]);
+  assert.deepStrictEqual(r.footprints, [{ ...f, after: { staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 } }]);
   const s = r.state;
   assert.deepStrictEqual(s.erasedSubjects, [id]);
   assert.strictEqual(count(s.staging, id), 0);
@@ -60,11 +60,11 @@ test("counters equal a recount of what remains; Bronze is never edited", () => {
   assert.strictEqual(s.productionRows, s.productionData.length);
   assert.strictEqual(s.productionKeys.length, s.productionRows);
   assert.strictEqual(new Set(s.productionKeys).size, s.productionKeys.length);
-  const obs = s.productionData.filter((r) => Engine.isEvaluable(r)).length;
+  const obs = s.productionData.length;
   const abn = s.productionData.filter((r) => Engine.isAbnormal(r)).length;
   assert.strictEqual(s.publishedObservations, obs);
   assert.strictEqual(s.publishedAbnormal, abn);
-  assert.strictEqual(s.publishedNotEvaluable, s.productionData.length - obs);
+  assert.strictEqual(s.publishedNotEvaluable, s.productionData.filter((r) => !Engine.isEvaluable(r)).length);
   assert.strictEqual(s.todaySoFar.observations, s.publishedObservations);
   assert.strictEqual(s.todaySoFar.abnormalCount, s.publishedAbnormal);
   assert.strictEqual(s.bronzeRows, before.bronzeRows);
@@ -109,7 +109,7 @@ test("the live sample falls by exactly the subject's Silver rows and abnormal re
   const before = Engine.getState("incident", a);
   const rows = before.productionData.filter((r) => subjectOf(r) === id);
   const s = Engine.eraseSubjects("incident", a, [id]).state;
-  assert.strictEqual(before.todaySoFar.observations - s.todaySoFar.observations, rows.filter((r) => Engine.isEvaluable(r)).length);
+  assert.strictEqual(before.todaySoFar.observations - s.todaySoFar.observations, rows.length);
   assert.strictEqual(before.todaySoFar.abnormalCount - s.todaySoFar.abnormalCount, rows.filter((r) => Engine.isAbnormal(r)).length);
   const c0 = Engine.liveSampleCheck(before), c1 = Engine.liveSampleCheck(s);
   assert.strictEqual(c0.published - c1.published, rows.length);

@@ -1331,10 +1331,6 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
   const gone = new Set(erased);
   const theirs = (p) => gone.has(rowSubject(p));
   const { counts } = bronzeCounts(scenario, actions, gone);
-  const footprints = erased.map((id) => {
-    const r = subjectRowsInState(base, id);
-    return { patientId: id, inCohort: true, bronze: counts.get(id), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
-  });
   const productionData = base.productionData.filter((r) => !theirs(r));
   const staging = base.staging.filter((r) => !theirs(r));
   const dlq = base.dlq.filter((d) => !theirs(d.payload));
@@ -1350,10 +1346,19 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
     todaySoFar: { ...base.todaySoFar, observations: sum.observations, abnormalCount: sum.abnormalCount, notEvaluable: sum.notEvaluable, abnormalVitalRate: sum.abnormalVitalRate },
     businessCase: computeBusinessCase(reduced),
     erasedSubjects: erased.slice(),
-    unreadableRawRows: footprints.reduce((n, f) => n + f.bronze, 0),
+    unreadableRawRows: erased.reduce((n, id) => n + counts.get(id), 0),
   };
+  // Before erasure (as subjectFootprint reports it) and after, both read from the states themselves.
+  const footprints = erased.map((id) => {
+    const r = subjectRowsInState(base, id), a = subjectRowsInState(state, id);
+    return {
+      patientId: id, inCohort: true, bronze: counts.get(id), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient,
+      after: { staging: a.staging, silver: a.silver, deadLetter: a.deadLetter, dimPatient: a.dimPatient },
+    };
+  });
   const silverGone = footprints.reduce((n, f) => n + f.silver, 0);
-  const keyList = state.productionKeys;
+  // Recounted from the remaining rows, not read back from the counters.
+  const keyList = state.productionData.map(keyOf).filter((k) => k !== null);
   const results = [
     erased.every((id) => { const r = subjectRowsInState(state, id); return r.staging + r.silver + r.deadLetter + r.dimPatient === 0; }),
     base.productionRows - state.productionRows === silverGone,
@@ -1361,7 +1366,7 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
       const a = subjectRowsInState(base, id), b = subjectRowsInState(state, id);
       return a.staging === b.staging && a.silver === b.silver && a.deadLetter === b.deadLetter && a.dimPatient === b.dimPatient;
     }),
-    new Set(keyList.map((k) => JSON.stringify(k))).size === keyList.length,
+    new Set(keyList.map((k) => JSON.stringify(k))).size === keyList.length && JSON.stringify(keyList) === JSON.stringify(state.productionKeys),
     JSON.stringify(state.kpis) === JSON.stringify(base.kpis) && JSON.stringify(computeKpis(getHistory()).map((k) => k.value)) === JSON.stringify(state.kpis.map((k) => k.value)),
   ];
   const checks = ERASURE_CHECKS.map(([id, label], i) => ({ id, label, pass: results[i] }));
