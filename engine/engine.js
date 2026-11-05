@@ -636,6 +636,37 @@ function computeKpis(history, windowDays = 7) {
   });
 }
 
+const METRIC_DEFINITIONS = deepFreeze({
+  "Abnormal Vital Rate": {
+    current: "standard_thresholds",
+    definitions: [
+      { id: "standard_thresholds", label: "Standard thresholds", numerator: "abnormal_obs_standard", denominator: "observations" },
+      { id: "strict_thresholds", label: "Strict thresholds", numerator: "abnormal_obs_strict", denominator: "observations" },
+    ],
+  },
+  "30-Day Readmission Rate": {
+    current: "all_cause",
+    definitions: [
+      { id: "all_cause", label: "All-cause readmissions", numerator: "readmits_30d_all", denominator: "discharges" },
+      { id: "unplanned_only", label: "Unplanned readmissions only", numerator: "readmits_30d_unplanned", denominator: "discharges" },
+    ],
+  },
+});
+
+function computeMetric(history, metricName, definitionId, windowDays = 7) {
+  const metric = Object.prototype.hasOwnProperty.call(METRIC_DEFINITIONS, metricName) ? METRIC_DEFINITIONS[metricName] : null;
+  if (!metric) return null;
+  const def = metric.definitions.find((d) => d.id === definitionId);
+  if (!def) return null;
+  if (!Number.isInteger(windowDays) || windowDays < 1 || 2 * windowDays > history.length) return null;
+  const cur = history.slice(-windowDays);
+  const pri = history.slice(-2 * windowDays, -windowDays);
+  const sum = (rows, f) => rows.reduce((s, r) => s + r[f], 0);
+  const value = sum(cur, def.numerator) / sum(cur, def.denominator);
+  const priorValue = sum(pri, def.numerator) / sum(pri, def.denominator);
+  return { value, priorValue, deltaPct: ((value - priorValue) / priorValue) * 100 };
+}
+
 function facilityProfile(history) {
   const bedsStaffed = BED_STAFFED_CAP();
   const occupancy = computeKpis(history)[0].value;
@@ -1045,7 +1076,7 @@ const Engine = {
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
   initialState, reduce, replay,
-  getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
+  getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,

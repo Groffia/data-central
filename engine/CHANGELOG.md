@@ -1,5 +1,11 @@
 # Changelog
 
+## engine-v1.8 (unreleased)
+
+New exports for the Value page. `Engine.METRIC_DEFINITIONS` (deep-frozen): for "Abnormal Vital Rate" (current `standard_thresholds`; also `strict_thresholds`) and "30-Day Readmission Rate" (current `all_cause`; also `unplanned_only`), each definition has `id`, `label`, `numerator` and `denominator` history fields. `Engine.computeMetric(history, metricName, definitionId, windowDays = 7)` returns `{ value, priorValue, deltaPct }` using the same arithmetic as `computeKpis`, or `null` for an unknown metric or definition or a window whose current and prior periods do not fit in the history. For the current definitions it deep-equals the matching `computeKpis` entry. Later tasks add `liveSampleCheck` and `naiveSample` to this entry.
+
+What moved: nothing pinned (`computeKpis` unchanged, `DETERMINISM_HASH` and `GENERATOR_HASH` unchanged, no engine state changed).
+
 ## v1.7 (2026-11-05)
 
 Action link encoding, so a page can carry any state HQ reached in a URL. New exports: `Engine.encodeActions(actions)`, `Engine.decodeActions(text)`, `Engine.stepForActions(scenario, actions)`. `Engine.parseLinkParams` now also returns `actions` (decoded array, or null when `a=` is absent or invalid) and `batch` (positive integer, else null); `scenario` and `step` behave as before. `Engine.inspectBatch(scenario, actions, n[, opts])` (Task 2) is described below; the tag `engine-v1.7` follows review of Task 2.
