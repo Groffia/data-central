@@ -73,11 +73,22 @@
       ' d, warm to cold ' + t.warmToColdDays + ' d, retention ' + t.retentionDays + ' d');
   }
 
-  vm.stageChips = function stageChips(state, ctx) {
-    return [
+  // Deep link into the Pipeline page, or null when the page has no (usable) Pipeline base. `ui` carries scenario and actions.
+  function pipelineLink(ui, ctx, focus) {
+    const base = ctx && ctx.pipelineBase;
+    if (!base || !ui || !HQ.links) return null;
+    if (!HQ.links.focusOk(focus)) return null;
+    return HQ.links.pipelineUrl(base, ui.scenario, ui.actions, focus, Engine);
+  }
+
+  vm.stageChips = function stageChips(state, ctx, ui) {
+    const chips = [
       generationChip(state), ingestionChip(state, ctx), processingChip(state), storageChip(state),
       governanceChip(state), analysisChip(), visualizationChip(state), archivingChip(ctx)
     ];
+    const href = pipelineLink(ui, ctx, 'stage-storage');
+    if (href) chips[3].href = href;
+    return chips;
   };
 
   vm.statusRow = function statusRow(state) {
@@ -138,7 +149,7 @@
 
   function observedText(v) { return v === null || v === undefined ? 'null' : JSON.stringify(v); }
 
-  vm.incidentPanel = function incidentPanel(state) {
+  vm.incidentPanel = function incidentPanel(state, ui, ctx) {
     const dlq = state.dlq || [], alerts = state.alerts || [];
     const a = alerts.length ? alerts[alerts.length - 1] : null;
     const open = openEntries(state).length;
@@ -151,12 +162,15 @@
         canResolve: a.status === 'open' || a.status === 'acknowledged'
       } : null,
       rows: dlq.map(function (d) {
-        return {
+        const row = {
           dlqId: d.dlqId, failedTests: (d.failedTests || []).slice(), column: d.column,
           observedValueText: observedText(d.observedValue), reason: d.reason,
           suggestedReason: Engine.suggestedReason(d), repairable: !!d.repairable, status: d.status,
           canRepair: !!d.repairable && d.status === 'open', canDiscard: d.status === 'open'
         };
+        const href = pipelineLink(ui, ctx, d.dlqId);
+        if (href) row.href = href;
+        return row;
       }),
       discardReasons: Engine.DISCARD_REASONS.slice(),
       canResolveRetry: gateOpen && open === 0,
@@ -249,11 +263,11 @@
     const u = ui || {};
     return {
       banner: vm.glanceBanner(state),
-      chips: vm.stageChips(state, ctx),
+      chips: vm.stageChips(state, ctx, u),
       status: vm.statusRow(state),
       tiles: vm.kpiTiles(state),
       today: vm.todaySoFar(state),
-      incident: vm.incidentPanel(state),
+      incident: vm.incidentPanel(state, u, ctx),
       timeline: vm.timeline(state),
       business: vm.businessCase(state),
       vendor: vm.vendorTable(),

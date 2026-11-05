@@ -99,7 +99,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const html = fs.readFileSync(path.join(OUT, 'hq-single.html'), 'utf8');
   const inline = [];
   html.replace(/<script>([\s\S]*?)<\/script>/g, function (m, body) { inline.push(body); return m; });
-  assert.strictEqual(inline.length, 9);
+  assert.strictEqual(inline.length, 10);
   const a = fakeDocRun(inline);
   assert.strictEqual((a['region-stages'].match(/data-health="/g) || []).length, 8);
   assert.ok(a['region-footer'].indexOf(FOOTER) >= 0);
@@ -108,7 +108,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const idx = fs.readFileSync(path.join(pagesDir, 'index.html'), 'utf8');
   const srcs = [];
   idx.replace(/<script\s+src="([^"]+)"/g, function (m, s) { srcs.push(s); return m; });
-  assert.strictEqual(srcs.length, 9);
+  assert.strictEqual(srcs.length, 10);
   const b = fakeDocRun(srcs.map(function (s) { return fs.readFileSync(path.join(pagesDir, s), 'utf8'); }));
   assert.deepStrictEqual(b, a);
 });

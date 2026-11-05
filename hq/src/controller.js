@@ -39,17 +39,19 @@
     return 'Engine self-test failed: ' + (failing.length ? failing.join(', ') : 'unknown check');
   }
 
-  ctl.createController = function createController(Engine, search) {
+  // opts.pipelineBase: relative URL of the Pipeline page (from the pipeline-base meta tag); absent means no links.
+  ctl.createController = function createController(Engine, search, opts) {
     const error = selfTestError(Engine);
     const open = openingState(Engine, search);
     let scenario = open.scenario;
     let actions = open.actions;
     let notice = null;
     const ctx = { exportRows: Engine.generateExport(1, 'healthy').rows.length, tiering: Engine.TIERING_DEFAULTS };
+    if (opts && typeof opts.pipelineBase === 'string') ctx.pipelineBase = opts.pipelineBase;
 
     function state() { return Engine.getState(scenario, actions); }
     function getModel() {
-      return HQ.viewmodel.buildViewModel(state(), { notice: notice, error: error, scenario: scenario }, ctx);
+      return HQ.viewmodel.buildViewModel(state(), { notice: notice, error: error, scenario: scenario, actions: actions }, ctx);
     }
     function finish(ok, n) { notice = n; return { ok: ok, notice: n }; }
 

@@ -16,6 +16,11 @@
       (o.disabled || forceDisabled ? ' disabled' : '') + '>' + esc(label) + '</button>';
   }
 
+  // Link into the Pipeline page; href and label are escaped, the visible text is the already-shown text.
+  function link(href, label, text) {
+    return '<a' + attr('href', href) + attr('aria-label', label) + '>' + esc(text) + '</a>';
+  }
+
   function scenarioButton(label, name, current) {
     return button(label, 'scenario', { scenario: name, pressed: current === name });
   }
@@ -41,7 +46,7 @@
       return '<li class="chip"' + attr('data-health', c.health) + attr('data-stage', c.id) + '>' +
         '<span class="dot" aria-hidden="true"></span>' +
         '<span class="chip-name">' + esc(c.id + ' ' + c.name) + '</span>' +
-        '<span class="chip-text">' + esc(c.text) + '</span></li>';
+        '<span class="chip-text">' + (c.href ? link(c.href, 'Open ' + c.name + ' in Pipeline', c.text) : esc(c.text)) + '</span></li>';
     }).join('') + '</ol>';
   }
 
@@ -109,7 +114,7 @@
   function dlqRow(row, reasons) {
     const open = row.status === 'open';
     return '<tr' + attr('data-dlq-id', row.dlqId) + attr('data-status', row.status) + '>' +
-      '<td>' + esc(row.dlqId) + '</td>' +
+      '<td>' + (row.href ? link(row.href, 'Open ' + row.dlqId + ' in Pipeline', row.dlqId) : esc(row.dlqId)) + '</td>' +
       '<td>' + esc(row.failedTests.join(', ')) + '</td>' +
       '<td>' + esc(row.column) + '</td>' +
       '<td><code>' + esc(row.observedValueText) + '</code></td>' +

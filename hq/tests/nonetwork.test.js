@@ -26,6 +26,7 @@ test('each scan pattern can fail on a sample', () => {
   assert.deepStrictEqual(scanNetwork('<link href=\'https://a.b/x.css\'>'), ['remote src/href']);
   NONDET.forEach(function (c) { assert.deepStrictEqual(scanNondet('x ' + c + ' y'), [c]); });
   assert.deepStrictEqual(scanNetwork('<a href="#x">src/main.js</a>'), []);
+  assert.deepStrictEqual(scanNetwork('<a href="../pipeline/?scenario=incident&step=3#dlq-3-4">x</a><meta name="pipeline-base" content="../pipeline/">'), []);
 });
 
 const srcDir = path.join(ROOT, 'src');

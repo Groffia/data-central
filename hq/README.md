@@ -2,6 +2,10 @@
 
 A demo page that shows how a data platform is run end to end: what healthy looks like, what happens when bad data arrives, and what the business gains from running it this way. Fictional company (Tamsworth Health), synthetic data generated in the browser (seed 42), no network access at runtime.
 
+## Release note: hq-v1.1
+
+Adds deep links into the Pipeline page (requires `engine-v1.7`). In the Pages form, each dead-letter id in the incident table and the Storage stage chip open the matching place in Pipeline (for example `../pipeline/?scenario=incident&step=3#dlq-3-4`); a state that has left the script, such as a repairable row discarded, is carried in the link as `a=`. The links come from `<meta name="pipeline-base" content="../pipeline/">` in `index.html`. The single-file build removes that tag, so it shows no links, and without the tag the page behaves exactly as hq-v1.0.1: no behaviour change.
+
 ## Release note: hq-v1.0.1
 
 Small release on top of hq-v1.0: the tenant is renamed to **Tamsworth Health** (header subtitle; requires `engine-v1.6`), and the "In production this is…" table uses the vendors' formal names "Snowflake Horizon Catalog" and "Microsoft Purview". No other behaviour changed. The hq-v1.0 tag marks the first release (it exists only in this repo's history).
@@ -16,7 +20,7 @@ Small release on top of hq-v1.0: the tenant is renamed to **Tamsworth Health** (
 - Act 5: business case. "Without this system" next to "With this system", every number computed from the run. Storage figures are labelled illustrative.
 - Also: a standalone "In production this is…" table (Databricks, Snowflake, Fabric). Watch (Short cut about 2:00, Full about 4:30) with captions, pause, skip and stop. Link parameters, for example `?scenario=incident&step=3`.
 
-**Requires** engine tag `engine-v1.6` (hq-v1.0 was built against `engine-v1.5`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`. Engine and page tests must both pass.
+**Requires** engine tag `engine-v1.7` (hq-v1.1; hq-v1.0.1 needed `engine-v1.6`, hq-v1.0 was built against `engine-v1.5`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`. Engine and page tests must both pass.
 
 **Two output forms, one source**
 - `dist\hq-single.html`: one file, engine and page inlined. Opens from `file://`, can be emailed or attached.
@@ -36,7 +40,7 @@ node --test tests/                # page tests (no dependencies; Node 20)
 
 ## Layout
 
-`src\` (format, escape, viewmodel, render, controller, autoplay, main, styles), `index.html`, `scripts\` (inline, serve), `tests\`. Pure modules are tested under `node --test`; only `main.js` touches the DOM.
+`src\` (links, viewmodel, render, controller, autoplay, main, styles), `index.html`, `scripts\` (inline, serve), `tests\`. Pure modules are tested under `node --test`; only `main.js` touches the DOM.
 
 All data is synthetic and generated deterministically (seed 42). Company names are fictional.
 

@@ -4,7 +4,16 @@
   const Engine = globalThis.Engine;
   const KEYS = ['header', 'banner', 'stages', 'status', 'tiles', 'today', 'controls', 'incident', 'timeline', 'business', 'vendor', 'notice', 'footer'];
 
-  const controller = HQ.controller.createController(Engine, location.search);
+  // Optional deep links into the Pipeline page: only when the page carries <meta name="pipeline-base" content="...">.
+  function pipelineBase() {
+    try {
+      const m = document.querySelector('meta[name="pipeline-base"]');
+      const v = m && m.getAttribute('content');
+      return typeof v === 'string' && v !== '' ? v : undefined;
+    } catch (e) { return undefined; }
+  }
+
+  const controller = HQ.controller.createController(Engine, location.search, { pipelineBase: pipelineBase() });
   let player = null;
 
   function focusSelector(el) {
