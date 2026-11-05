@@ -33,7 +33,7 @@ Run by Claude in the built-in browser pane at 1024 px wide, driving the real but
 
 ## Test suites
 
-HQ suite (`node --test tests/` in `hq\`): 179 tests, 179 pass, 0 fail. Engine suite (in `engine\`, tag `engine-v1.4`): 178 tests, 178 pass, 0 fail.
+HQ suite (`node --test tests/` in `hq\`): 189 tests, 189 pass, 0 fail. Engine suite (in `engine\`, tag `engine-v1.5`): 182 tests, 182 pass, 0 fail.
 
 ## Known gaps
 
@@ -66,3 +66,15 @@ Run in the built-in browser pane at 1024 px, `dist` served with `node scripts/se
 | Discard events | Pass | The scripted incident now logs the four reasons Missing patient ID, Physiologically impossible value, Malformed or suspicious input, Wrong unit, source must resend. |
 
 Known limit: "0 invalid readings in production" is a fixed 0 in the view model. The engine exposes no field for it, so the page states what the gate guarantees; it is not measured against production rows.
+
+## Re-run after the second round of decisions (hq commit 9bcc1f2, engine-v1.5)
+
+Same method as before: 1024 px, `dist` served over http (`file://` is for Stephen to open). Short cut run in real time on the single-file build.
+
+| Item | Result | Observed |
+|---|---|---|
+| Scroll once per scene | Pass | `scrollIntoView` calls logged during one Short cut: 0 s stages (Act 1), 15 s status row (Act 3 start), 25 s incident panel (target changed when the incident appeared), 65 s incident panel (recovery start), 85 s business case (Act 5). Five calls, equal to scene starts plus target changes. |
+| No pull-back while scrolled away | Pass | At 68 s (recovery running) the page was scrolled to the top (scrollY 0). At 80 s, after the recovery's 13 steps had run and the gate had closed with 76 rows in production, scrollY was still 0 and no extra scroll call was logged. |
+| Act 5 column | Pass | Business case in view at 90 s. "With this system": 9 rows stopped at the batch; 0 invalid readings in production (now `businessCase.invalidRowsInProduction` from the engine); caught at the batch (at most 15 simulated minutes); 5 repaired, 4 discarded with logged reasons. |
+
+Not shown in the browser: the red state of the invalid-readings line, because the real engine always gives 0. It is covered by unit tests (1 and 2 give "1 invalid reading in production" and "2 invalid readings in production" with the red marker) and the engine test that injects a bad row into production and gets 1.
