@@ -136,6 +136,51 @@
     });
   }
 
+  // ----- Task 9: with the gate and without it -----
+
+  const GATE_LABEL = 'With the gate (what this dashboard shows)';
+  const NO_GATE_LABEL = 'Without a gate (a model of a naive pipeline)';
+  const COMPARE_NOTE = 'The seven-day tiles come from the 120-day Gold history, so a single bad batch does not move them. The damage a bad batch does is to the live sample and to trust: rows that vanish or invalid readings that are counted.';
+
+  // Reasons grouped by text, most frequent first, ties in first-seen order.
+  function groupReasons(list) {
+    const groups = [];
+    (Array.isArray(list) ? list : []).forEach(function (r) {
+      const text = String(r && r.reason);
+      const g = groups.filter(function (x) { return x.text === text; })[0];
+      if (g) g.count++; else groups.push({ text: text, count: 1 });
+    });
+    return groups
+      .map(function (g, i) { return { g: g, i: i }; })
+      .sort(function (a, b) { return b.g.count - a.g.count || a.i - b.i; })
+      .map(function (x) { return x.g; });
+  }
+
+  function compare(state, naive) {
+    const p = Shared.format.plural;
+    const t = (state && state.todaySoFar) || {};
+    const n = naive || {};
+    return {
+      withGate: {
+        readingsText: t.observations + ' ' + p(t.observations, 'reading', 'readings'),
+        abnormalText: t.abnormalCount + ' abnormal',
+        rateText: t.abnormalVitalRate.toFixed(1) + '%',
+        label: GATE_LABEL
+      },
+      withoutGate: {
+        countedText: n.counted + ' ' + p(n.counted, 'reading', 'readings') + ' counted',
+        droppedText: n.dropped + ' ' + p(n.dropped, 'row', 'rows') + ' silently dropped',
+        droppedReasons: groupReasons(n.droppedReasons),
+        invalidText: n.invalidReadings + ' invalid ' + p(n.invalidReadings, 'reading', 'readings') + ' counted',
+        rateText: n.ratePct.toFixed(1) + '%',
+        label: NO_GATE_LABEL
+      },
+      note: COMPARE_NOTE
+    };
+  }
+
+  vm.compare = compare;
+
   vm.kpiTiles = kpiTiles;
   vm.header = header;
   vm.stepLabel = stepLabel;
