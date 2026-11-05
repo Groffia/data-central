@@ -351,3 +351,63 @@ test('data-n that is not a positive integer reaches the controller raw and is sh
   p.click({ 'data-cmd': 'batch', 'data-n': '2' });
   assert.ok(/data-n="2" aria-pressed="true"/.test(p.html('batches')));
 });
+
+// ---- fix round 3: first click after a tiering edit, per-region and per-part rendering ----
+test('typing a valid value then clicking Next works on the first click, then Reset likewise', () => {
+  const p = boot();
+  const before = p.html('header');
+  p.typeInto(p.q(FIELD), '45');
+  let r = p.press('button[data-cmd="next"]');
+  assert.equal(r.lost, false, 'Next was replaced between mousedown and mouseup');
+  assert.notEqual(p.html('header'), before);
+  assert.ok(/value="45"/.test(p.html('storage')));
+  p.typeInto(p.q(FIELD), '46');
+  r = p.press('button[data-cmd="resetTiering"]');
+  assert.equal(r.lost, false, 'Reset was replaced between mousedown and mouseup');
+  assert.ok(!/value="46"/.test(p.html('storage')));
+});
+
+test('Reset survives a change that only changes the results', () => {
+  const p = boot();
+  const reset = p.q('button[data-cmd="resetTiering"]');
+  p.typeInto(p.q(FIELD), '10');
+  p.change(p.document.activeElement);
+  assert.equal(reset.detached, false);
+});
+
+test('an invalid value then Next works on the first click; the alert node is not re-created', () => {
+  const p = boot();
+  p.typeInto(p.q(FIELD), '0');
+  p.change(p.document.activeElement);
+  const alert = p.q('[role="alert"]');
+  assert.ok(alert);
+  const out = p.html('storage');
+  const r = p.press('button[data-cmd="next"]');
+  assert.equal(r.lost, false);
+  assert.equal(alert.detached, false, 'alert re-created by an unrelated render');
+  assert.equal(p.html('storage'), out);
+  assert.equal(p.qa('[role="alert"]').length, 1);
+  // aria-describedby still resolves to the message
+  const id = p.q(FIELD).getAttribute('aria-describedby');
+  assert.ok(id);
+  assert.ok(p.document.getElementById(id));
+});
+
+test('regions whose markup did not change are not rewritten', () => {
+  const p = boot();
+  const w = p.log.innerHTMLWrites;
+  p.click({ 'data-cmd': 'resetTiering' }); // nothing changes
+  assert.equal(p.log.innerHTMLWrites, w);
+  p.clickRendered('button[data-cmd="next"]');
+  assert.ok(p.log.innerHTMLWrites - w < 12, 'only changed regions are written');
+});
+
+test('storage is split into a form part and an output part; Reset lives in neither', () => {
+  const p = boot();
+  const inputs = p.document.getElementById('tier-inputs').innerHTML;
+  const out = p.document.getElementById('tier-out').innerHTML;
+  assert.ok(/data-field="hotToWarmDays"/.test(inputs));
+  assert.ok(/Monthly cost/.test(out));
+  assert.ok(!/resetTiering/.test(inputs + out));
+  assert.ok(/data-cmd="resetTiering"/.test(p.html('storage')));
+});

@@ -5,10 +5,10 @@ A demo page that opens the first four lifecycle stages of the Data Central platf
 ## Release note: pipeline-v1.0
 
 **What the page covers**
-- Stage 1, Generation: what a batch contains and which failures were injected.
+- Stage 1, Generation: the source and its cadence, the data contract, the golden rows and the facility scale.
 - Stage 2, Collection/Ingestion: the raw export as it landed, unchanged.
 - Stage 3, Processing/Preparation: the test matrix (every test against every row), row view, the dead-letter queue with the repairable rows, and the medallion layers.
-- Stage 4, Storage: production rows, tiering with local sliders (hot, warm, cold), an illustrative cost figure.
+- Stage 4, Storage: the tiering model with local inputs (hot, warm, cold, daily volume) and an illustrative cost figure. (Production rows appear in the medallion block under Stage 3.)
 - A stepper and a batch picker (both stay), a scenario switch (Healthy, Incident), and a standalone "In production this is..." table.
 
 **Requires** engine tag `engine-v1.7` (adds the link encoding `a=` and `inspectBatch`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`; shared helpers are the sibling folder `..\shared`. Engine, shared and page tests must all pass.

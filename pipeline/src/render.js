@@ -178,7 +178,9 @@
       }).join('') + '</div>';
   }
 
-  function storage(vm) {
+  // Storage is three pieces so main.js can replace them separately: the frame (headings and the Reset button, which
+  // only changes with the focus highlight), the inputs part, and the output part (message, bar, figures).
+  function storageParts(vm) {
     const s = vm.storage;
     const r = s.result;
     const fields = TIER_FIELDS.map(function (f) {
@@ -188,17 +190,23 @@
         (s.valid ? '' : ' aria-describedby="tier-message"') + '>' +
         '<span class="default">' + esc('Policy default: ' + s.defaults[k]) + '</span></div>';
     }).join('');
-    return '<div id="stage-storage"' + (vm.focus === 'stage-storage' ? ' data-focus="true"' : '') + '>' +
-      heading('Stage 4', 'Storage') + '<h3>Tiering model (illustrative)</h3>' +
-      '<div class="tier-inputs">' + fields + '</div>' +
-      '<div class="tier-actions">' + button('Reset to policy defaults', 'resetTiering') + '</div>' +
-      (s.valid ? '' : '<p id="tier-message" class="error" role="alert">' + esc(s.message) + '</p>') +
+    const out = (s.valid ? '' : '<p id="tier-message" class="error" role="alert">' + esc(s.message) + '</p>') +
       tierBar(s.tierBar) +
       dl([['Monthly cost', r.monthlyCostText], ['All hot', r.allHotText], ['All warm', r.allWarmText]]) +
       '<p class="storage-headline">' + esc(r.headlineText) + '</p>' +
       '<p class="storage-secondary">' + esc(r.secondaryText) + '</p>' +
-      '<p class="storage-label">' + esc(r.label) + '</p></div>';
+      '<p class="storage-label">' + esc(r.label) + '</p>';
+    const frame = function (inner, outer) {
+      return '<div id="stage-storage"' + (vm.focus === 'stage-storage' ? ' data-focus="true"' : '') + '>' +
+        heading('Stage 4', 'Storage') + '<h3>Tiering model (illustrative)</h3>' +
+        '<div id="tier-inputs" class="tier-inputs">' + inner + '</div>' +
+        '<div class="tier-actions">' + button('Reset to policy defaults', 'resetTiering') + '</div>' +
+        '<div id="tier-out">' + outer + '</div></div>';
+    };
+    return { frame: frame('', ''), inputs: fields, out: out, full: frame(fields, out) };
   }
+
+  function storage(vm) { return storageParts(vm).full; }
 
   function vendor(vm) {
     const v = vm.vendor;
@@ -225,6 +233,7 @@
         rows: rows(vm), dlq: dlq(vm), medallion: medallion(vm), storage: storage(vm), vendor: vendor(vm),
         notice: notice(vm), footer: footer()
       };
-    }
+    },
+    storageParts: storageParts
   };
 })();

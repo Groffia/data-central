@@ -18,6 +18,14 @@
     if (!/[?&]scenario=(healthy|incident)(&|$)/.test(s)) return { scenario: 'healthy', actions: startFor(Engine, 'healthy') };
     try {
       const p = Engine.parseLinkParams(s);
+      // An a= list that replays without throwing is the state to open (links from the Pipeline page carry diverged states).
+      if (Array.isArray(p.actions)) {
+        const sc = SCENARIOS.indexOf(p.scenario) >= 0 ? p.scenario : 'healthy';
+        try {
+          Engine.getState(sc, p.actions);
+          return { scenario: sc, actions: p.actions.slice() };
+        } catch (e) { /* unusable: use the step logic */ }
+      }
       const sm = /[?&]step=([^&]*)/.exec(s);
       if (p.scenario === 'healthy' && !(sm && sm[1] !== '')) return { scenario: 'healthy', actions: startFor(Engine, 'healthy') };
       const scenario = SCENARIOS.indexOf(p.scenario) >= 0 ? p.scenario : 'healthy';

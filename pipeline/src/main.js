@@ -19,6 +19,8 @@
   const controller = Pipeline.controller.createController(Engine, location.search, location.hash, { hqBase: hqBase() });
   let scrolledToTarget = false;
   let lastStepText = null;
+  const lastHtml = {}; // region key -> the string last written, so unchanged regions are left alone
+  let lastStorage = null; // { frame, inputs, out } last written to the storage region
   const NO_SCROLL = { preventScroll: true };
 
   function ok(v) { return typeof v === 'string' && v.indexOf('"') < 0; }
@@ -101,14 +103,35 @@
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
   }
 
+  // The one place the page assigns innerHTML.
+  function setHTML(el, html) { el.innerHTML = html; }
+
+  // The storage region is replaced only when its frame changes; otherwise its inputs part and output part are
+  // replaced on their own, so a button under the pointer (Reset) is not swapped out between mousedown and mouseup.
+  function renderStorage(model) {
+    const el = document.getElementById('region-storage');
+    if (!el) return;
+    const sp = Pipeline.render.storageParts(model);
+    const inputsEl = lastStorage && lastStorage.frame === sp.frame ? document.getElementById('tier-inputs') : null;
+    const outEl = inputsEl ? document.getElementById('tier-out') : null;
+    if (!inputsEl || !outEl) {
+      setHTML(el, sp.full);
+    } else {
+      if (sp.inputs !== lastStorage.inputs) setHTML(inputsEl, sp.inputs);
+      if (sp.out !== lastStorage.out) setHTML(outEl, sp.out);
+    }
+    lastStorage = { frame: sp.frame, inputs: sp.inputs, out: sp.out };
+  }
+
   function render(committed) {
     const active = document.activeElement;
     const d = describe(active);
     const model = controller.getModel();
     const regions = Pipeline.render.renderRegions(model);
     KEYS.forEach(function (k) {
+      if (k === 'storage') { renderStorage(model); return; }
       const el = document.getElementById('region-' + k);
-      if (el) el.innerHTML = regions[k];
+      if (el && lastHtml[k] !== regions[k]) { setHTML(el, regions[k]); lastHtml[k] = regions[k]; }
     });
     const caption = document.getElementById('caption');
     if (caption) caption.textContent = model.notice || '';

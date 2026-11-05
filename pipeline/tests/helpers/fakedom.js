@@ -36,6 +36,25 @@ function boot(options) {
   const log = { focused: [], focusOpts: [], scrolled: [], innerHTMLWrites: 0 };
   const els = {};
   const document = { activeElement: null };
+  // Elements are "detached" once the container they were found in is rewritten: the region, or a child container (CHILD_IDS).
+  const CHILD_IDS = ['tier-inputs', 'tier-out'];
+  const epoch = {};
+  const ep = function (k) { return epoch[k] || 0; };
+
+  // [start, end) of the inner content of the div with this id inside the region, found by balanced <div> counting.
+  function childSpan(html, id) {
+    const open = new RegExp('<div\\b[^>]*\\sid="' + id + '"[^>]*>').exec(html);
+    if (!open) return null;
+    const start = open.index + open[0].length;
+    const re = /<(\/?)div\b[^>]*>/g;
+    re.lastIndex = start;
+    let depth = 1, m;
+    while ((m = re.exec(html))) {
+      depth += m[1] ? -1 : 1;
+      if (depth === 0) return [start, m.index];
+    }
+    return null;
+  }
 
   function attrOf(tagText, k) {
     const r = new RegExp('\\s' + k + '="([^"]*)"').exec(tagText);
@@ -43,11 +62,13 @@ function boot(options) {
   }
   function hasAttr(tagText, k) { return new RegExp('\\s' + k + '(?=[\\s>=/])').test(tagText); }
 
-  function stub(tagText, regionId) {
+  function stub(tagText, regionId, childId) {
     const tag = /^<([a-z0-9]+)/.exec(tagText)[1];
     const id = attrOf(tagText, 'id');
     const key = regionId + '|' + (id || attrOf(tagText, 'data-field') || '');
+    const born = { r: ep(regionId), c: childId ? ep(childId) : 0 };
     const e = {
+      get detached() { return ep(regionId) !== born.r || (!!childId && ep(childId) !== born.c); },
       tagName: tag.toUpperCase(), region: regionId, id: id, rawTag: tagText,
       getAttribute: function (k) { return attrOf(tagText, k); },
       hasAttribute: function (k) { return hasAttr(tagText, k); },
@@ -83,9 +104,15 @@ function boot(options) {
     const sel = parseSelector(selText);
     const out = [];
     Object.keys(regionHtml).forEach(function (rid) {
-      (regionHtml[rid].match(/<[a-z0-9]+\b[^>]*>/g) || []).forEach(function (t) {
-        if (matches(t, sel)) out.push(stub(t, rid));
-      });
+      const html = regionHtml[rid];
+      const spans = CHILD_IDS.map(function (c) { return [c, childSpan(html, c)]; }).filter(function (x) { return x[1]; });
+      const re = /<[a-z0-9]+\b[^>]*>/g;
+      let m;
+      while ((m = re.exec(html))) {
+        if (!matches(m[0], sel)) continue;
+        const inside = spans.filter(function (x) { return m.index >= x[1][0] && m.index < x[1][1]; })[0];
+        out.push(stub(m[0], rid, inside ? inside[0] : null));
+      }
     });
     return out;
   }
@@ -101,6 +128,8 @@ function boot(options) {
         get: function () { return regionHtml[id] || ''; },
         set: function (v) {
           log.innerHTMLWrites++;
+          epoch[id] = ep(id) + 1;
+          CHILD_IDS.forEach(function (c) { if (childSpan(regionHtml[id] || '', c)) epoch[c] = ep(c) + 1; });
           regionHtml[id] = o.transform ? String(o.transform(id, String(v))) : String(v);
           Object.keys(store).forEach(function (k) { if (k.indexOf(id + '|') === 0) delete store[k]; });
         }
@@ -109,8 +138,29 @@ function boot(options) {
     return els[id];
   }
 
+  // A child container whose innerHTML can be rewritten on its own (only that part of the region is replaced).
+  function child(id) {
+    const rid = Object.keys(regionHtml).filter(function (r) { return childSpan(regionHtml[r], id); })[0];
+    if (!rid) return null;
+    return {
+      id: id,
+      get innerHTML() { const s = childSpan(regionHtml[rid], id); return regionHtml[rid].slice(s[0], s[1]); },
+      set innerHTML(v) {
+        const html = regionHtml[rid];
+        const s = childSpan(html, id);
+        log.innerHTMLWrites++;
+        const old = html.slice(s[0], s[1]);
+        old.replace(/\sid="([^"]+)"/g, function (m, i) { delete store[rid + '|' + i]; return m; });
+        epoch[id] = ep(id) + 1;
+        const next = html.slice(0, s[0]) + String(v) + html.slice(s[1]);
+        regionHtml[rid] = o.transform ? String(o.transform(rid, next)) : next;
+      }
+    };
+  }
+
   document.getElementById = function (id) {
     if (id.indexOf('region-') === 0 || id === 'caption' || id === 'step-live') return region(id);
+    if (CHILD_IDS.indexOf(id) >= 0) return child(id);
     const hit = all('#' + id)[0];
     return hit || null;
   };
@@ -165,6 +215,17 @@ function boot(options) {
     click: function (attrs, disabled) { fire('click', fakeButton(attrs, disabled)); },
     change: function (el) { fire('change', el); },
     input: function (el) { fire('input', el); },
+    // A user pressing a control: blur fires change on a dirty focused input first (like a browser), then the click is
+    // delivered only if the control was not replaced in between. Returns { lost, el }.
+    press: function (s) {
+      const el = all(s)[0];
+      if (!el) throw new Error('no element for ' + s);
+      const a = document.activeElement;
+      if (a && a.hasAttribute && a.hasAttribute('data-field') && a.value !== a.getAttribute('value')) fire('change', a);
+      if (el.detached) return { lost: true, el: el };
+      fire('click', el);
+      return { lost: false, el: el };
+    },
     // Simulate typing without any event: sets value and caret.
     typeInto: function (el, text, start, end) {
       el.focus();

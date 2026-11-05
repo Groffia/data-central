@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.7 (in progress)
+## v1.7 (2026-11-05)
 
 Action link encoding, so a page can carry any state HQ reached in a URL. New exports: `Engine.encodeActions(actions)`, `Engine.decodeActions(text)`, `Engine.stepForActions(scenario, actions)`. `Engine.parseLinkParams` now also returns `actions` (decoded array, or null when `a=` is absent or invalid) and `batch` (positive integer, else null); `scenario` and `step` behave as before. `Engine.inspectBatch(scenario, actions, n[, opts])` (Task 2) is described below; the tag `engine-v1.7` follows review of Task 2.
 
@@ -8,7 +8,7 @@ Encoding: actions joined by `.`; `runBatch` r, `ackAlert` k, `resolveRetry` y, `
 
 `inspectBatch(scenario, actions, n) -> { n, batchId, runEpoch, rows, results, rowFailures, decision, dlqIds } | null`: the export of batch `n` and its `runTests` results, computed with the production keys that existed when it ran, so a page never re-implements the gate. `null` when `n` is not a positive integer or batch `n` has not run in this state (a rejected `runBatch` is not a run). `decision` is `"PUBLISHED"` or `"HELD"` as the reducer decided; `dlqIds` are the ids that batch created. It replays the actions one at a time and reads the reducer's before and after states; it does not change state. An unknown scenario throws, as elsewhere. Optional fourth argument `opts` (`faultExports`) is passed to the reducer as in `getState`; the default fault list for the scenario applies without it. Scripted incident batch 3: HELD, 20 rows, 9 dlq ids, counts as in Page Spec v1 - Pipeline section 4.
 
-What moved: nothing pinned (no hash, no engine state). `parseLinkParams` returns two more keys, so the existing `parseLinkParams` expectations in `interface.test.js` now also list `actions: null, batch: null`; no other existing test changed. 205 tests (13 new in `link.test.js`, 10 new in `inspect.test.js`).
+What moved: nothing pinned (no hash, no engine state). `parseLinkParams` returns two more keys, so the existing `parseLinkParams` expectations in `interface.test.js` now also list `actions: null, batch: null`; no other existing test changed. 206 tests (13 new in `link.test.js`, 10 new in `inspect.test.js`).
 
 ## v1.6 (2026-11-05)
 
