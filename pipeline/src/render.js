@@ -21,10 +21,18 @@
       (o.disabled ? ' disabled' : '') + '>' + esc(label) + '</button>';
   }
 
-  // Script-bearing URL schemes never reach an href.
+  // Allowlist: only a scheme-less relative URL of safe characters. Any ASCII control character or space
+  // (browsers ignore tab, LF and CR inside a scheme) rejects the value; so do a scheme, "//", or over 2000 characters.
   function safeHref(href) {
-    if (typeof href !== 'string' || href === '') return '';
-    if (/^[\s\u0000-\u001f]*(javascript|data|vbscript):/i.test(href)) return '';
+    if (typeof href !== 'string' || href === '' || href.length > 2000) return '';
+    if (href.replace(/[\u0000-\u0020\u007f]/g, '') !== href) return '';
+    if (!/^[A-Za-z0-9_.\/?&=%#+~:-]*$/.test(href)) return '';
+    if (href.indexOf('//') === 0) return '';
+    const colon = href.indexOf(':');
+    if (colon >= 0) {
+      const stop = href.search(/[\/?#]/);
+      if (stop < 0 || colon < stop) return '';
+    }
     return href;
   }
 
@@ -117,7 +125,7 @@
     const head = heading('Stage 3', 'Processing/Preparation') + '<h3>Quality-test matrix</h3>';
     if (!vm.landing && !m.rows.length) return head + empty(NO_BATCH);
     return head +
-      '<p class="caption">Rows that fail an error test go to the dead-letter queue below. Warn tests are shown but never quarantine a row.</p>' +
+      '<p class="caption">Rows that fail an error test go to the <a href="#region-dlq">dead-letter queue</a> below. Warn tests are shown but never quarantine a row.</p>' +
       table('matrix-table', ['Test', 'Column', 'Severity', 'Failing rows', 'Which rows'].map(th), m.rows.map(function (r) {
         const which = r.failing === 0 ? '' : '<details><summary>Show rows</summary>' +
           esc(r.rowIndexes.map(function (i) { return 'Row ' + (i + 1); }).join(', ')) + '</details>';
@@ -146,7 +154,7 @@
       vm.dlq.map(function (d) {
         const href = safeHref(d.hqHref);
         const link = href && d.status === 'open' ? '<a' + attr('href', href) + '>Handle in HQ</a>' : '';
-        return '<tr' + attr('id', d.anchor) + (vm.focus && vm.focus === d.id ? ' data-focus="true"' : '') + attr('data-status', d.status) + '>' +
+        return '<tr' + attr('id', d.anchor) + (vm.focus && vm.focus === d.anchor ? ' data-focus="true"' : '') + attr('data-status', d.status) + '>' +
           '<td>' + esc(d.id) + '</td><td>' + esc(d.failedTests.join(', ')) + '</td><td>' + esc(d.column) + '</td>' +
           '<td><code>' + esc(d.observedValueText) + '</code></td><td>' + esc(d.reason) + '</td>' +
           '<td>' + (d.repairable ? 'Yes' : 'No') + '</td><td>' + esc(d.status) + '</td><td>' + link + '</td></tr>';

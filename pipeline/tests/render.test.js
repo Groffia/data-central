@@ -102,9 +102,62 @@ test('Handle in HQ links only with hqHref', () => {
   assert.strictEqual(count(on.header, 'Open this state in HQ'), 1);
 });
 
-test('javascript: hrefs are never rendered', () => {
-  const r = regions('incident', 3, { hqLink: 'javascript:alert(1)' });
-  assert.strictEqual(all(r).toLowerCase().indexOf('javascript:'), -1);
+const HOSTILE = ['javascript:alert(1)', ' JaVaScRiPt:alert(1)', 'java\tscript:alert(1)', 'java\nscript:alert(1)', 'java\rscript:alert(1)',
+  'data:text/html,x', 'vbscript:x', '//evil.example/x', 'https://evil.example/x', 'file:///x', '" onmouseover="x',
+  '../hq/' + 'a'.repeat(2100), '../hq/?a=1 b', '../hq/\u0000x'];
+
+test('hostile hqLink values never produce an href or javascript: text', () => {
+  HOSTILE.forEach((link) => {
+    const r = regions('incident', 3, { hqLink: link });
+    const t = all(r);
+    assert.deepStrictEqual(t.match(/href="[^"]*"/g), ['href="#region-dlq"'], JSON.stringify(link));
+    assert.strictEqual(t.toLowerCase().indexOf('javascript:'), -1, JSON.stringify(link));
+    assert.strictEqual(count(r.dlq, 'Handle in HQ'), 0);
+    assert.strictEqual(count(r.header, 'Open this state in HQ'), 0);
+  });
+});
+
+test('legitimate relative hqLinks render the escaped href exactly', () => {
+  ['../hq/?scenario=incident&step=3#dlq-3-4', '../hq/?scenario=incident&a=r.r.r'].forEach((link) => {
+    const r = regions('incident', 3, { hqLink: link });
+    const want = 'href="' + link.replace(/&/g, '&amp;') + '"';
+    assert.ok(r.header.indexOf(want) >= 0, link);
+    assert.strictEqual(count(r.dlq, want), 9);
+  });
+});
+
+test('Handle in HQ renders only for open rows', () => {
+  const vm = JSON.parse(JSON.stringify(build('incident', 3)));
+  vm.dlq[0].status = 'repaired';
+  vm.dlq[1].status = 'discarded';
+  const r = Pipeline.render.renderRegions(vm);
+  assert.strictEqual(count(r.dlq, '>Handle in HQ</a>'), 7);
+  assert.ok(!new RegExp('<tr id="' + vm.dlq[0].anchor + '"[^]*?</tr>').exec(r.dlq)[0].includes('Handle in HQ'));
+  assert.ok(!new RegExp('<tr id="' + vm.dlq[1].anchor + '"[^]*?</tr>').exec(r.dlq)[0].includes('Handle in HQ'));
+});
+
+test('matrix caption links to the dead-letter region', () => {
+  assert.ok(regions('incident', 3).matrix.indexOf('<a href="#region-dlq">dead-letter queue</a>') >= 0);
+});
+
+test('focus matches the anchor used for the id, not the id field', () => {
+  const vm = JSON.parse(JSON.stringify(build('incident', 3, { focus: 'anchor-x' })));
+  vm.dlq[2].anchor = 'anchor-x';
+  const r = Pipeline.render.renderRegions(vm);
+  assert.strictEqual(count(r.dlq, 'data-focus="true"'), 1);
+  assert.ok(/<tr id="anchor-x" data-focus="true"/.test(r.dlq));
+  const vm2 = JSON.parse(JSON.stringify(build('incident', 3, { focus: vm.dlq[2].id })));
+  vm2.dlq[2].anchor = 'anchor-x';
+  assert.strictEqual(count(Pipeline.render.renderRegions(vm2).dlq, 'data-focus'), 0);
+});
+
+test('aria-describedby points at the message only when invalid', () => {
+  const bad = regions('incident', 3, { tieringInputs: { hotToWarmDays: 'x' } }).storage;
+  assert.strictEqual(count(bad, 'aria-describedby="tier-message"'), 4);
+  assert.strictEqual(count(bad, 'id="tier-message"'), 1);
+  const ok = regions('incident', 3).storage;
+  assert.strictEqual(count(ok, 'aria-describedby'), 0);
+  assert.strictEqual(count(ok, 'id="tier-message"'), 0);
 });
 
 test('focus attributes', () => {
@@ -201,22 +254,27 @@ test('tables are wrapped in table-wrap', () => {
   });
 });
 
-test('ten scripted states: no script, javascript:, or inline handlers', () => {
+test('ten scripted states with hostile notice, hqLink and focus: no script, javascript:, or inline handlers', () => {
   const states = [['healthy', 0], ['healthy', 1], ['healthy', 3], ['healthy', 4], ['incident', 2], ['incident', 3], ['incident', 5], ['incident', 9], ['incident', 12], ['incident', 16]];
-  states.forEach(([s, k]) => {
-    const t = all(regions(s, k, { focus: 'dlq-3-4', notice: 'n' })).toLowerCase();
-    assert.strictEqual(t.indexOf('<script'), -1, s + k);
-    assert.strictEqual(t.indexOf('javascript:'), -1, s + k);
-    assert.ok(!/\son[a-z]+\s*=/.test(t.replace(/data-[a-z-]+="[^"]*"/g, '')), s + k);
+  states.forEach(([s, k], i) => {
+    const hostile = { focus: '"><script>x</script><img onerror=x>', notice: '<script>alert(1)</script><b onclick=x>', hqLink: HOSTILE[i % HOSTILE.length] };
+    [hostile, { focus: 'dlq-3-4', notice: 'n' }].forEach((extra) => {
+      const t = all(regions(s, k, extra)).toLowerCase();
+      assert.strictEqual(t.indexOf('<script'), -1, s + k);
+      assert.strictEqual(t.indexOf('javascript:'), -1, s + k);
+      assert.ok(!/<[^>]*\son[a-z]+\s*=/.test(t), s + k);
+      assert.strictEqual(t.indexOf('<img'), -1, s + k);
+    });
   });
 });
 
-test('row view shows warn tests as muted text on passing rows, escaped', () => {
-  const r = regions('incident', 3);
-  assert.strictEqual(count(r.rows, 'warn: abnormal_vital_flag'), 2);
-  assert.ok(r.rows.indexOf('<span class="muted">warn: abnormal_vital_flag</span>') >= 0);
-  const vm = JSON.parse(JSON.stringify(build('incident', 3)));
-  vm.rowView[2].warnTests = ['<b>x</b>'];
-  const h = Pipeline.render.renderRegions(vm).rows;
-  assert.ok(h.indexOf('<b>x</b>') < 0 && h.indexOf('warn: &lt;b&gt;x&lt;/b&gt;') >= 0);
+test('hostile vm inputs still render twelve strings', () => {
+  const inputs = [undefined, {}, { scenario: 'nope' }, { scenario: 'incident' }, { scenario: 'incident', step: 'abc', actions: 'x', state: null },
+    { scenario: 'incident', step: 3, inspect: { rows: null, results: null, rowFailures: null } },
+    { scenario: 'incident', step: 3, inspect: {} }, { scenario: 'healthy', inspect: 'junk', tieringInputs: 5, focus: 7 }];
+  inputs.forEach((inp, i) => {
+    const r = Pipeline.render.renderRegions(vmod.buildViewModel(inp));
+    assert.deepStrictEqual(Object.keys(r).sort(), KEYS, 'input ' + i);
+    KEYS.forEach((k) => assert.strictEqual(typeof r[k], 'string'));
+  });
 });

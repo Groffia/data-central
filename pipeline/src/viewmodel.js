@@ -388,12 +388,15 @@
 
   // Pure: reads its input, builds new objects, never writes to them.
   function buildViewModel(input) {
-    const inp = input || {};
-    const scenario = inp.scenario;
-    const step = inp.step;
-    const actions = inp.actions || [];
-    const state = inp.state || Engine.getState(scenario, actions);
-    const inspect = inp.inspect || null;
+    // Defaults (same as the controller): an unknown scenario is healthy; without usable actions the scenario's
+    // opening state (its prelude) is used; a non-object inspect counts as no batch.
+    const inp = input && typeof input === 'object' ? input : {};
+    const scenario = Engine.AUTOPLAY[inp.scenario] ? inp.scenario : 'healthy';
+    const floor = Engine.PRELUDE[scenario].length;
+    const step = Number.isInteger(inp.step) ? inp.step : floor;
+    const actions = Array.isArray(inp.actions) ? inp.actions : Engine.actionsForStep(scenario, floor);
+    const state = inp.state && typeof inp.state === 'object' ? inp.state : Engine.getState(scenario, actions);
+    const inspect = inp.inspect && typeof inp.inspect === 'object' ? inp.inspect : null;
     const hqLink = typeof inp.hqLink === 'string' ? inp.hqLink : '';
     const total = state.batchesRun || 0;
     const selected = inp.selectedBatch === null || inp.selectedBatch === undefined ? (total || null) : inp.selectedBatch;

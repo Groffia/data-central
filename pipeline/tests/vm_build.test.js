@@ -71,9 +71,29 @@ test('invalid tiering input keeps raw strings and the previous result', () => {
   assert.deepStrictEqual(v.storage.result, plain(prev.result));
 });
 
-test('building does not mutate its input', () => {
-  const i = input('incident', 3, 3, { tieringInputs: { hotToWarmDays: '9' }, focus: 'dlq-3-4' });
-  const before = JSON.stringify(i);
-  vm.buildViewModel(i);
-  assert.strictEqual(JSON.stringify(i), before);
+function deepFreeze(o) {
+  if (o && typeof o === 'object' && !Object.isFrozen(o)) {
+    Object.freeze(o);
+    Object.keys(o).forEach((k) => deepFreeze(o[k]));
+  }
+  return o;
+}
+
+test('building does not mutate its input (deep-frozen, strict mode throws on write)', () => {
+  const i = deepFreeze(input('incident', 3, 3, { tieringInputs: { hotToWarmDays: '9' }, focus: 'dlq-3-4', tieringPrevious: vm.tiering({}, null) }));
+  const v = vm.buildViewModel(i);
+  assert.strictEqual(v.dlq.length, 9);
+});
+
+test('missing or unknown input falls back to healthy at its opening actions', () => {
+  [undefined, {}, { scenario: 'nope' }].forEach((inp) => {
+    const v = vm.buildViewModel(inp);
+    assert.strictEqual(v.scenario, 'healthy');
+    assert.strictEqual(v.landing, null);
+    assert.strictEqual(v.dlq.length, 0);
+    assert.strictEqual(v.header.steps.n, Engine.PRELUDE.healthy.length);
+  });
+  const w = vm.buildViewModel({ scenario: 'incident' });
+  assert.strictEqual(w.scenario, 'incident');
+  assert.strictEqual(w.header.steps.n, Engine.PRELUDE.incident.length);
 });
