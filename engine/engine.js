@@ -802,8 +802,17 @@ const naiveAbnormalRate = (rows) => naiveAbnormalStats(rows).ratePct;
 
 const snakeKey = (k) => k.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
 
+// The contract names of the sensitive fields a row payload holds (not null or undefined), in contract order. camelCase keys
+// (renamed-column rows) resolve to the same contract names. Anything that is not a plain object holds none.
+function phiFields(payload) {
+  if (!isObj(payload)) return [];
+  const present = new Set();
+  for (const [k, v] of Object.entries(payload)) if (v !== null && v !== undefined) present.add(snakeKey(k));
+  return PHI_FIELDS.filter((f) => present.has(f));
+}
+
 function holdsPhi(payload) {
-  return Object.entries(isObj(payload) ? payload : {}).some(([k, v]) => PHI_FIELDS.includes(snakeKey(k)) && v !== null && v !== undefined);
+  return phiFields(payload).length > 0;
 }
 
 // How many rows now in production fail an error-severity contract test (the gate's own tests, run over the
@@ -1190,7 +1199,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, metricSeries, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  phiFields, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
