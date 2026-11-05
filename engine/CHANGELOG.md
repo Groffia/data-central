@@ -22,6 +22,10 @@ Branch feat/engine-v1.2. 172 tests (151 in v1.1).
 
 - Event times and `state.clock` now advance with operator actions (the scripted incident ends at 15:16:00Z, not 15:15:00Z, and the repair, discard, acknowledge, retry and resolve events are 15:01 to 15:11 and 15:16 instead of all sharing their batch time). Nothing else changes.
 
+### Known gap carried out of the v1.2 review (does not change engine behavior)
+
+- The `getState` call site of the evaluable-denominator rate is not covered with `notEvaluable > 0` (the reducer cannot publish a non-evaluable row today). A vm-loaded test that replaces `initialState` with `publishedObservations: 10, publishedAbnormal: 3, publishedNotEvaluable: 2` and asserts `todaySoFar.abnormalVitalRate === (3/8)*100` would close it.
+
 ## v1.1 (2026-11-04)
 
 Branch feat/engine-v1.1. 151 tests.
