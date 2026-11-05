@@ -8,7 +8,7 @@ Stages 6 and 7 for Tamsworth Health; spec: Page Spec v1 - Value, kept outside th
 - Trends over 120 days (stage 7): daily and 7-day trailing series per metric.
 - With the gate and without it (stage 7): side-by-side comparison.
 - Metric definitions: one governed place (stage 7).
-- Expected-range check (stage 6): a hand-picked figure against the expected range.
+- Expected-range check (stage 6): the live sample, without the five hand-picked rows, against a binomial expected range.
 
 A table below the panels maps the metrics layer and dashboards to Databricks, Snowflake and Fabric equivalents.
 
@@ -17,7 +17,7 @@ A table below the panels maps the metrics layer and dashboards to Databricks, Sn
 - `scenario`: `healthy` or `incident`. Anything else, or none, opens the healthy scenario.
 - `step`: a step number in the chosen scenario's guided run.
 - `a`: encoded actions, for a state that has left the script (as in HQ and Pipeline links). Actions that do not replay are ignored.
-- Hash ids: `#stage-definitions`, `#stage-check` and `#kpi-<id>` (one per KPI tile) scroll to and focus that place.
+- Hash ids: `#stage-definitions`, `#stage-check` and `#kpi-<id>` (one per KPI tile) scroll to and highlight that place.
 
 ## Build forms
 
@@ -38,7 +38,7 @@ Requires engine tag `engine-v1.8`.
 
 ## Not done / parked
 
-- `details.explain` open state is lost on re-render.
+- The "How this check works" disclosure closes on any re-render of the check panel (for example when a step changes it).
 - `styles.css` contains unused rules copied from Pipeline.
 - Axis widening for huge spikes.
 

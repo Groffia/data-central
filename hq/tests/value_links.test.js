@@ -69,8 +69,8 @@ test('chips 6 and 7 and the four KPI tiles link to Value with the real anchors',
   assert.equal(m.tiles.length, 4);
   m.tiles.forEach((t, i) => assert.equal(t.href, '../value/?scenario=incident&step=3#kpi-' + ids[i]));
   const r = HQ.render.renderRegions(m);
-  assert.ok(r.stages.indexOf('<a href="../value/?scenario=incident&amp;step=3#stage-check" aria-label="Open Analysis/Modeling in Value">Expected-range check: ') >= 0, r.stages);
-  assert.ok(r.stages.indexOf('aria-label="Open Visualization in Value"') >= 0);
+  assert.ok(r.stages.indexOf('<a href="../value/?scenario=incident&amp;step=3#stage-check" aria-label="Expected-range check: ') >= 0, r.stages);
+  assert.ok(r.stages.indexOf('(opens in Value)"') >= 0);
   assert.equal((r.stages.match(/<a /g) || []).length, 2);
   assert.equal((r.tiles.match(/<a /g) || []).length, 4);
   assert.ok(r.tiles.indexOf('<a href="../value/?scenario=incident&amp;step=3#kpi-30-day-readmission-rate" aria-label="Open 30-Day Readmission Rate in Value">30-Day Readmission Rate</a>') >= 0, r.tiles);
@@ -199,4 +199,16 @@ test('index.html declares value-base once; the single file drops it and shows no
   const els = boot(single, metaOf('value-base'), metaOf('pipeline-base'));
   assert.ok(els['region-stages'].innerHTML.length > 0);
   assert.ok(els['region-stages'].innerHTML.indexOf('<a ') < 0 && els['region-tiles'].innerHTML.indexOf('<a ') < 0);
+});
+
+test('chip links keep their visible text in the accessible name (label in name)', () => {
+  const m = model('incident', Engine.AUTOPLAY.incident.slice(0, 3), { valueBase: VB, pipelineBase: PB });
+  const r = HQ.render.renderRegions(m);
+  const anchors = [...r.stages.matchAll(/<a [^>]*aria-label="([^"]*)"[^>]*>([^<]*)<\/a>/g)].map((x) => ({ label: x[1], text: x[2] }));
+  assert.ok(anchors.length >= 3, 'chips 4, 6 and 7 link when both bases exist');
+  anchors.forEach((a) => assert.ok(a.label.indexOf(a.text) === 0 && /\(opens in (?:Pipeline|Value)\)$/.test(a.label), a.label));
+  const six = anchors.find((a) => /^Expected-range check: /.test(a.text));
+  assert.ok(six, 'chip 6 link present');
+  assert.equal(six.label, six.text + ' (opens in Value)');
+  assert.ok(six.label.indexOf(m.chips[5].text) >= 0);
 });

@@ -9,8 +9,20 @@ const plain = (x) => JSON.parse(JSON.stringify(x));
 const panel = (scenario, k) => vm.checkPanel(Engine.getState(scenario, Engine.actionsForStep(scenario, k)));
 const NEUTRAL_VERDICT = 'Not enough data yet (fewer than 30 readings)';
 
-test('title', () => {
-  assert.strictEqual(panel('healthy', 4).title, 'Expected-range check: a demonstration of the pattern, not a clinical model.');
+test('title, lead and question', () => {
+  for (const c of [panel('healthy', 4), panel('healthy', 1), vm.checkPanel(null)]) {
+    assert.strictEqual(c.title, 'Expected-range check');
+    assert.strictEqual(c.lead, 'A demonstration of the pattern, not a clinical model.');
+    assert.strictEqual(c.question, "Is today's abnormal-vital rate unusual for a sample this size?");
+  }
+});
+
+test('explanations are true: three of the five are abnormal; 20 to 80 readings only in the guided runs', () => {
+  const text = panel('healthy', 4).explain.join(' ');
+  assert.ok(text.includes('three of the five are abnormal'));
+  assert.ok(!text.includes('deliberately abnormal'));
+  assert.ok(text.includes('In the guided runs, today holds 20 to 80 readings'));
+  assert.ok(!/today holds just/.test(text));
 });
 
 test('healthy step 1 is neutral', () => {

@@ -105,11 +105,34 @@ test('flat series renders finite', () => {
   checkGeometry(svg);
   assert.deepStrictEqual(pathPoints(svg), [3]);
 });
-test('one point: single circle, no path', () => {
-  const svg = C.lineChart({ id: 'o', title: 'One', unit: 'days', dates: ['2026-01-01'], series: [{ name: 's', values: [4.2] }] });
-  assert.strictEqual((svg.match(/<circle/g) || []).length, 1);
-  assert.ok(!/<path/.test(svg));
-  checkGeometry(svg);
+test('one finite point: the empty state, no circle, no path', () => {
+  for (const vals of [[4.2], [NaN, 4.2, null]]) {
+    const o = { id: 'o', title: 'One', unit: 'days', dates: ['d1', 'd2', 'd3'].slice(0, vals.length), series: [{ name: 's', values: vals }] };
+    const svg = C.lineChart(o);
+    assert.match(svg, /<text[^>]*>No data to chart<\/text>/);
+    assert.ok(!/<circle|<path/.test(svg));
+    assert.match(C.summary(o), /no data to chart$/);
+    checkGeometry(svg);
+  }
+});
+test('plural counts: 1 day, 1 point could not be drawn, 2 points', () => {
+  const two = C.summary({ id: 'p', title: 'T', unit: '', dates: ['d1', 'd2'], series: [{ name: 's', values: [1, 2] }] });
+  assert.match(two, / over 2 days$/);
+  const one = C.summary({ id: 'p', title: 'T', unit: '', dates: ['d1', 'd2', 'd3'], series: [{ name: 's', values: [1, 2, NaN] }] });
+  assert.match(one, / over 3 days, 1 point could not be drawn$/);
+  assert.ok(!/1 points/.test(one) && !/1 days/.test(one));
+});
+test('plus and minus 1e308 never print Infinity or NaN in axis, summary or table', () => {
+  for (const unit of ['pct', 'days', '']) {
+    for (const big of [1e308, -1e308]) {
+      const o = { id: 'b', title: 'Big', unit, dates: ['d1', 'd2', 'd3'], series: [{ name: 's', values: [big, big, big] }] };
+      const out = C.lineChart(o) + C.summary(o) + C.table(o);
+      assert.ok(!/Infinity|NaN/.test(out), unit + ' ' + big);
+    }
+  }
+  const mixed = { id: 'b', title: 'Mixed', unit: 'pct', dates: ['d1', 'd2', 'd3', 'd4'], series: [{ name: 's', values: [0.5, 1e308, 0.6, 0.7] }] };
+  assert.ok(!/Infinity|NaN/.test(C.lineChart(mixed) + C.summary(mixed)));
+  assert.match(C.summary(mixed), /, 1 point could not be drawn$/);
 });
 test('empty and all non-finite: empty-state text, no path', () => {
   for (const vals of [[], [NaN, null, undefined]]) {
@@ -131,12 +154,17 @@ test('NaN, negative and spike inputs: dropped or clamped, summary says so', () =
   assert.match(C.summary(o), /, 2 points could not be drawn$/);
   assert.match(svg, /2 points could not be drawn/);
 });
-test('summary for Bed Occupancy matches the fixed format', () => {
+test('summary with a trailing second series names daily and 7-day values', () => {
   const p = (v) => (v * 100).toFixed(1) + '%';
-  const exp = 'Bed Occupancy: ' + p(occ[119]) + ' on ' + dates[119] + ', range ' + p(Math.min(...occ)) + ' to ' + p(Math.max(...occ)) + ' over 120 days';
+  const exp = 'Bed Occupancy: daily ' + p(occ[119]) + ' on ' + dates[119] + ' (7-day ' + p(sma[119]) + '), daily range ' + p(Math.min(...occ)) + ' to ' + p(Math.max(...occ)) + ' over 120 days';
   assert.strictEqual(C.summary(two), exp + ', weekends shaded');
   assert.strictEqual(C.summary(Object.assign({}, two, { weekendIndexes: [] })), exp);
-  assert.match(exp, /^Bed Occupancy: \d+\.\d% on 2026-11-03, range \d+\.\d% to \d+\.\d% over 120 days$/);
+  assert.match(exp, /^Bed Occupancy: daily \d+\.\d% on 2026-11-03 \(7-day \d+\.\d%\), daily range \d+\.\d% to \d+\.\d% over 120 days$/);
+});
+test('summary for a single series keeps the plain format', () => {
+  const p = (v) => (v * 100).toFixed(1) + '%';
+  const one = Object.assign({}, two, { series: [two.series[0]] });
+  assert.strictEqual(C.summary(one), 'Bed Occupancy: ' + p(occ[119]) + ' on ' + dates[119] + ', range ' + p(Math.min(...occ)) + ' to ' + p(Math.max(...occ)) + ' over 120 days, weekends shaded');
 });
 test('number formats: pct, days, plain', () => {
   assert.strictEqual(C.format(0.786, 'pct'), '78.6%');

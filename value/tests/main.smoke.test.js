@@ -58,7 +58,7 @@ test('scripted session: DOM equals a fresh render after every step, no errors', 
   });
 });
 
-test('hardcoded mode after a publish shows the conflict banner with role alert', () => {
+test('hardcoded mode after a publish shows the conflict banner (visible, no role alert)', () => {
   const p = boot({ search: '?scenario=incident&step=3', meta: META });
   assert.ok(!/class="conflict"/.test(p.html('definitions')));
   p.clickRendered('button[data-cmd="mode"][data-governed="false"]');
@@ -66,7 +66,8 @@ test('hardcoded mode after a publish shows the conflict banner with role alert',
   s.value = 'strict_thresholds';
   p.change(s);
   p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
-  assert.ok(/<p class="conflict" role="alert">Definition conflict: 3 reports disagree/.test(p.html('definitions')));
+  assert.ok(/<p class="conflict">Definition conflict: 3 reports disagree/.test(p.html('definitions')));
+  assert.ok(p.html('definitions').indexOf('role="alert"') < 0);
   p.clickRendered('button[data-cmd="rollback"][data-metric="' + AVR + '"]');
   p.clickRendered('button[data-cmd="reset"]');
   assert.ok(!/class="conflict"/.test(p.html('definitions')));
@@ -272,4 +273,67 @@ test('only main.js touches document, window, location, timers', () => {
     const code = t.replace(/\/\/.*$/gm, '').replace(/'(?:[^'\\\n]|\\.)*'/g, "''");
     assert.ok(!/\b(?:document|window|location|setTimeout|setInterval|localStorage)\b/.test(code), n);
   });
+});
+
+// ----- fix B: one persistent live element announces the definitions result -----
+
+function watchLive(p) {
+  const live = p.document.getElementById('def-live');
+  let v = live.textContent;
+  const w = { writes: 0, get text() { return v; } };
+  Object.defineProperty(live, 'textContent', { get: () => v, set: (x) => { w.writes++; v = x; } });
+  return w;
+}
+function toConflict(p) {
+  p.clickRendered('button[data-cmd="mode"][data-governed="false"]');
+  const s = p.q(SEL);
+  s.value = 'strict_thresholds';
+  p.change(s);
+}
+
+test('a publish changes #def-live text once, with the message', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  const w = watchLive(p);
+  const s = p.q(SEL);
+  s.value = 'strict_thresholds';
+  p.change(s);
+  assert.equal(w.writes, 0, 'selecting announces nothing');
+  p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
+  assert.equal(w.writes, 1);
+  assert.equal(w.text, 'Published Abnormal Vital Rate v2');
+  assert.ok(p.html('definitions').indexOf('aria-live') < 0);
+});
+
+test('re-rendering with an unchanged message does not rewrite #def-live', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  const s = p.q(SEL);
+  s.value = 'strict_thresholds';
+  p.change(s);
+  p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
+  const w = watchLive(p);
+  p.clickRendered(TOGGLE);
+  p.clickRendered(TOGGLE);
+  p.clickRendered('button[data-cmd="next"]');
+  p.clickRendered('button[data-cmd="back"]');
+  assert.equal(w.writes, 0);
+});
+
+test('a conflict is announced once with the publish; choosing another definition while in conflict does not re-announce it', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  toConflict(p);
+  const w = watchLive(p);
+  p.clickRendered('button[data-cmd="publish"][data-metric="' + AVR + '"]');
+  assert.equal(w.writes, 1);
+  assert.match(w.text, /^Published Abnormal Vital Rate v2\. Definition conflict: 3 reports disagree$/);
+  assert.ok(/class="conflict"/.test(p.html('definitions')));
+  const before = w.text;
+  const s = p.q(SEL);
+  s.value = 'standard_thresholds';
+  p.change(s);
+  const re = p.q('select[data-cmd="select"][data-metric="30-Day Readmission Rate"]');
+  re.value = 'unplanned_only';
+  p.change(re);
+  assert.equal(w.writes, 1);
+  assert.equal(w.text, before);
+  assert.ok(/class="conflict"/.test(p.html('definitions')));
 });

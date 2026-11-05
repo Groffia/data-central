@@ -103,7 +103,7 @@ test('with a base: each dead-letter id and the Storage chip are links with exact
   });
   assert.ok(rows.some(function (r) { return r.dlqId === 'dlq-3-4'; }), 'incident k=3 has dlq-3-4');
   assert.ok(regions.incident.indexOf('<a href="../pipeline/?scenario=incident&amp;step=3#dlq-3-4" aria-label="Open dlq-3-4 in Pipeline">dlq-3-4</a>') >= 0);
-  assert.ok(regions.stages.indexOf('<a href="../pipeline/?scenario=incident&amp;step=3#stage-storage" aria-label="Open Storage in Pipeline">') >= 0, regions.stages);
+  assert.ok(regions.stages.indexOf('<a href="../pipeline/?scenario=incident&amp;step=3#stage-storage" aria-label="40 rows in production (opens in Pipeline)">40 rows in production</a>') >= 0, regions.stages);
   assert.strictEqual((regions.stages.match(/<a /g) || []).length, 1);
 });
 
@@ -147,7 +147,7 @@ test('no base: output is byte-identical to the pre-links baseline for ten script
 });
 
 test('with a base: stripping the added anchors gives exactly the no-base output, for ten states', () => {
-  const strip = function (html) { return html.replace(/<a href="[^"]*" aria-label="Open [^"]*in (?:Pipeline|Value)">/g, '').replace(/<\/a>/g, ''); };
+  const strip = function (html) { return html.replace(/<a href="[^"]*" aria-label="(?:Open [^"]*in (?:Pipeline|Value)|[^"]*\(opens in (?:Pipeline|Value)\))">/g, '').replace(/<\/a>/g, ''); };
   Object.keys(BASELINE).forEach(function (key) {
     const sc = key.split(':')[0], k = Number(key.split(':')[1]);
     const acts = Engine.AUTOPLAY[sc].slice(0, k);
@@ -227,7 +227,7 @@ function bootMain(metaContent) {
 test('main.js: meta tag present gives links; absent, hostile or empty gives none', () => {
   const on = bootMain('../pipeline/');
   assert.ok(on['region-incident'].innerHTML.indexOf('in Pipeline') >= 0);
-  assert.ok(on['region-stages'].innerHTML.indexOf('Open Storage in Pipeline') >= 0);
+  assert.ok(on['region-stages'].innerHTML.indexOf('(opens in Pipeline)') >= 0);
   [null, '', 'https://evil.example/', 'javascript:alert(1)'].forEach(function (c) {
     const off = bootMain(c);
     assert.ok(off['region-incident'].innerHTML.indexOf('in Pipeline') < 0, String(c));

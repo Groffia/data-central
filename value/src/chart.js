@@ -46,8 +46,28 @@
     if (unit === 'pct') s = (v * 100).toFixed(1) + '%';
     else if (unit === 'days') s = v.toFixed(1) + ' days';
     else s = v.toFixed(2);
+    if (/Infinity|NaN/.test(s)) return '';
     return s.replace(/^-(0\.0+)(%| days)?$/, '$1$2');
   }
+
+  // A value that cannot be shown in its unit (for example 1e308 as a percentage) is treated like a missing one.
+  function usable(v, unit) { return isNum(v) && fmt(v, unit) !== ''; }
+  function clean(series, unit) {
+    return (series || []).map(function (s) {
+      var o = {};
+      for (var k in s) if (Object.prototype.hasOwnProperty.call(s, k)) o[k] = s[k];
+      var vals = (s && s.values) || [];
+      var out = [];
+      for (var i = 0; i < vals.length; i++) out.push(usable(vals[i], unit) ? vals[i] : NaN);
+      o.values = out;
+      return o;
+    });
+  }
+  function lastFinite(vals, n) {
+    for (var i = Math.min(vals.length, n) - 1; i >= 0; i--) if (isNum(vals[i])) return i;
+    return -1;
+  }
+  function plural(n, one, many) { return globalThis.Shared.format.plural(n, one, many); }
 
   function dropped(series, n) {
     var d = 0;
@@ -60,19 +80,28 @@
   }
 
   function summary(o) {
-    var series = o.series || [], dates = o.dates || [], unit = o.unit || '';
+    var dates = o.dates || [], unit = o.unit || '';
+    var series = clean(o.series, unit);
     var first = series[0] ? series[0].values || [] : [];
     var n = dates.length || first.length;
-    var lastIdx = -1;
-    for (var i = Math.min(first.length, n) - 1; i >= 0; i--) if (isNum(first[i])) { lastIdx = i; break; }
     var title = esc(o.title);
-    if (lastIdx < 0) return title + ': no data to chart';
     var fin = finiteOf(first);
+    var lastIdx = lastFinite(first, n);
+    if (fin.length < 2 || lastIdx < 0) return title + ': no data to chart';
     var mn = Math.min.apply(null, fin), mx = Math.max.apply(null, fin);
-    var out = title + ': ' + fmt(first[lastIdx], unit) + ' on ' + esc(dates[lastIdx]) + ', range ' + fmt(mn, unit) + ' to ' + fmt(mx, unit) + ' over ' + n + ' days';
+    var out;
+    if (series.length > 1) {
+      var tv = series[1].values || [];
+      var ti = lastFinite(tv, n);
+      out = title + ': daily ' + fmt(first[lastIdx], unit) + ' on ' + esc(dates[lastIdx]) +
+        (ti >= 0 ? ' (7-day ' + fmt(tv[ti], unit) + ')' : '') + ', daily range ' + fmt(mn, unit) + ' to ' + fmt(mx, unit);
+    } else {
+      out = title + ': ' + fmt(first[lastIdx], unit) + ' on ' + esc(dates[lastIdx]) + ', range ' + fmt(mn, unit) + ' to ' + fmt(mx, unit);
+    }
+    out += ' over ' + n + ' ' + plural(n, 'day', 'days');
     if (o.weekendIndexes && o.weekendIndexes.length) out += ', weekends shaded';
     var d = dropped(series, 0);
-    if (d > 0) out += ', ' + d + ' points could not be drawn';
+    if (d > 0) out += ', ' + d + ' ' + plural(d, 'point could not be drawn', 'points could not be drawn');
     return out;
   }
 
@@ -85,7 +114,7 @@
       h += '<tr><th scope="row">' + esc(d) + '</th>';
       series.forEach(function (s) {
         var v = s && s.values ? s.values[i] : undefined;
-        h += '<td>' + (isNum(v) ? fmt(v, unit) : 'no data') + '</td>';
+        h += '<td>' + (usable(v, unit) ? fmt(v, unit) : 'no data') + '</td>';
       });
       h += '</tr>';
     });
@@ -93,14 +122,15 @@
   }
 
   function lineChart(o) {
-    var id = esc(o.id), series = o.series || [], dates = o.dates || [], unit = o.unit || '';
+    var id = esc(o.id), dates = o.dates || [], unit = o.unit || '';
+    var series = clean(o.series, unit);
     var n = dates.length;
     for (var k = 0; k < series.length; k++) n = Math.max(n, (series[k].values || []).length);
     var all = [];
     series.forEach(function (s) { all = all.concat(finiteOf(s.values)); });
     var head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-labelledby="' + id + '-title ' + id + '-desc">' +
       '<title id="' + id + '-title">' + esc(o.title) + '</title><desc id="' + id + '-desc">' + summary(o) + '</desc>';
-    if (!all.length) {
+    if (finiteOf(series[0] && series[0].values).length < 2) {
       return head + '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle">No data to chart</text></svg>';
     }
     var sc = scale(all, PLOT_H);

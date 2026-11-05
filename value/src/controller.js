@@ -147,6 +147,7 @@
       if (t === 'next') return step(1);
       if (t === 'scenario') {
         if (typeof cmd.value !== 'string' || SCENARIOS.indexOf(cmd.value) < 0) return false;
+        if (cmd.value === scenario) return false; // choosing the active scenario keeps the steps and definitions
         scenario = cmd.value;
         actions = openingActions(Engine, scenario);
         defState = Value.definitions.initial();

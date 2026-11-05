@@ -196,7 +196,8 @@ pre.yaml code { overflow-wrap: normal; }
 .changelog { margin: 0 0 .5rem; padding-left: 1.2rem; }
 
 /* expected-range check */
-.check-title { font-weight: 700; }
+.check-lead { font-weight: 700; }
+.check-question { font-style: italic; }
 .verdict { font-weight: 700; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid var(--border); }
 .verdict[data-level="ok"] { background: var(--green); color: var(--on-green); border-color: var(--green); }
 .verdict[data-level="warn"] { background: var(--amber); color: var(--on-amber); border-color: var(--amber); }

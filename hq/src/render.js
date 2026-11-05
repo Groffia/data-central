@@ -46,7 +46,7 @@
       return '<li class="chip"' + attr('data-health', c.health) + attr('data-stage', c.id) + '>' +
         '<span class="dot" aria-hidden="true"></span>' +
         '<span class="chip-name">' + esc(c.id + ' ' + c.name) + '</span>' +
-        '<span class="chip-text">' + (c.href ? link(c.href, 'Open ' + c.name + ' in ' + (c.id === 4 ? 'Pipeline' : 'Value'), c.text) : esc(c.text)) + '</span></li>';
+        '<span class="chip-text">' + (c.href ? link(c.href, c.text + ' (opens in ' + (c.id === 4 ? 'Pipeline' : 'Value') + ')', c.text) : esc(c.text)) + '</span></li>';
     }).join('') + '</ol>';
   }
 

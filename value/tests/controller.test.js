@@ -163,7 +163,26 @@ test('scenario switch resets actions, definitions, open tables and focus', () =>
   assert.equal(steps(c).n, FLOOR_I);
   const same = make('?scenario=incident&step=9');
   same.dispatch({ type: 'scenario', value: 'incident' });
-  assert.equal(steps(same).n, FLOOR_I);
+  assert.equal(steps(same).n, 9, 'choosing the active scenario is a no-op');
+});
+
+test('clicking the active scenario keeps definitions, stepping state and tables, and does not notify', () => {
+  const c = make('?scenario=incident&step=5');
+  c.dispatch({ type: 'select', metric: AVR, definitionId: 'strict_thresholds' });
+  c.dispatch({ type: 'publish', metric: AVR });
+  c.dispatch({ type: 'tableToggle', kpi: 'bed-occupancy' });
+  const before = JSON.stringify(c.getModel());
+  const k = counter(c);
+  c.dispatch({ type: 'scenario', value: 'incident' });
+  assert.equal(k.n, 0);
+  assert.equal(JSON.stringify(c.getModel()), before);
+  assert.equal(steps(c).n, 5);
+  assert.equal(metric(c, AVR).version, 2);
+  assert.equal(c.getModel().definitions.changelog.length, 1);
+  assert.equal(c.getModel().trends[0].tableOpen, true);
+  c.dispatch({ type: 'scenario', value: 'healthy' });
+  assert.equal(k.n, 1);
+  assert.equal(c.getModel().definitions.changelog.length, 0);
 });
 
 test('publish then back keeps definitions but changes freshness and held', () => {

@@ -115,7 +115,9 @@ test('trends: four figures, chart svg, visible summary, Show as table with aria-
   assert.strictEqual(count(t, '<figure '), 4);
   assert.strictEqual(count(t, '<svg xmlns'), 4);
   assert.strictEqual(count(t, 'class="trend-summary"'), 4);
-  assert.match(t, /<p class="trend-summary">Bed Occupancy: \d+\.\d% on 20\d\d-\d\d-\d\d, range /);
+  assert.match(t, /<p class="trend-summary">Bed Occupancy: daily \d+\.\d% on 20\d\d-\d\d-\d\d \(7-day \d+\.\d%\), daily range /);
+  assert.strictEqual(count(t, 'trailing window is shorter for the first six days'), 4);
+  assert.match(t, /<p class="trend-legend caption">Thin line: daily value\. Thick line: 7-day trailing value \(trailing window is shorter for the first six days\)\. Shaded bands: weekends\.<\/p>/);
   assert.strictEqual(count(t, '>Show as table</button>'), 4);
   assert.strictEqual(count(t, 'aria-expanded="false"'), 4);
   assert.strictEqual(count(t, '<table'), 0);
@@ -170,11 +172,12 @@ test('definitions: labelled selects, buttons with names, version badge, yaml, co
   has(d, '>Reset definitions</button>');
   has(d, 'data-cmd="mode" data-governed="true" aria-pressed="true">One governed definition</button>');
   has(d, 'data-cmd="mode" data-governed="false" aria-pressed="false">Hardcoded in the report</button>');
-  has(d, 'aria-live="polite"');
+  has(d, '<p class="def-message">');
+  assert.strictEqual(count(d, 'aria-live'), 0, 'the live element is def-live in index.html, not in the region');
   has(d, 'No definition changes yet');
 });
 
-test('conflict banner: role alert only in conflict, listing both values', () => {
+test('conflict banner: present only in conflict, no role alert, listing both values', () => {
   const clean = R.definitions(model('healthy', 1));
   assert.strictEqual(count(clean, 'role="alert"'), 0);
   let ds = D.reduce(D.initial(), { type: 'mode', governed: false });
@@ -183,8 +186,9 @@ test('conflict banner: role alert only in conflict, listing both values', () => 
   ds = D.reduce(ds, { type: 'publish', metric: 'Abnormal Vital Rate' });
   const m = model('healthy', 1, { defState: ds });
   const d = R.definitions(m);
-  assert.strictEqual(count(d, 'role="alert"'), 1);
-  assert.match(d, /<p class="conflict" role="alert">Definition conflict: 3 reports disagree \(values: \d+\.\d%, \d+\.\d%\)<\/p>/);
+  assert.strictEqual(count(d, 'role="alert"'), 0);
+  assert.strictEqual(count(d, 'class="conflict"'), 1);
+  assert.match(d, /<p class="conflict">Definition conflict: 3 reports disagree \(values: \d+\.\d%, \d+\.\d%\)<\/p>/);
   has(d, 'aria-pressed="true">Hardcoded in the report</button>');
   has(d, 'v2: Abnormal Vital Rate: standard_thresholds -&gt; strict_thresholds, 1 consumer changed');
   // governed publish: no banner
@@ -197,7 +201,10 @@ test('check: title, number lines, verdict with level and a text cue, explain dis
   const m = model('healthy', 4);
   const c = R.check(m);
   assert.ok(c.indexOf('<span id="stage-check"></span>') === 0);
-  has(c, 'Expected-range check: a demonstration of the pattern, not a clinical model.');
+  has(c, '<h2>Expected-range check</h2>');
+  has(c, '<p class="check-lead">A demonstration of the pattern, not a clinical model.</p>');
+  has(c, '<p class="check-question">Is today&#39;s abnormal-vital rate unusual for a sample this size?</p>');
+  assert.ok(c.indexOf('check-lead') < c.indexOf('check-with') && c.indexOf('check-question') < c.indexOf('check-with'));
   has(c, '10 of 80 = 12.5% (counting the five hand-picked rows)');
   has(c, '7 of 75 = 9.3% (without them; this is the number the verdict uses)');
   has(c, '<p class="verdict" data-level="ok"><span aria-hidden="true">✓</span> Within the expected range</p>');

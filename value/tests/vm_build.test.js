@@ -66,7 +66,7 @@ test('four trends: 120 days, two series, weekend indexes from the dates', () => 
     assert.ok(t.weekendIndexes.every((i) => [0, 6].includes(V.dayOfWeek(t.dates[i]))));
     assert.strictEqual(t.weekendIndexes.length, t.dates.filter((d) => [0, 6].includes(V.dayOfWeek(d))).length);
     assert.ok(t.weekendIndexes.length > 20);
-    assert.ok(/ on 20\d\d-\d\d-\d\d, range /.test(t.summary));
+    assert.ok(/: daily \d+\.\d% on 20\d\d-\d\d-\d\d \(7-day \d+\.\d%\), daily range /.test(t.summary) || /: daily \d+\.\d days on 20\d\d-\d\d-\d\d \(7-day \d+\.\d days\), daily range /.test(t.summary));
     assert.ok(t.summary.indexOf('<') < 0);
   });
 });
@@ -211,4 +211,63 @@ test('src uses no Date constructor, Math.random or Date.now', () => {
     const s = fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8');
     assert.ok(!/new Date\(|Date\.now|Math\.random|innerHTML|document\./.test(s), f);
   });
+});
+
+// ----- fix B: panel B follows the Trend chart consumer; no ratio arithmetic in the page -----
+
+function publishStrict(governed) {
+  let ds = D.reduce(D.initial(), { type: 'mode', governed });
+  ds = D.reduce(ds, { type: 'select', metric: 'Abnormal Vital Rate', definitionId: 'strict_thresholds' });
+  return D.reduce(ds, { type: 'publish', metric: 'Abnormal Vital Rate' });
+}
+const pctText = (v) => (v * 100).toFixed(1) + '%';
+
+for (const governed of [true, false]) {
+  test('after publishing strict (' + (governed ? 'governed' : 'hardcoded') + ') panel B agrees with the consumers table Trend chart row; the tile uses the published definition', () => {
+    const m = build('incident', 3, { defState: publishStrict(governed) });
+    const abn = m.definitions.metrics.find((x) => x.name === 'Abnormal Vital Rate');
+    const trendRow = abn.consumers.find((r) => r.consumer === 'Trend chart');
+    const trend = m.trends[1];
+    assert.strictEqual(pctText(trend.series[1].values[119]), trendRow.valueText);
+    const tile = abn.consumers.find((r) => r.consumer === 'Dashboard tile');
+    assert.strictEqual(m.kpis.tiles[1].valueText, tile.valueText);
+    if (governed) {
+      assert.strictEqual(trendRow.definitionId, 'strict_thresholds');
+      assert.notStrictEqual(trendRow.valueText, '6.2%');
+    } else {
+      assert.strictEqual(trendRow.definitionId, 'standard_thresholds');
+      assert.strictEqual(trendRow.valueText, '6.2%');
+      assert.notStrictEqual(m.kpis.tiles[1].valueText, '6.2%');
+      assert.ok(trend.summary.indexOf('6.2%') >= 0, trend.summary);
+    }
+  });
+}
+
+test('hardcoded readmission: chart keeps all-cause after publishing unplanned_only', () => {
+  let ds = D.reduce(D.initial(), { type: 'mode', governed: false });
+  ds = D.reduce(ds, { type: 'select', metric: '30-Day Readmission Rate', definitionId: 'unplanned_only' });
+  ds = D.reduce(ds, { type: 'publish', metric: '30-Day Readmission Rate' });
+  const m = build('healthy', 1, { defState: ds });
+  const hist = Engine.getHistory();
+  assert.deepStrictEqual(J(m.trends[3].series[0].values), J(Engine.metricSeries(hist, '30-Day Readmission Rate', 'all_cause', 7).daily));
+  assert.notStrictEqual(m.kpis.tiles[3].valueText, pctText(Engine.computeMetric(hist, '30-Day Readmission Rate', 'all_cause').value));
+});
+
+test('series and sparklines are exactly the engine metricSeries output', () => {
+  const m = build('healthy', 1);
+  const hist = Engine.getHistory();
+  ['Bed Occupancy', 'Abnormal Vital Rate', 'Avg Length of Stay', '30-Day Readmission Rate'].forEach((name, i) => {
+    const s = Engine.metricSeries(hist, name, undefined, 7);
+    assert.deepStrictEqual(J(m.trends[i].series[0].values), J(s.daily));
+    assert.deepStrictEqual(J(m.trends[i].series[1].values), J(s.trailing));
+    assert.deepStrictEqual(J(m.trends[i].dates), J(s.dates));
+    assert.deepStrictEqual(J(m.kpis.tiles[i].sparkline.points), J(s.daily.slice(-30)));
+  });
+});
+
+test('no ratio arithmetic remains in viewmodel.js (guard; behaviour tests are the proof)', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'viewmodel.js'), 'utf8');
+  assert.ok(!/\[num\]\s*\/|\/\s*sum\(|\[den\]/.test(src));
+  assert.ok(!/FIXED/.test(src));
+  assert.ok(!/\bnumerator\b|\bdenominator\b/.test(src));
 });

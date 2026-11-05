@@ -178,7 +178,7 @@ function boot(options) {
   }
 
   document.getElementById = function (id) {
-    if (id.indexOf('region-') === 0 || id === 'caption') return region(id);
+    if (id.indexOf('region-') === 0 || id === 'caption' || id === 'def-live') return region(id);
     if (CHILD_IDS.indexOf(id) >= 0) return child(id);
     const hit = all('#' + id)[0];
     return hit || null;
@@ -203,6 +203,7 @@ function boot(options) {
   const ctx = vm.createContext({ Engine, document, window, location: { search: o.search || '', hash: o.hash || '' }, console });
   REGION_KEYS.forEach(function (k) { region('region-' + k); });
   region('caption');
+  region('def-live');
   let lastController = null;
   FILES.forEach(function (f) {
     if (/main\.js$/.test(f)) {
@@ -230,6 +231,7 @@ function boot(options) {
     Engine: Engine, document: document, controller: function () { return lastController; }, Value: function () { return ctx.Value; }, log: log, timers: timers, handlers: handlers, regionKeys: REGION_KEYS,
     html: function (k) { return regionHtml['region-' + k]; },
     caption: function () { return els.caption.textContent; },
+    defLive: function () { return els['def-live'].textContent; },
     q: function (s) { return all(s)[0] || null; },
     qa: all,
     // Click the rendered control matching the selector (like a user would); returns the element.

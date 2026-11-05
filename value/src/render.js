@@ -122,7 +122,7 @@
       '<figcaption>' + esc(t.title) + '</figcaption>' +
       Value.chart.lineChart(spec) +
       '<p class="trend-summary">' + esc(t.summary) + '</p>' +
-      '<p class="trend-legend caption">Thin line: daily value. Thick line: 7-day trailing value. Shaded bands: weekends.</p>' +
+      '<p class="trend-legend caption">Thin line: daily value. Thick line: 7-day trailing value' + (t.tableNote ? ' (' + esc(t.tableNote) + ')' : '') + '. Shaded bands: weekends.</p>' +
       button('Show as table', 'table-toggle', { data: { kpi: t.id }, expanded: open, label: 'Show as table: ' + t.title }) +
       tableHtml +
       '</figure>';
@@ -170,7 +170,7 @@
       return '<tr><th scope="row">' + esc(r.consumer) + '</th><td>' + esc(r.definitionId) + '</td><td>' + esc(r.valueText) + '</td></tr>';
     });
     const conflict = m.conflict && typeof m.conflict === 'object'
-      ? '<p class="conflict" role="alert">' + esc(m.conflict.text) + ' (values: ' + arr(m.conflict.values).map(esc).join(', ') + ')</p>' : '';
+      ? '<p class="conflict">' + esc(m.conflict.text) + ' (values: ' + arr(m.conflict.values).map(esc).join(', ') + ')</p>' : '';
     return '<div class="metric-panel"' + attr('data-metric', m.name) + '>' +
       '<h3>' + esc(m.name) + ' <span class="badge version-badge">' + esc('v' + m.version) + '</span></h3>' +
       '<p class="caption">' + esc('Published: ' + m.publishedId) + '</p>' +
@@ -198,7 +198,7 @@
       '</div>' +
       button('Reset definitions', 'reset') +
       '</div>' +
-      '<p class="def-message" aria-live="polite">' + esc(d.message) + '</p>' +
+      '<p class="def-message">' + esc(d.message) + '</p>' +
       arr(d.metrics).map(metricPanel).join('') +
       '<h3>Changelog</h3>' +
       (log.length ? '<ul class="changelog">' + log.map(function (e) { return '<li>' + esc('v' + e.version + ': ' + e.text) + '</li>'; }).join('') + '</ul>' : empty('No definition changes yet'));
@@ -211,8 +211,9 @@
     const level = c.level === 'ok' || c.level === 'warn' ? c.level : 'neutral';
     const cue = level === 'ok' ? '✓' : level === 'warn' ? '⚠' : '–';
     return '<span id="stage-check"></span>' +
-      heading('Stage 6: Analysis/Modeling', 'Expected-range check') +
-      '<p class="check-title">' + esc(c.title) + '</p>' +
+      heading('Stage 6: Analysis/Modeling', c.title || 'Expected-range check') +
+      '<p class="check-lead">' + esc(c.lead) + '</p>' +
+      '<p class="check-question">' + esc(c.question) + '</p>' +
       '<p class="check-with">' + esc(c.withHandPickedText) + '</p>' +
       '<p class="check-without">' + esc(c.withoutHandPickedText) + '</p>' +
       '<p class="check-range">' + esc(c.rangeText) + '</p>' +

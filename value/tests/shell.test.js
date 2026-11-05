@@ -33,6 +33,14 @@ test('caption is an aria-live polite element, once', () => {
   assert.ok(/aria-live="polite"/.test(tag));
 });
 
+test('def-live is one persistent visually-hidden polite element outside the regions', () => {
+  assert.strictEqual(count(html, 'id="def-live"'), 1);
+  const tag = /<[a-z]+[^>]*id="def-live"[^>]*>/.exec(html)[0];
+  assert.ok(/aria-live="polite"/.test(tag));
+  assert.ok(/class="visually-hidden"/.test(tag));
+  assert.ok(html.indexOf('id="def-live"') < html.indexOf('<main>'));
+});
+
 test('both hq-base and pipeline-base metas present once, in the head', () => {
   assert.strictEqual(count(html, 'name="hq-base"'), 1);
   assert.strictEqual(count(html, 'name="pipeline-base"'), 1);

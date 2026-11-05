@@ -25,6 +25,7 @@
   });
   let scrolledToTarget = false;
   let lastStepText = null;
+  let lastLive = '';
   let highlighted = '';
   const lastHtml = {}; // region key -> the string last written, so unchanged regions are left alone
 
@@ -102,6 +103,18 @@
   // The one place the page assigns innerHTML.
   function setHTML(el, html) { el.innerHTML = html; }
 
+  // The definitions result (and any conflict) is announced from one persistent live element outside the regions, and only
+  // when its text changes. A render that carries no message (for example choosing another definition) leaves it alone.
+  function announce(model) {
+    const live = document.getElementById('def-live');
+    const d = model && model.definitions;
+    if (!live || !d || !d.message) return;
+    const parts = [String(d.message)];
+    (Array.isArray(d.metrics) ? d.metrics : []).forEach(function (m) { if (m && m.conflict && m.conflict.text) parts.push(String(m.conflict.text)); });
+    const text = parts.join('. ');
+    if (text !== lastLive) { live.textContent = text; lastLive = text; }
+  }
+
   function render() {
     const active = document.activeElement;
     const d = describe(active);
@@ -115,6 +128,7 @@
     const caption = document.getElementById('caption');
     const stepText = model.header && model.header.steps ? String(model.header.steps.text) : '';
     if (caption && stepText !== lastStepText) { caption.textContent = stepText; lastStepText = stepText; }
+    announce(model);
     restoreFocus(d, active);
     applyFocusTarget();
   }

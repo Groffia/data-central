@@ -78,12 +78,12 @@
 
   // ----- Task 7: KPI tiles -----
 
-  // Field pairs for the fixed (current) definitions, as in Engine.computeKpis.
-  const FIXED = {
-    'Bed Occupancy': { num: 'beds_occupied', den: 'beds_staffed', source: 'fct_census_daily', kind: 'pct' },
-    'Abnormal Vital Rate': { num: 'abnormal_obs_standard', den: 'observations', source: 'fct_vital_observation', kind: 'pct' },
-    'Avg Length of Stay': { num: 'patient_days', den: 'discharges', source: 'fct_census_daily', kind: 'days' },
-    '30-Day Readmission Rate': { num: 'readmits_30d_all', den: 'discharges', source: 'fct_census_daily', kind: 'pct' }
+  // Display facts only (source table, unit); every number comes from the engine.
+  const DISPLAY = {
+    'Bed Occupancy': { source: 'fct_census_daily', kind: 'pct' },
+    'Abnormal Vital Rate': { source: 'fct_vital_observation', kind: 'pct' },
+    'Avg Length of Stay': { source: 'fct_census_daily', kind: 'days' },
+    '30-Day Readmission Rate': { source: 'fct_census_daily', kind: 'pct' }
   };
   const NO_PUBLISH_TEXT = 'No batch published yet';
 
@@ -112,13 +112,14 @@
     const rows = Array.isArray(history) ? history : [];
     const f = Shared.format;
     return kpis.map(function (k) {
-      const fx = FIXED[k.name];
+      const fx = DISPLAY[k.name];
       const sel = selection(k.name, metricState);
-      let value = k.value, deltaPct = k.deltaPct, num = fx.num, den = fx.den;
+      let value = k.value, deltaPct = k.deltaPct, defId;
       if (sel.def) {
         const m = Engine.computeMetric(rows, k.name, sel.def.id);
-        if (m) { value = m.value; deltaPct = m.deltaPct; num = sel.def.numerator; den = sel.def.denominator; }
+        if (m) { value = m.value; deltaPct = m.deltaPct; defId = sel.def.id; }
       }
+      const series = Engine.metricSeries(rows, k.name, defId, 7);
       const d = deltaOf(deltaPct);
       return {
         id: kebab(k.name),
@@ -126,7 +127,7 @@
         valueText: fx.kind === 'days' ? value.toFixed(1) + ' days' : (value * 100).toFixed(1) + '%',
         deltaText: d.text,
         deltaDirection: d.dir,
-        sparkline: { points: rows.slice(-30).map(function (r) { return r[num] / r[den]; }) },
+        sparkline: { points: series ? series.daily.slice(-30) : [] },
         source: fx.source,
         definitionBadge: 'def v' + sel.version,
         freshness: k.asOfBatchId ? 'as of ' + f.batchLabel(k.asOfBatchId) + ', ' + f.clockLabel(k.asOfIso) : NO_PUBLISH_TEXT,
@@ -187,13 +188,15 @@
 
   // ----- Task 11: expected-range check panel -----
 
-  const CHECK_TITLE = 'Expected-range check: a demonstration of the pattern, not a clinical model.';
+  const CHECK_TITLE = 'Expected-range check';
+  const CHECK_LEAD = 'A demonstration of the pattern, not a clinical model.';
+  const CHECK_QUESTION = "Is today's abnormal-vital rate unusual for a sample this size?";
   const CHECK_NEUTRAL = 'Not enough data yet (fewer than 30 readings)';
   const CHECK_EXPLAIN = [
     'Baseline: the 120-day Abnormal Vital Rate, using the standard definition.',
-    'Range rule: the 95% range of a binomial for a sample this size, because 20 to 80 readings are far noisier than a whole day.',
-    'Why the sample is small: the demo publishes only a few batches of 20 readings each, so today holds just 20 to 80.',
-    'The five hand-picked edge-case rows are left out: they are deliberately abnormal and would make every healthy batch look unusual.',
+    'Range rule: the 95% range of a binomial for a sample this size, because a small sample is far noisier than a whole day.',
+    'Why the sample is small: the demo publishes only a few batches of 20 readings each. In the guided runs, today holds 20 to 80 readings.',
+    'The five hand-picked edge-case rows are left out: three of the five are abnormal, and they would make every healthy batch look unusual.',
     'It does not predict anything, it is not for clinical use, and it is not a diagnosis.'
   ];
 
@@ -207,14 +210,14 @@
     try { c = Engine.liveSampleCheck(state); } catch (e) { c = null; }
     if (!c) {
       return {
-        title: CHECK_TITLE, withHandPickedText: '', withoutHandPickedText: '', rangeText: '',
+        title: CHECK_TITLE, lead: CHECK_LEAD, question: CHECK_QUESTION, withHandPickedText: '', withoutHandPickedText: '', rangeText: '',
         verdict: CHECK_NEUTRAL, level: 'neutral', explain: CHECK_EXPLAIN.slice()
       };
     }
     const all = checkRate(c.abnormal, c.published);
     const level = c.verdict === 'Within the expected range' ? 'ok' : c.verdict === 'Above the expected range' ? 'warn' : 'neutral';
     return {
-      title: CHECK_TITLE,
+      title: CHECK_TITLE, lead: CHECK_LEAD, question: CHECK_QUESTION,
       withHandPickedText: c.handPicked > 0 ? all + ' (counting the five hand-picked rows)' : all,
       withoutHandPickedText: checkRate(c.abnormalReadings, c.readings) + ' (without them; this is the number the verdict uses)',
       rangeText: c.readings > 0 && c.upperLimitPct !== null
@@ -282,20 +285,13 @@
     };
   }
 
-  // Daily and 7-day trailing series for one tile, using the published definition. The window is shorter for the first six days.
-  function trendOf(tile, history, published, openTables) {
-    const fx = FIXED[tile.name];
-    const sel = selection(tile.name, published);
-    const num = sel.def ? sel.def.numerator : fx.num;
-    const den = sel.def ? sel.def.denominator : fx.den;
-    const daily = [], trailing = [];
-    for (let i = 0; i < history.length; i++) {
-      daily.push(history[i][num] / history[i][den]);
-      let n = 0, d = 0;
-      for (let j = Math.max(0, i - 6); j <= i; j++) { n += history[j][num]; d += history[j][den]; }
-      trailing.push(n / d);
-    }
-    const dates = history.map(function (r) { return r.date; });
+  // Daily and 7-day trailing series for one tile, from the engine, for the definition id given (undefined: the current one).
+  // The window is shorter for the first six days.
+  function trendOf(tile, history, defId, openTables) {
+    const fx = DISPLAY[tile.name];
+    const ms = Engine.metricSeries(history, tile.name, defId, 7) || { dates: [], daily: [], trailing: [] };
+    const daily = ms.daily, trailing = ms.trailing;
+    const dates = ms.dates;
     const weekendIndexes = [];
     dates.forEach(function (dt, i) { const w = dayOfWeek(dt); if (w === 0 || w === 6) weekendIndexes.push(i); });
     const unit = fx.kind === 'days' ? 'days' : 'pct';
@@ -329,7 +325,7 @@
 
   function emptyCheck() {
     try { return checkPanel(null); } catch (e) {
-      return { title: CHECK_TITLE, withHandPickedText: '', withoutHandPickedText: '', rangeText: '', verdict: CHECK_NEUTRAL, level: 'neutral', explain: CHECK_EXPLAIN.slice() };
+      return { title: CHECK_TITLE, lead: CHECK_LEAD, question: CHECK_QUESTION, withHandPickedText: '', withoutHandPickedText: '', rangeText: '', verdict: CHECK_NEUTRAL, level: 'neutral', explain: CHECK_EXPLAIN.slice() };
     }
   }
 
@@ -356,10 +352,16 @@
       const ds = Value.definitions.reduce(c.defState, { type: 'none' });
       const pub = Value.definitions.published(ds);
       const tiles = kpiTiles(state, history, pub);
+      // Panel B follows the Trend chart consumer: the published definition when governed, its own copy when hardcoded.
+      const trendDef = {};
+      Value.definitions.consumers(ds, history).forEach(function (m) {
+        const row = m.rows.filter(function (r) { return r.consumer === 'Trend chart'; })[0];
+        if (row) trendDef[m.metric] = row.definitionId;
+      });
       return {
         header: Object.assign({}, header(state, scenario, step, links, actions), { scenario: scenario }),
         kpis: { tiles: tiles },
-        trends: tiles.map(function (t) { return trendOf(t, history, pub, c.openTables); }),
+        trends: tiles.map(function (t) { return trendOf(t, history, trendDef[t.name], c.openTables); }),
         compare: compare(state, naive),
         definitions: definitionsModel(ds, history),
         check: checkPanel(state),
