@@ -119,8 +119,11 @@ test("stepForActions", () => {
   assert.strictEqual(stepForActions("incident", AUTOPLAY.incident), 16);
   assert.strictEqual(stepForActions("incident", AUTOPLAY.incident.slice(0, PRELUDE.incident.length)), 2);
   assert.strictEqual(stepForActions("incident", []), null, "below the prelude is not a step");
-  const changed = clone(AUTOPLAY.incident.slice(0, 11));
-  changed[10].reason = "Other, see note";
+  const di = AUTOPLAY.incident.findIndex((a) => a.type === "discardRow");
+  assert.ok(di >= 8 && di <= 11);
+  const changed = clone(AUTOPLAY.incident.slice(0, di + 1));
+  assert.strictEqual(changed[di].type, "discardRow");
+  changed[di].reason = "Other, see note";
   assert.strictEqual(stepForActions("incident", AUTOPLAY.incident.slice(0, 10).concat([{ type: "discardRow", dlqId: "dlq-3-4", reason: "Other, see note" }])), null);
   assert.strictEqual(stepForActions("incident", changed), null);
   assert.strictEqual(stepForActions("incident", [...AUTOPLAY.incident, R]), null, "longer than the script");
@@ -159,4 +162,28 @@ test("parseLinkParams: repeated parameters, the first a= and batch= win (even if
   assert.strictEqual(parseLinkParams("?a=bad&a=r").actions, null);
   assert.strictEqual(parseLinkParams("?batch=2&batch=3").batch, 2);
   assert.strictEqual(parseLinkParams("?batch=abc&batch=3").batch, null);
+});
+
+test("strict key sets: extra or missing keys make stepForActions and encodeActions return null", () => {
+  const bad = [
+    { type: "runBatch", x: 1 },
+    { type: "runBatch", dlqId: "dlq-1-1" },
+    { type: "repairRow", dlqId: "dlq-3-2", reason: "Other, see note" },
+    { type: "repairRow", dlqId: "dlq-3-2", x: 1 },
+    { type: "repairRow" },
+    { type: "discardRow", dlqId: "dlq-3-4" },
+    { type: "discardRow", dlqId: "dlq-3-4", reason: "Missing patient ID", x: 1 },
+    { type: "ackAlert", reason: "Other, see note" },
+  ];
+  bad.forEach((a) => assert.strictEqual(encodeActions([a]), null, JSON.stringify(a)));
+  assert.strictEqual(stepForActions("healthy", [{ type: "runBatch", x: 1 }]), null);
+  assert.strictEqual(stepForActions("healthy", [{ type: "runBatch", dlqId: "dlq-1-1" }]), null);
+  const rep = clone(AUTOPLAY.incident.slice(0, 4));
+  rep[3].reason = "Other, see note";
+  assert.strictEqual(stepForActions("incident", rep), null, "repairRow with a stray reason");
+  // well-formed scripted actions still encode and match
+  assert.strictEqual(encodeActions([R]), "r");
+  assert.strictEqual(stepForActions("healthy", [{ type: "runBatch" }]), 1);
+  assert.strictEqual(stepForActions("incident", clone(AUTOPLAY.incident)), 16);
+  assert.strictEqual(encodeActions(clone(AUTOPLAY.incident)), INCIDENT_LITERAL);
 });

@@ -858,13 +858,17 @@ const LINK_DLQ_ID = /^dlq-[0-9]{1,3}-[0-9]{1,3}$/;
 const LINK_SIMPLE = { runBatch: "r", ackAlert: "k", resolveRetry: "y", resolveAlert: "z" };
 const LINK_SIMPLE_REV = { r: "runBatch", k: "ackAlert", y: "resolveRetry", z: "resolveAlert" };
 
+// Exact key sets per action type: an action with an extra or a missing key is not encodable and never matches a script.
+const LINK_KEYS = { runBatch: ["type"], ackAlert: ["type"], resolveRetry: ["type"], resolveAlert: ["type"], repairRow: ["type", "dlqId"], discardRow: ["type", "dlqId", "reason"] };
+const hasExactKeys = (o, keys) => Array.isArray(keys) && Object.keys(o).length === keys.length && keys.every((k) => Object.prototype.hasOwnProperty.call(o, k));
+
 // Returns the encoded string, or null when the list cannot be encoded: not an array, an unknown action type, a bad
 // dlq id, a discard whose reason is not in DISCARD_REASONS (the index is the encoding), or a result over the cap.
 function encodeActions(actions) {
   if (!Array.isArray(actions)) return null;
   const parts = [];
   for (const a of actions) {
-    if (a === null || typeof a !== "object") return null;
+    if (a === null || typeof a !== "object" || !hasExactKeys(a, LINK_KEYS[a.type])) return null;
     if (Object.prototype.hasOwnProperty.call(LINK_SIMPLE, a.type)) parts.push(LINK_SIMPLE[a.type]);
     else if (a.type === "repairRow") {
       if (typeof a.dlqId !== "string" || !LINK_DLQ_ID.test(a.dlqId)) return null;
@@ -896,7 +900,8 @@ function decodeActions(text) {
   return out;
 }
 
-const sameAction = (x, y) => x !== null && typeof x === "object" && x.type === y.type && x.dlqId === y.dlqId && x.reason === y.reason;
+const sameAction = (x, y) => x !== null && typeof x === "object" && Object.keys(x).length === Object.keys(y).length &&
+  Object.keys(y).every((k) => Object.prototype.hasOwnProperty.call(x, k) && x[k] === y[k]);
 
 // N when `actions` equals the first N scripted actions of the scenario (N between the prelude length and the whole
 // script, as actionsForStep allows), else null. Never throws.
