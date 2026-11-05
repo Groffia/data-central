@@ -33,8 +33,8 @@ Small release on top of hq-v1.0: the tenant is renamed to **Tamsworth Health** (
 ## Build and run
 
 ```
-node scripts/inline.js            # writes dist\hq-single.html and dist\pages\
-node scripts/inline.js --out out  # another output folder
+node ../scripts/inline.js .          # shared inliner: writes dist\hq-single.html and dist\pages\
+node ../scripts/inline.js . --out out  # another output folder
 node scripts/serve.js dist/pages  # local check at http://localhost:8080/ (localhost only)
 node --test tests/                # page tests (no dependencies; Node 20)
 ```

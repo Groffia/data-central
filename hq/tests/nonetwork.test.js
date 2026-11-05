@@ -53,7 +53,7 @@ test('src and shared js files have no Math.random, Date.now, new Date(', () => {
 
 test('build outputs have no network use', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'hqnonet-'));
-  const r = cp.spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), '--out', out], { cwd: ROOT, encoding: 'utf8' });
+  const r = cp.spawnSync(process.execPath, [path.join(ROOT, '..', 'scripts', 'inline.js'), ROOT, '--out', out], { cwd: ROOT, encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stderr);
   const files = [path.join(out, 'hq-single.html'), path.join(out, 'pages', 'index.html')];
   files.forEach(function (f) {

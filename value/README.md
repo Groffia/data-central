@@ -29,7 +29,7 @@ A table below the panels maps the metrics layer and dashboards to Databricks, Sn
 ```
 cd value
 node --test tests/
-node scripts/inline.js          # writes dist\value-single.html and dist\pages\
+node ../scripts/inline.js .        # shared inliner: writes dist\value-single.html and dist\pages\
 ```
 
 From the repo root, `node scripts/build-site.js` builds every page into `site/` and checks each engine copy.

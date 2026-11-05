@@ -39,9 +39,9 @@ Node 20, nothing to install.
 
 ```
 cd engine && node --test tests/
-cd ../hq && node --test tests/ && node scripts/inline.js
-cd ../pipeline && node --test tests/ && node scripts/inline.js
-cd ../value && node --test tests/ && node scripts/inline.js
+cd ../hq && node --test tests/ && node ../scripts/inline.js .
+cd ../pipeline && node --test tests/ && node ../scripts/inline.js .
+cd ../value && node --test tests/ && node ../scripts/inline.js .
 ```
 
 Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve.js dist/pages` from `hq/`. Full build notes and the acceptance record are in `hq/README.md` and `hq/ACCEPTANCE.md`.

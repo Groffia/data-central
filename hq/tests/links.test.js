@@ -238,7 +238,7 @@ test('main.js: meta tag present gives links; absent, hostile or empty gives none
 // ---- build output ----
 
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'hqlinks-'));
-const built = cp.spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
+const built = cp.spawnSync(process.execPath, [path.join(ROOT, '..', 'scripts', 'inline.js'), ROOT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
 
 test('single-file build: no pipeline-base meta and no ../pipeline/ string anywhere; Pages form keeps the meta', () => {
   assert.strictEqual(built.status, 0, built.stderr);

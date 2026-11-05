@@ -114,7 +114,7 @@ function writeRoot(out) {
 }
 
 function buildPage(page, out) {
-  execFileSync(process.execPath, [path.join(page.dir, 'scripts', 'inline.js'), '--out', path.join(page.dir, 'dist')],
+  execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), page.dir, '--out', path.join(page.dir, 'dist')],
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
   const dist = path.join(ROOT, page.dir, 'dist');
   const dest = path.join(out, page.dir);

@@ -8,11 +8,11 @@ const cp = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, '..', 'engine', 'engine.js');
-const SCRIPT = path.join(ROOT, 'scripts', 'inline.js');
+const SCRIPT = path.join(ROOT, '..', 'scripts', 'inline.js'); // the shared inliner at the repo root
 const SHARED = path.join(ROOT, '..', 'shared');
 const engineText = fs.readFileSync(ENGINE, 'utf8');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'valbuild-'));
-const r = cp.spawnSync(process.execPath, [SCRIPT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
+const r = cp.spawnSync(process.execPath, [SCRIPT, ROOT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
 
 test('build succeeds', () => {
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));

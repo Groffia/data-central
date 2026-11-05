@@ -20,8 +20,8 @@ A demo page that opens the first four lifecycle stages of the Data Central platf
 ## Build and run
 
 ```
-node scripts/inline.js            # writes dist\pipeline-single.html and dist\pages\
-node scripts/inline.js --out out  # another output folder
+node ../scripts/inline.js .          # shared inliner: writes dist\pipeline-single.html and dist\pages\
+node ../scripts/inline.js . --out out  # another output folder
 node --test tests/                # page tests (no dependencies; Node 20)
 ```
 
@@ -49,6 +49,6 @@ Examples: `?scenario=incident&step=3#dlq-3-4`, `?scenario=incident&step=16#stage
 
 ## Layout
 
-`src\` (viewmodel, render, controller, main, styles), `index.html`, `scripts\inline.js`, `tests\`. Pure modules are tested under `node --test`; only `main.js` touches the DOM.
+`src\` (viewmodel, render, controller, main, styles), `index.html`, `tests\` (the inliner is shared: `scripts/inline.js` at the repo root). Pure modules are tested under `node --test`; only `main.js` touches the DOM.
 
 All data is synthetic and generated deterministically (seed 42). Company names are fictional.

@@ -9,13 +9,13 @@ const cp = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, '..', 'engine', 'engine.js');
-const SCRIPT = path.join(ROOT, 'scripts', 'inline.js');
+const SCRIPT = path.join(ROOT, '..', 'scripts', 'inline.js'); // the shared inliner at the repo root
 const engineText = fs.readFileSync(ENGINE, 'utf8');
 const FOOTER = 'All data is synthetic and generated deterministically (seed 42). Company names are fictional.';
 
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'hqbuild-')); }
 function build(out, env) {
-  const r = cp.spawnSync(process.execPath, [SCRIPT, '--out', out], {
+  const r = cp.spawnSync(process.execPath, [SCRIPT, ROOT, '--out', out], {
     cwd: ROOT, encoding: 'utf8', env: Object.assign({}, process.env, env || {})
   });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
@@ -147,10 +147,8 @@ test('CSS containing </STYLE> fails the build naming the file and </style', () =
   fs.writeFileSync(path.join(d, 'src', 'styles.css'), 'body { color: red; } /* </STYLE> */\n');
   fs.writeFileSync(path.join(d, 'index.html'),
     '<!doctype html><html><head><link rel="stylesheet" href="src/styles.css" data-inline></head><body></body></html>');
-  // Run a copy of the script rooted in the fixture so the real index.html is untouched.
-  fs.mkdirSync(path.join(d, 'scripts'), { recursive: true });
-  fs.copyFileSync(SCRIPT, path.join(d, 'scripts', 'inline.js'));
-  const r = cp.spawnSync(process.execPath, [path.join(d, 'scripts', 'inline.js'), '--out', path.join(d, 'out')], {
+  // Run the shared script against the fixture folder so the real index.html is untouched.
+  const r = cp.spawnSync(process.execPath, [SCRIPT, d, '--out', path.join(d, 'out')], {
     cwd: d, encoding: 'utf8', env: Object.assign({}, process.env, { ENGINE_PATH: ENGINE })
   });
   const out = (r.stdout || '') + (r.stderr || '');

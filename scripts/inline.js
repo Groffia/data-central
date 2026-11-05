@@ -1,27 +1,34 @@
 #!/usr/bin/env node
 'use strict';
-// Build: node scripts/inline.js [--out <dir>]   (default dist)
-// Writes <out>/hq-single.html and <out>/pages/ (index.html, engine.js, shared/*, src/*).
-// ENGINE_PATH env var overrides the engine location (default ..\engine\engine.js).
+// Shared page inliner. Build, from the repo root: node scripts/inline.js <page-dir> [--out <dir>]
+// <page-dir> is a folder holding index.html and src/ (hq, pipeline, value, brain). Default out: <page-dir>/dist.
+// Writes <out>/<page>-single.html and <out>/pages/ (index.html, engine.js, shared/*, src/*), <page> = the folder's name.
+// The single file drops every <meta name="...-base"> (relative links to sibling pages only work beside those folders).
+// ENGINE_PATH env var overrides the engine location (default <repo>/engine/engine.js).
 const fs = require('node:fs');
 const path = require('node:path');
 
-const ROOT = path.join(__dirname, '..');
-// Shared scripts live at the repo root (..\shared relative to hq); index.html refers to them as shared/<name>.js.
-const SHARED_DIR = path.join(ROOT, '..', 'shared');
+// The repo root is the parent of this script's folder; engine/ and shared/ live there.
+const REPO = path.join(__dirname, '..');
+// Shared scripts live at the repo root; index.html refers to them as shared/<name>.js.
+const SHARED_DIR = path.join(REPO, 'shared');
 
 function fail(msg) {
   process.stderr.write('build failed: ' + msg + '\n');
   process.exit(1);
 }
 
-function parseOut(argv) {
+function parseArgs(argv) {
   const i = argv.indexOf('--out');
+  let out = null;
+  let rest = argv;
   if (i >= 0) {
     if (!argv[i + 1]) fail('--out needs a directory');
-    return argv[i + 1];
+    out = argv[i + 1];
+    rest = argv.slice(0, i).concat(argv.slice(i + 2));
   }
-  return 'dist';
+  if (rest.length !== 1) fail('usage: node scripts/inline.js <page-dir> [--out <dir>]');
+  return { page: rest[0], out: out };
 }
 
 function attr(attrs, name) {
@@ -35,9 +42,14 @@ function stripFlag(tag) {
   return tag.replace(/\s+data-inline(?=[\s/>])/gi, '');
 }
 
+const args = parseArgs(process.argv.slice(2));
+const ROOT = path.resolve(args.page);
+if (!fs.existsSync(path.join(ROOT, 'index.html'))) fail('page folder has no index.html: ' + ROOT);
+const NAME = path.basename(ROOT);
+
 const engineFile = process.env.ENGINE_PATH
   ? path.resolve(process.env.ENGINE_PATH)
-  : path.join(ROOT, '..', 'engine', 'engine.js');
+  : path.join(REPO, 'engine', 'engine.js');
 
 // Resolve a src/href as written in index.html to a file on disk.
 function resolveRef(ref) {
@@ -55,7 +67,7 @@ function readSource(ref) {
   return { file, buf: fs.readFileSync(file) };
 }
 
-const outDir = path.resolve(parseOut(process.argv.slice(2)));
+const outDir = path.resolve(args.out || path.join(ROOT, 'dist'));
 const indexText = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 const SCRIPT_RE = /<script\b([^>]*)>\s*<\/script\s*>/gi;
@@ -97,17 +109,15 @@ single = single.replace(LINK_RE, function (m, a) {
   return '<style>' + text + '</style>';
 });
 
-// The pipeline-base meta (relative link to the Pipeline page) only makes sense beside the Pipeline folder: the single file drops it, so it shows no Pipeline link.
-single = single.replace(/[ \t]*<meta\b[^>]*\bname\s*=\s*(?:"pipeline-base"|'pipeline-base')[^>]*>[ \t]*\r?\n?/gi, function () { return ''; });
-// Likewise the value-base meta: the single file shows no Value links.
-single = single.replace(/[ \t]*<meta\b[^>]*\bname\s*=\s*(?:"value-base"|'value-base')[^>]*>[ \t]*\r?\n?/gi, function () { return ''; });
+// Every *-base meta (relative links to sibling pages) only makes sense beside those folders: the single file drops them all, so it shows no links.
+single = single.replace(/[ \t]*<meta\b[^>]*\bname\s*=\s*(?:"[a-z0-9_-]*-base"|'[a-z0-9_-]*-base')[^>]*>[ \t]*\r?\n?/gi, function () { return ''; });
 
 // Pages form: same markup with the data-inline flag removed.
 const pagesIndex = indexText.replace(SCRIPT_RE, function (m) { return stripFlag(m); })
   .replace(LINK_RE, function (m) { return stripFlag(m); });
 
 fs.mkdirSync(path.join(outDir, 'pages', 'src'), { recursive: true });
-fs.writeFileSync(path.join(outDir, 'hq-single.html'), single);
+fs.writeFileSync(path.join(outDir, NAME + '-single.html'), single);
 fs.writeFileSync(path.join(outDir, 'pages', 'index.html'), pagesIndex);
 Object.keys(sources).forEach(function (ref) {
   const dest = path.join(outDir, 'pages', ref);
@@ -115,4 +125,4 @@ Object.keys(sources).forEach(function (ref) {
   fs.writeFileSync(dest, sources[ref].buf); // byte-for-byte
 });
 
-process.stdout.write('built ' + path.join(outDir, 'hq-single.html') + ' and ' + path.join(outDir, 'pages') + '\n');
+process.stdout.write('built ' + path.join(outDir, NAME + '-single.html') + ' and ' + path.join(outDir, 'pages') + '\n');

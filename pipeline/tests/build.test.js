@@ -9,11 +9,11 @@ const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, '..', 'engine', 'engine.js');
-const SCRIPT = path.join(ROOT, 'scripts', 'inline.js');
+const SCRIPT = path.join(ROOT, '..', 'scripts', 'inline.js'); // the shared inliner at the repo root
 const SHARED = path.join(ROOT, '..', 'shared');
 const engineText = fs.readFileSync(ENGINE, 'utf8');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'pipebuild-'));
-const r = cp.spawnSync(process.execPath, [SCRIPT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
+const r = cp.spawnSync(process.execPath, [SCRIPT, ROOT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
 
 test('build succeeds', () => {
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
@@ -121,21 +121,21 @@ test('real pipeline sources, shared files and engine contain no </script or </st
   });
 });
 
-// Fixture: <d>/pipeline/{index.html,scripts/inline.js,src/*} and <d>/shared/*, so the real script runs against hostile sources.
+// Fixture: <d>/pipeline/{index.html,src/*}, <d>/shared/* and a copy of the shared script at <d>/scripts/inline.js (so its repo root is <d>), so the real script runs against hostile sources.
 function fixture(parts) {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'pipefix-'));
   const pdir = path.join(d, 'pipeline');
-  fs.mkdirSync(path.join(pdir, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'scripts'), { recursive: true });
   fs.mkdirSync(path.join(pdir, 'src'), { recursive: true });
   fs.mkdirSync(path.join(d, 'shared'), { recursive: true });
-  fs.copyFileSync(SCRIPT, path.join(pdir, 'scripts', 'inline.js'));
+  fs.copyFileSync(SCRIPT, path.join(d, 'scripts', 'inline.js'));
   fs.writeFileSync(path.join(d, 'engine.js'), parts.engine || 'var e = 1;\n');
   fs.writeFileSync(path.join(d, 'shared', 'escape.js'), parts.shared || 'var s = 1;\n');
   fs.writeFileSync(path.join(pdir, 'src', 'main.js'), parts.main || 'var m = 1;\n');
   fs.writeFileSync(path.join(pdir, 'src', 'styles.css'), parts.css || 'body { color: red; }\n');
   fs.writeFileSync(path.join(pdir, 'index.html'), '<!doctype html><html><head><link rel="stylesheet" href="src/styles.css" data-inline></head><body>' +
     '<script src="engine.js" data-inline></script><script src="shared/escape.js" data-inline></script><script src="src/main.js" data-inline></script></body></html>');
-  const res = cp.spawnSync(process.execPath, [path.join(pdir, 'scripts', 'inline.js'), '--out', path.join(d, 'out')], {
+  const res = cp.spawnSync(process.execPath, [path.join(d, 'scripts', 'inline.js'), pdir, '--out', path.join(d, 'out')], {
     cwd: pdir, encoding: 'utf8', env: Object.assign({}, process.env, { ENGINE_PATH: path.join(d, 'engine.js') })
   });
   return { code: res.status, out: (res.stdout || '') + (res.stderr || '') };

@@ -184,7 +184,7 @@ test('index.html declares value-base once; the single file drops it and shows no
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.equal((html.match(/<meta name="value-base" content="\.\.\/value\/">/g) || []).length, 1);
   const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'hqvalue-'));
-  const built = cp.spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
+  const built = cp.spawnSync(process.execPath, [path.join(ROOT, '..', 'scripts', 'inline.js'), ROOT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
   assert.equal(built.status, 0, built.stderr);
   const single = fs.readFileSync(path.join(OUT, 'hq-single.html'), 'utf8');
   const pages = fs.readFileSync(path.join(OUT, 'pages', 'index.html'), 'utf8');
