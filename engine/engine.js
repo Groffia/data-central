@@ -163,7 +163,13 @@ function rowRng(n, rowIndex) {
   return mulberry32((base ^ Math.imul(n, 0x9E3779B1) ^ Math.imul(rowIndex + 1, 0x85EBCA6B)) >>> 0);
 }
 
-function generateExport(n, scenario) { // scenario: only "healthy" is implemented here
+function assertScenario(s) {
+  if (s !== "healthy" && s !== "incident") throw new Error("scenario must be 'healthy' or 'incident'");
+}
+
+function generateExport(n, scenario, opts) {
+  assertScenario(scenario);
+  const faultExports = opts && Array.isArray(opts.faultExports) ? opts.faultExports : scenario === "incident" ? [3] : [];
   const pool = buildPatientPool();
   const runEpoch = exportRunEpoch(n);
   const block = (n - 1) % 2;
@@ -202,7 +208,40 @@ function generateExport(n, scenario) { // scenario: only "healthy" is implemente
       cipher_suite: rngPick(rng, CIPHERS),
     });
   }
+  if (faultExports.includes(n)) applyFaults(rows);
   return { n, runEpoch, rows };
+}
+
+// ===== SECTION: fault injector =====
+const REPAIRABLE_ROWS = [2, 6, 10, 15, 19]; // 1-based: schema drift, repairable
+const HARD_FAIL_ROWS = [4, 9, 13, 17]; // 1-based: hard failures, never repairable
+
+const toCamel = (k) => k.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+const CAMEL_TO_SNAKE = Object.fromEntries(CONTRACT.fields.map((f) => [toCamel(f.name), f.name]));
+
+// Positions are fixed. The salt-2 stream only picks the heart-rate value on the mmHg fault row.
+function applyFaults(rows) {
+  const rng = makeRng(2);
+  const hr = CONTRACT.vitalCodes[0];
+  const [a, b, c, d] = HARD_FAIL_ROWS.map((p) => rows[p - 1]);
+  a.patient_id = null;
+  b.vital_code = "59408-5"; b.unit = "%"; b.vital_value = 130;
+  c.patient_id = "'; DROP TABLE silver_vital_observation;--";
+  d.vital_code = hr.code; d.unit = "mmHg"; d.vital_value = Math.round(rngRange(rng, hr.min, hr.max));
+  REPAIRABLE_ROWS.forEach((p) => {
+    const row = rows[p - 1], out = {};
+    for (const [k, v] of Object.entries(row)) out[toCamel(k)] = k === "vital_value" ? String(v) : v;
+    rows[p - 1] = out;
+  });
+}
+
+function repairRow(row) {
+  if (!isObj(row)) return row;
+  const keys = Object.keys(row);
+  if (!keys.length || !keys.every((k) => k in CAMEL_TO_SNAKE)) return row;
+  const out = {};
+  for (const [k, v] of Object.entries(row)) out[CAMEL_TO_SNAKE[k]] = CAMEL_TO_SNAKE[k] === "vital_value" ? Number(v) : v;
+  return out;
 }
 
 // ===== SECTION: quality tests =====
@@ -300,7 +339,8 @@ const Engine = {
   mulberry32, makeRng, isoFromEpoch,
   rngPick, rngRange, rngGauss, round,
   PATIENT_POOL_SIZE, getContract, isAbnormal,
-  buildPatientPool, exportRunEpoch, generateExport,
+  buildPatientPool, exportRunEpoch, generateExport, assertScenario,
+  REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
 };
 
