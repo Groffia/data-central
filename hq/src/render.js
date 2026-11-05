@@ -147,7 +147,9 @@
 
   function bizCol(cls, col) {
     return '<section class="biz-col ' + cls + '"><h3>' + esc(col.title) + '</h3><ul>' +
-      col.lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></section>';
+      col.lines.map(function (l) {
+        return (l.level === 'red' ? '<li class="biz-alert" data-level="red">' : '<li>') + esc(l.text) + '</li>';
+      }).join('') + '</ul></section>';
   }
 
   function business(vm) {

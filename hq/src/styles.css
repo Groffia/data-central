@@ -125,6 +125,7 @@ summary { cursor: pointer; }
 .biz-col ul { margin: 0; padding-left: 18px; }
 .biz-without { border-color: var(--red); }
 .biz-with { border-color: var(--green); }
+.biz-alert { color: var(--red); font-weight: 600; }
 
 @media (max-width: 1023px) {
   .biz-columns { grid-template-columns: 1fr; }

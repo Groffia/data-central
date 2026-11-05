@@ -132,8 +132,25 @@ function bootEx(search, EngineOverride) {
     querySelectorAll: function (s) { return tagsFor(s).map(stub); },
     addEventListener: function (type, fn) { if (type === 'click') clickHandler = fn; }
   };
-  const window = { setTimeout: function (fn, ms) { timers.push({ fn: fn, ms: ms }); return timers.length; }, clearTimeout: function () {} };
-  const ctx = vm.createContext({ Engine, document, window, location: { search: search || '' }, performance: { now: function () { return 0; } }, console });
+  let clock = 0;
+  const window = {
+    setTimeout: function (fn, ms) { timers.push({ fn: fn, ms: ms, due: clock + ms, live: true }); return timers.length; },
+    clearTimeout: function (h) { if (timers[h - 1]) timers[h - 1].live = false; }
+  };
+  // Virtual time: fire live timers in due order up to clock + ms.
+  function advance(ms) {
+    const end = clock + ms;
+    for (;;) {
+      let next = null;
+      timers.forEach(function (t) { if (t.live && t.due <= end && (!next || t.due < next.due)) next = t; });
+      if (!next) break;
+      next.live = false;
+      clock = Math.max(clock, next.due);
+      next.fn();
+    }
+    clock = end;
+  }
+  const ctx = vm.createContext({ Engine, document, window, location: { search: search || '' }, performance: { now: function () { return clock; } }, console });
   FILES.forEach(function (n) {
     const f = path.join(ROOT, 'src', n + '.js');
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
@@ -142,7 +159,7 @@ function bootEx(search, EngineOverride) {
     const b = { disabled: false, getAttribute: function (k) { return Object.prototype.hasOwnProperty.call(attrs, k) ? attrs[k] : null; }, closest: function (s) { return s.indexOf('button') === 0 ? b : null; } };
     clickHandler({ target: b });
   }
-  return { els: els, click: click, timers: timers, log: log, document: document, store: store, html: function (k) { return regionHtml['region-' + k]; } };
+  return { els: els, click: click, timers: timers, advance: advance, log: log, document: document, store: store, html: function (k) { return regionHtml['region-' + k]; } };
 }
 
 test('Watch and playback controls are no-ops when the engine self-test failed', () => {
@@ -248,4 +265,59 @@ test('a chosen discard reason survives a re-render', () => {
   const after = p.document.querySelectorAll('select[data-role="discard-reason"]')
     .filter(function (x) { return x.getAttribute('data-dlq-id') === id; })[0];
   assert.strictEqual(after.value, other);
+});
+
+// ---- task 16: scroll once per scene, and again only when the target region changes ----
+function scrollCounts(p) {
+  const c = {};
+  p.log.scrolled.forEach(function (x) { c[x.id] = (c[x.id] || 0) + 1; });
+  return c;
+}
+
+test('scroll: act1 1, act3 2 (status then incident), recovery 1, act5 1; total 5', () => {
+  const p = bootEx('');
+  p.click({ 'data-cmd': 'watch' });
+  // short plan: act1 0-15s, act3 15-65s (gate run at +10s), recovery 65-85s, act5 85-120s
+  p.advance(14000);
+  assert.deepStrictEqual(scrollCounts(p), { 'region-stages': 1 });
+  p.advance(1000); // act3 starts: incident region empty, target is status
+  assert.deepStrictEqual(scrollCounts(p), { 'region-stages': 1, 'region-status': 1 });
+  p.advance(9000);
+  assert.strictEqual(p.log.scrolled.length, 2); // gate run not yet applied
+  p.advance(1500); // gate run at +10s: incident region fills, target changes
+  assert.deepStrictEqual(scrollCounts(p), { 'region-stages': 1, 'region-status': 1, 'region-incident': 1 });
+  p.advance(39500); // to recovery start (65s): scene start scrolls once
+  assert.strictEqual(scrollCounts(p)['region-incident'], 2);
+  p.advance(19500); // recovery steps (13) dispatch and re-render, no extra scrolls
+  assert.strictEqual(p.log.scrolled.length, 4);
+  p.advance(500); // act5 starts (85s)
+  assert.deepStrictEqual(scrollCounts(p), { 'region-stages': 1, 'region-status': 1, 'region-incident': 2, 'region-business': 1 });
+  assert.strictEqual(p.log.scrolled.length, 5);
+  p.advance(40000); // ends
+  assert.strictEqual(p.log.scrolled.length, 5);
+});
+
+test('scroll: extra manual renders inside a scene add no scroll calls', () => {
+  const p = bootEx('');
+  p.click({ 'data-cmd': 'watch' });
+  p.advance(1000);
+  const n = p.log.scrolled.length;
+  for (let i = 0; i < 5; i++) p.document.getElementById('region-status').innerHTML = 'x';
+  p.click({ 'data-cmd': 'pause' });
+  p.click({ 'data-cmd': 'resume' });
+  assert.strictEqual(p.log.scrolled.length, n);
+});
+
+test('scroll: a stopped player never scrolls again, and a new Watch scrolls at its start', () => {
+  const p = bootEx('');
+  p.click({ 'data-cmd': 'watch' });
+  p.advance(1000);
+  p.click({ 'data-cmd': 'stop' });
+  const n = p.log.scrolled.length;
+  p.click({ 'data-cmd': 'run' });
+  p.advance(100000);
+  assert.strictEqual(p.log.scrolled.length, n);
+  p.click({ 'data-cmd': 'watch' });
+  assert.strictEqual(p.log.scrolled.length, n + 1);
+  assert.strictEqual(p.log.scrolled[n].id, 'region-stages');
 });

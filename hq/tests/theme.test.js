@@ -23,7 +23,7 @@ function ratio(a, b) {
 
 const PAIRS = [
   ['text', 'bg'], ['text', 'panel'], ['text-2', 'panel'],
-  ['green', 'panel'], ['amber', 'panel'], ['red', 'panel'], ['indigo', 'panel'],
+  ['green', 'panel'], ['red', 'panel-2'], ['amber', 'panel'], ['red', 'panel'], ['indigo', 'panel'],
   ['on-green', 'green'], ['on-amber', 'amber'], ['on-red', 'red'], ['on-indigo', 'indigo']
 ];
 
@@ -47,4 +47,12 @@ test('banner levels use the tested contrast pairs', () => {
     assert.ok(m[1].indexOf('color: var(--on-' + lv + ')') >= 0, lv + ' text');
     assert.ok(ratio(token('on-' + lv), token(lv)) >= 4.5);
   });
+});
+
+test('biz-alert uses the red token on the panel pair', () => {
+  const m = /\.biz-alert\s*\{([^}]*)\}/.exec(css);
+  assert.ok(m, 'rule for .biz-alert');
+  assert.ok(m[1].indexOf('color: var(--red)') >= 0);
+  assert.ok(ratio(token('red'), token('panel-2')) >= 4.5, 'biz-col sits on panel-2');
+  assert.ok(ratio(token('red'), token('panel')) >= 4.5);
 });

@@ -13,7 +13,7 @@ function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function render(state) {
   return HQ.render.renderRegions(vm.buildViewModel(state, { scenario: 'incident' }, CTX)).business;
 }
-function lines(c) { return [...c.lines]; }
+function lines(c) { return [...c.lines].map(function (l) { return l.text; }); }
 
 const WITHOUT_TITLE = 'Without this system';
 const WITH_TITLE = 'With this system';
@@ -54,10 +54,10 @@ test('singular forms at count 1', () => {
   s.businessCase.invalidRowsReachingDashboard = 1;
   s.businessCase.rowsStopped = 1;
   const c = vm.businessCase(s).columns;
-  assert.strictEqual(c.without.lines[0], '1 row vanishes silently');
-  assert.strictEqual(c.without.lines[1], '1 impossible reading reaches the dashboard');
-  assert.strictEqual(c.with.lines[0], '1 row stopped at the batch');
-  assert.strictEqual(c.with.lines[1], '0 invalid readings in production');
+  assert.strictEqual(c.without.lines[0].text, '1 row vanishes silently');
+  assert.strictEqual(c.without.lines[1].text, '1 impossible reading reaches the dashboard');
+  assert.strictEqual(c.with.lines[0].text, '1 row stopped at the batch');
+  assert.strictEqual(c.with.lines[1].text, '0 invalid readings in production');
 });
 
 test('zero counts use plural nouns', () => {
@@ -66,16 +66,16 @@ test('zero counts use plural nouns', () => {
   s.businessCase.invalidRowsReachingDashboard = 0;
   s.businessCase.rowsStopped = 0;
   const c = vm.businessCase(s).columns;
-  assert.strictEqual(c.without.lines[0], '0 rows vanish silently');
-  assert.strictEqual(c.without.lines[1], '0 impossible readings reach the dashboard');
-  assert.strictEqual(c.with.lines[0], '0 rows stopped at the batch');
+  assert.strictEqual(c.without.lines[0].text, '0 rows vanish silently');
+  assert.strictEqual(c.without.lines[1].text, '0 impossible readings reach the dashboard');
+  assert.strictEqual(c.with.lines[0].text, '0 rows stopped at the batch');
 });
 
 test('R and D count dead-letter statuses on a hand-made state', () => {
   const s = clone(st('incident', 3));
   s.dlq.forEach(function (d, i) { d.status = i === 0 ? 'repaired' : i === 1 ? 'discarded' : 'open'; });
   const c = vm.businessCase(s).columns;
-  assert.strictEqual(c.with.lines[3], '1 repaired, 1 discarded with logged reasons');
+  assert.strictEqual(c.with.lines[3].text, '1 repaired, 1 discarded with logged reasons');
 });
 
 test('render: two columns with classes, titles and lines, escaped', () => {
@@ -115,4 +115,55 @@ test('css: two columns at 1024px and wider, stacked below via media query', () =
   assert.ok(css.indexOf('@media (max-width: 1023px)') >= 0);
   assert.ok(/\.biz-columns[^{]*\{[^}]*grid-template-columns:\s*1fr 1fr/.test(css));
   assert.ok(/@media \(max-width: 1023px\)\s*\{\s*\.biz-columns\s*\{[^}]*grid-template-columns:\s*1fr\s*;/.test(css));
+});
+
+// ---- task 16: computed invalid readings line ----
+function withInvalid(n) {
+  const s = clone(st('incident', 3));
+  s.businessCase.invalidRowsInProduction = n;
+  return s;
+}
+
+test('invalid-in-production line is computed: 1 gives singular, red, marker', () => {
+  const s = withInvalid(1);
+  const line = vm.businessCase(s).columns.with.lines[1];
+  assert.strictEqual(line.text, '1 invalid reading in production');
+  assert.strictEqual(line.level, 'red');
+  const html = render(s);
+  assert.ok(html.indexOf('<li class="biz-alert" data-level="red">1 invalid reading in production</li>') >= 0);
+});
+
+test('invalid-in-production line: 2 gives plural, red, marker', () => {
+  const s = withInvalid(2);
+  const line = vm.businessCase(s).columns.with.lines[1];
+  assert.strictEqual(line.text, '2 invalid readings in production');
+  assert.strictEqual(line.level, 'red');
+  assert.ok(render(s).indexOf('biz-alert') >= 0);
+});
+
+test('invalid-in-production line: other lines unchanged when count is nonzero', () => {
+  const base = lines(vm.businessCase(st('incident', 3)).columns.with);
+  const alt = lines(vm.businessCase(withInvalid(2)).columns.with);
+  assert.deepStrictEqual(alt.filter(function (_, i) { return i !== 1; }), base.filter(function (_, i) { return i !== 1; }));
+});
+
+test('invalid-in-production line: zero has no level and no marker at k=3, 8, 16', () => {
+  [3, 8, 16].forEach(function (k) {
+    const s = st('incident', k);
+    const line = vm.businessCase(s).columns.with.lines[1];
+    assert.strictEqual(line.text, '0 invalid readings in production');
+    assert.ok(!('level' in line), 'no level key at k=' + k);
+    const html = render(s);
+    assert.strictEqual(html.indexOf('biz-alert'), -1);
+    assert.ok(html.indexOf('<li>0 invalid readings in production</li>') >= 0);
+  });
+});
+
+test('invalid-in-production field missing falls back to 0 without throwing', () => {
+  const s = clone(st('incident', 3));
+  delete s.businessCase.invalidRowsInProduction;
+  const line = vm.businessCase(s).columns.with.lines[1];
+  assert.strictEqual(line.text, '0 invalid readings in production');
+  assert.ok(!('level' in line));
+  assert.strictEqual(render(s).indexOf('biz-alert'), -1);
 });

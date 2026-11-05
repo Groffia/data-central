@@ -185,8 +185,11 @@
     const dlq = state.dlq;
     const repaired = dlq.filter(function (d) { return d.status === 'repaired'; }).length;
     const discarded = dlq.filter(function (d) { return d.status === 'discarded'; }).length;
-    // No engine field counts invalid rows in production; the gate holds failing rows, so the count is the literal 0.
-    const invalidInProduction = 0;
+    // Engine v1.5 computes this (0 while the gate holds failing rows); older state shapes lack it, so fall back to 0.
+    const invalidInProduction = typeof b.invalidRowsInProduction === 'number' ? b.invalidRowsInProduction : 0;
+    const T = function (text) { return { text: text }; };
+    const invalidLine = T(invalidInProduction + ' invalid ' + pl(invalidInProduction, 'reading', 'readings') + ' in production');
+    if (invalidInProduction > 0) invalidLine.level = 'red';
     return {
       hasIncident: true,
       placeholder: null,
@@ -197,19 +200,19 @@
         without: {
           title: 'Without this system',
           lines: [
-            b.rowsSilentlyDropped + ' ' + pl(b.rowsSilentlyDropped, 'row vanishes', 'rows vanish') + ' silently',
-            b.invalidRowsReachingDashboard + ' impossible ' +
-              pl(b.invalidRowsReachingDashboard, 'reading reaches', 'readings reach') + ' the dashboard',
-            'Detected at the next scheduled review (assumed ' + b.hoursToDetectWithoutGate + ' hours, an assumption).'
+            T(b.rowsSilentlyDropped + ' ' + pl(b.rowsSilentlyDropped, 'row vanishes', 'rows vanish') + ' silently'),
+            T(b.invalidRowsReachingDashboard + ' impossible ' +
+              pl(b.invalidRowsReachingDashboard, 'reading reaches', 'readings reach') + ' the dashboard'),
+            T('Detected at the next scheduled review (assumed ' + b.hoursToDetectWithoutGate + ' hours, an assumption).')
           ]
         },
         with: {
           title: 'With this system',
           lines: [
-            b.rowsStopped + ' ' + pl(b.rowsStopped, 'row', 'rows') + ' stopped at the batch',
-            invalidInProduction + ' invalid ' + pl(invalidInProduction, 'reading', 'readings') + ' in production',
-            'Caught at the batch (at most ' + b.minutesToDetectWithGate + ' simulated minutes).',
-            repaired + ' repaired, ' + discarded + ' discarded with logged reasons'
+            T(b.rowsStopped + ' ' + pl(b.rowsStopped, 'row', 'rows') + ' stopped at the batch'),
+            invalidLine,
+            T('Caught at the batch (at most ' + b.minutesToDetectWithGate + ' simulated minutes).'),
+            T(repaired + ' repaired, ' + discarded + ' discarded with logged reasons')
           ]
         }
       },

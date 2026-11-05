@@ -64,16 +64,37 @@
   const SCENE_REGION = { act1: 'region-stages', act2: 'region-status', act3: 'region-incident', recovery: 'region-incident', act4: 'region-incident', act5: 'region-business' };
   let sceneId = null;
 
-  function scrollToScene() {
-    if (!sceneId) return;
+  let lastScrolledId = null;
+
+  // The region the current scene wants on screen (null when no scene is active).
+  function targetId() {
+    if (!sceneId) return null;
     let id = SCENE_REGION[sceneId];
-    if (!id) return;
+    if (!id) return null;
     if (id === 'region-incident') {
       const inc = document.getElementById('region-incident');
       if (!inc || !inc.innerHTML) id = 'region-status';
     }
+    return id;
+  }
+
+  function scrollTo(id) {
+    lastScrolledId = id;
     const el = document.getElementById(id);
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
+  }
+
+  // Scene start: always scroll once.
+  function scrollAtSceneStart() {
+    lastScrolledId = null;
+    const id = targetId();
+    if (id) scrollTo(id);
+  }
+
+  // After a render: scroll only if the scene's target region has changed since the last scroll.
+  function scrollIfTargetChanged() {
+    const id = targetId();
+    if (id && id !== lastScrolledId) scrollTo(id);
   }
 
   function render() {
@@ -106,7 +127,7 @@
       if (enabled(again)) { if (again !== active) again.focus(); }
       else fallbackFocus(rowId, prevIdx);
     }
-    if (player) scrollToScene();
+    if (player) scrollIfTargetChanged();
   }
 
   function setCaption(text) {
@@ -116,6 +137,8 @@
 
   function stopPlayer() {
     if (player) { player.stop(); player = null; }
+    sceneId = null;
+    lastScrolledId = null;
   }
 
   function dispatch(cmd) {
@@ -137,14 +160,15 @@
       clearTimer: function (h) { window.clearTimeout(h); },
       now: function () { return performance.now(); },
       onCaption: setCaption,
-      onScene: function (scene) { sceneId = scene && scene.id; scrollToScene(); },
+      onScene: function (scene) { sceneId = scene && scene.id; scrollAtSceneStart(); },
       onEnd: function () {
         setCaption('Demo finished. You now have control: press Run next batch, or switch scenario.');
-        if (player === mine) { player = null; sceneId = null; }
+        if (player === mine) { player = null; sceneId = null; lastScrolledId = null; }
       }
     });
     player = mine;
     sceneId = null;
+    lastScrolledId = null;
     mine.start();
   }
 
