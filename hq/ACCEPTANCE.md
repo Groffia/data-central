@@ -33,7 +33,7 @@ Run by Claude in the built-in browser pane at 1024 px wide, driving the real but
 
 ## Test suites
 
-HQ suite (`node --test tests/` in `hq\`): 143 tests, 143 pass, 0 fail. Engine suite (in `engine\`): 173 tests, 173 pass, 0 fail.
+HQ suite (`node --test tests/` in `hq\`): 179 tests, 179 pass, 0 fail. Engine suite (in `engine\`, tag `engine-v1.4`): 178 tests, 178 pass, 0 fail.
 
 ## Known gaps
 
@@ -51,3 +51,18 @@ The whole-branch review found three things a viewer would hit, and they were fix
 - Vendor heading reads "In production this is…" and the new persistent notice container is present.
 
 Not re-run after the fixes: the full 4:30 Full version, and the broken-engine banner (the render change that disables every control on a failed self-test is covered by a unit test, not by a browser run).
+
+## Re-run after Stephen's decisions of 2026-11-05 (hq commit 4ab842f, engine-v1.4)
+
+Run in the built-in browser pane at 1024 px, `dist` served with `node scripts/serve.js` over http (`file://` still not openable by the tool; Stephen opens `dist\hq-single.html` himself). Network list: only the page and its local files, as before.
+
+| Item | Result | Observed |
+|---|---|---|
+| Full stage names | Pass | Chips read 1 Generation, 2 Collection/Ingestion, 3 Processing/Preparation, 4 Storage, 5 Governance, 6 Analysis/Modeling, 7 Visualization, 8 Archiving/Retirement. No element overflows and no horizontal scroll at 1024 px (scrollWidth equals clientWidth). |
+| Glance banner | Pass | None at healthy start and after the incident switch (two clean exports). Open: amber "Incident in progress: gate open at Batch 3, production held at Batch 2." Half-open: amber "Incident in progress: gate half-open at Batch 3, trial batch pending, production held at Batch 2." Resolved: green "Last incident: caught at the gate on Batch 3. No bad rows reached production." |
+| Act 5 layout | Pass | Headline kept; two columns side by side at 1024 px (466 px each); stacked at 900 px. Without: 7 rows vanish silently, 2 impossible readings, detected at the next scheduled review (assumed 24 hours, an assumption). With: 9 rows stopped at the batch, 0 invalid readings in production, caught at the batch (at most 15 simulated minutes), 5 repaired, 4 discarded with logged reasons. |
+| Full version end to end (Pages form) | Pass | Captions at 0, 30, 90, 180, 225 s; "Demo finished" at 270 s (4:30); gate CLOSED, production 76, Banner green. |
+| Broken engine | Pass | With `DETERMINISM_HASH` altered in `dist\pages\engine.js`: "Engine self-test failed: determinism_hash" shown; all 10 buttons rendered disabled; clicking changed nothing and no caption played. File restored byte-identical. |
+| Discard events | Pass | The scripted incident now logs the four reasons Missing patient ID, Physiologically impossible value, Malformed or suspicious input, Wrong unit, source must resend. |
+
+Known limit: "0 invalid readings in production" is a fixed 0 in the view model. The engine exposes no field for it, so the page states what the gate guarantees; it is not measured against production rows.
