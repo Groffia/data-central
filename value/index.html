@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="hq-base" content="../hq/">
+<meta name="pipeline-base" content="../pipeline/">
+<title>Value: What the Business Sees</title>
+<link rel="stylesheet" href="src/styles.css" data-inline>
+</head>
+<body>
+<a class="skip-link" href="#region-kpis">Skip to the KPI dashboard</a>
+<section id="region-header" class="region" aria-label="Header"></section>
+<p id="caption" class="caption-bar" aria-live="polite"></p>
+<main>
+<section id="region-notice" class="region" aria-label="Notices"></section>
+<section id="region-kpis" class="region" aria-label="KPI dashboard"></section>
+<section id="region-trends" class="region" aria-label="Trends"></section>
+<section id="region-compare" class="region" aria-label="With the gate and without it"></section>
+<section id="region-definitions" class="region" aria-label="Metric definitions"><span id="stage-definitions"></span></section>
+<section id="region-check" class="region" aria-label="Expected-range check"><span id="stage-check"></span></section>
+<section id="region-vendor" class="region" aria-label="In production this is"></section>
+</main>
+<section id="region-footer" class="region" aria-label="Footer"><p>All data is synthetic and generated deterministically (seed 42). Company names are fictional.</p></section>
+<script src="engine.js" data-inline></script>
+<script src="shared/escape.js" data-inline></script>
+<script src="shared/format.js" data-inline></script>
+<script src="shared/vendor.js" data-inline></script>
+<script src="src/viewmodel.js" data-inline></script>
+<script src="src/chart.js" data-inline></script>
+<script src="src/definitions.js" data-inline></script>
+<script src="src/render.js" data-inline></script>
+<script src="src/controller.js" data-inline></script>
+<script src="src/main.js" data-inline></script>
+</body>
+</html>
