@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const cp = require('node:child_process');
+const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, '..', 'engine', 'engine.js');
@@ -40,4 +41,48 @@ test('pages form has engine and shared files byte-for-byte and relative refs', (
   const idx = fs.readFileSync(path.join(pages, 'index.html'), 'utf8');
   assert.ok(idx.indexOf('src="src/main.js"') >= 0);
   assert.ok(!/data-inline/.test(idx));
+});
+
+// Runs every inline <script> of a built page in a vm with a tiny DOM; returns the rendered header region.
+function runPage(htmlText) {
+  const regions = {};
+  const metaRe = /<meta[^>]*name="hq-base"[^>]*content="([^"]*)"[^>]*>/i;
+  const document = {
+    activeElement: null,
+    getElementById: function (id) { return regions[id] || (regions[id] = { id: id, innerHTML: '', textContent: '' }); },
+    querySelector: function (s) {
+      if (s.indexOf('meta') !== 0) return null;
+      const m = metaRe.exec(htmlText);
+      return m ? { getAttribute: function (k) { return k === 'content' ? m[1] : null; } } : null;
+    },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {}
+  };
+  const ctx = vm.createContext({ document, location: { search: '', hash: '' }, window: {}, console });
+  htmlText.replace(/<script>([\s\S]*?)<\/script>/g, function (m, code) { vm.runInContext(code, ctx); return m; });
+  return regions['region-header'].innerHTML;
+}
+
+test('single file has no hq-base meta; pages index.html has it', () => {
+  const single = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
+  const pages = fs.readFileSync(path.join(OUT, 'pages', 'index.html'), 'utf8');
+  assert.ok(!/<meta[^>]*hq-base/i.test(single), 'no hq-base meta tag (main.js still names it in its lookup)');
+  assert.ok(/<meta name="hq-base" content="\.\.\/hq\/">/.test(pages));
+  assert.ok(single.indexOf('<meta charset="utf-8">') >= 0 && single.indexOf('name="viewport"') >= 0, 'other metas kept');
+});
+
+test('running the single file gives no HQ link; the pages form gives the relative link', () => {
+  const single = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
+  const header = runPage(single);
+  assert.ok(header.indexOf('Pipeline: Under the Hood') >= 0);
+  assert.ok(header.indexOf('Open this state in HQ') < 0);
+  assert.ok(!/class="hq-link"/.test(header));
+  // The pages form loads scripts by src; inline them here in index.html order to run it.
+  const pages = path.join(OUT, 'pages');
+  let idx = fs.readFileSync(path.join(pages, 'index.html'), 'utf8');
+  idx = idx.replace(/<script\s+src="([^"]+)"><\/script>/g, function (m, src) {
+    return '<script>' + fs.readFileSync(path.join(pages, src), 'utf8') + '</script>';
+  });
+  const pagesHeader = runPage(idx);
+  assert.ok(/<a class="hq-link" href="\.\.\/hq\/\?scenario=healthy&amp;step=1">Open this state in HQ<\/a>/.test(pagesHeader), pagesHeader);
 });

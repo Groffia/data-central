@@ -33,8 +33,11 @@ test('skip link exists and targets an existing id', () => {
   assert.strictEqual(count(html, 'id="' + m[1] + '"'), 1);
 });
 
-test('no pipeline-base meta tag', () => {
+test('no pipeline-base meta tag; hq-base meta present once with exactly ../hq/', () => {
   assert.ok(!/pipeline-base/.test(html));
+  assert.strictEqual(count(html, 'name="hq-base"'), 1);
+  assert.ok(html.indexOf('<meta name="hq-base" content="../hq/">') >= 0);
+  assert.ok(html.indexOf('<meta name="hq-base"') < html.indexOf('</head>'), 'in the head');
 });
 
 const scripts = [];
