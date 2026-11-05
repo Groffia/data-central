@@ -38,3 +38,13 @@ test('styles define reduced-motion and focus-visible rules', () => {
   assert.ok(css.indexOf('prefers-reduced-motion') >= 0);
   assert.ok(css.indexOf(':focus-visible') >= 0);
 });
+
+test('banner levels use the tested contrast pairs', () => {
+  ['amber', 'green'].forEach(function (lv) {
+    const m = new RegExp('\\.banner\\[data-level="' + lv + '"\\]\\s*\\{([^}]*)\\}').exec(css);
+    assert.ok(m, 'rule for ' + lv);
+    assert.ok(m[1].indexOf('background: var(--' + lv + ')') >= 0, lv + ' background');
+    assert.ok(m[1].indexOf('color: var(--on-' + lv + ')') >= 0, lv + ' text');
+    assert.ok(ratio(token('on-' + lv), token(lv)) >= 4.5);
+  });
+});

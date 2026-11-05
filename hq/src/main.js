@@ -2,7 +2,7 @@
   'use strict';
   const HQ = globalThis.HQ;
   const Engine = globalThis.Engine;
-  const KEYS = ['header', 'stages', 'status', 'tiles', 'today', 'controls', 'incident', 'timeline', 'business', 'vendor', 'notice', 'footer'];
+  const KEYS = ['header', 'banner', 'stages', 'status', 'tiles', 'today', 'controls', 'incident', 'timeline', 'business', 'vendor', 'notice', 'footer'];
 
   const controller = HQ.controller.createController(Engine, location.search);
   let player = null;

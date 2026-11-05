@@ -5,7 +5,7 @@ const { loadHQ } = require('./helpers/load');
 
 const { Engine, HQ } = loadHQ();
 const ARCH = 'Policy modeled, not live: hot to warm 30 d, warm to cold 180 d, retention 2555 d';
-const NAMES = ['Generation', 'Ingestion', 'Processing', 'Storage', 'Governance',
+const NAMES = ['Generation', 'Collection/Ingestion', 'Processing/Preparation', 'Storage', 'Governance',
   'Analysis/Modeling', 'Visualization', 'Archiving/Retirement'];
 
 function st(scenario, k) { return Engine.getState(scenario, Engine.AUTOPLAY[scenario].slice(0, k)); }

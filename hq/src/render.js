@@ -31,6 +31,11 @@
       '</div>';
   }
 
+  function banner(vm) {
+    const b = vm.banner;
+    return b ? '<div class="banner"' + attr('data-level', b.level) + '>' + esc(b.text) + '</div>' : '';
+  }
+
   function stages(vm) {
     return '<ol class="stage-strip">' + vm.chips.map(function (c) {
       return '<li class="chip"' + attr('data-health', c.health) + attr('data-stage', c.id) + '>' +
@@ -188,7 +193,7 @@
     renderRegions: function renderRegions(vm) {
       forceDisabled = !!vm.error;
       try { return {
-        header: header(vm), stages: stages(vm), status: status(vm), tiles: tiles(vm), today: today(vm),
+        header: header(vm), banner: banner(vm), stages: stages(vm), status: status(vm), tiles: tiles(vm), today: today(vm),
         controls: controls(vm), incident: incident(vm), timeline: timeline(vm), business: business(vm),
         vendor: vendor(vm), notice: notice(vm), footer: footer()
       }; } finally { forceDisabled = false; }

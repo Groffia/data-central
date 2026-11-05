@@ -64,8 +64,13 @@ button:disabled {
 .chip[data-health="amber"] .dot { background: var(--amber); }
 .chip[data-health="red"] .dot { background: var(--red); }
 .chip[data-health="grey"] .dot { background: var(--grey); }
-.chip-name { font-weight: 600; }
-.chip-text { grid-column: 2; color: var(--text-2); font-size: .85rem; }
+.chip { min-width: 0; }
+.chip-name { font-weight: 600; overflow-wrap: anywhere; }
+.banner-region { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+.banner { padding: 10px 14px; border-radius: 8px; margin: 4px 0 8px; font-weight: 600; }
+.banner[data-level="amber"] { background: var(--amber); color: var(--on-amber); }
+.banner[data-level="green"] { background: var(--green); color: var(--on-green); }
+.chip-text { grid-column: 2; overflow-wrap: anywhere; color: var(--text-2); font-size: .85rem; }
 
 .status-row, .today-stats { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; }
 .stat { min-width: 110px; }

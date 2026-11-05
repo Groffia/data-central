@@ -11,10 +11,10 @@ function regions(scenario, k, ui) {
 }
 function count(s, sub) { return s.split(sub).length - 1; }
 function all(r) { return Object.keys(r).map(function (k) { return r[k]; }).join('\n'); }
-const KEYS = ['business', 'controls', 'footer', 'header', 'incident', 'notice', 'stages', 'status', 'tiles', 'timeline', 'today', 'vendor'];
+const KEYS = ['banner', 'business', 'controls', 'footer', 'header', 'incident', 'notice', 'stages', 'status', 'tiles', 'timeline', 'today', 'vendor'];
 const ESC_INJ = '&#39;; DROP TABLE silver_vital_observation;--';
 
-test('renderRegions returns the twelve region keys, all strings', () => {
+test('renderRegions returns the thirteen region keys, all strings', () => {
   const r = regions('incident', 3);
   assert.deepStrictEqual(Object.keys(r).sort(), KEYS);
   KEYS.forEach(function (k) { assert.strictEqual(typeof r[k], 'string'); });

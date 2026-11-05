@@ -25,16 +25,16 @@
 
   function ingestionChip(state, ctx) {
     return state.batchesRun
-      ? chip(2, 'Ingestion', GREEN, 'Landed ' + ctx.exportRows + ' ' + pl(ctx.exportRows, 'row', 'rows') + ' unchanged')
-      : chip(2, 'Ingestion', GREY, 'No export yet');
+      ? chip(2, 'Collection/Ingestion', GREEN, 'Landed ' + ctx.exportRows + ' ' + pl(ctx.exportRows, 'row', 'rows') + ' unchanged')
+      : chip(2, 'Collection/Ingestion', GREY, 'No export yet');
   }
 
   function processingChip(state) {
-    if (!state.batchesRun) return chip(3, 'Processing', GREY, WAIT);
+    if (!state.batchesRun) return chip(3, 'Processing/Preparation', GREY, WAIT);
     const n = (state.staging || []).length;
     return n > 0
-      ? chip(3, 'Processing', AMBER, n + ' ' + pl(n, 'row', 'rows') + ' held')
-      : chip(3, 'Processing', GREEN, 'All rows published');
+      ? chip(3, 'Processing/Preparation', AMBER, n + ' ' + pl(n, 'row', 'rows') + ' held')
+      : chip(3, 'Processing/Preparation', GREEN, 'All rows published');
   }
 
   function storageChip(state) {
@@ -92,6 +92,21 @@
       openAlerts: alerts.filter(function (a) { return a.status !== 'resolved'; }).length,
       lastGoodBatchText: HQ.format.batchLabel(state.lastGoodBatchId)
     };
+  };
+
+  vm.glanceBanner = function glanceBanner(state) {
+    const dlq = state.dlq || [];
+    if (!dlq.length) return null;
+    const n = HQ.format.batchLabel('batch-' + state.batchesRun);
+    const m = HQ.format.batchLabel(state.lastGoodBatchId);
+    if (state.gate === 'OPEN') {
+      return { level: 'amber', text: 'Incident in progress: gate open at ' + n + ', production held at ' + m + '.' };
+    }
+    if (state.gate === 'HALF_OPEN') {
+      return { level: 'amber', text: 'Incident in progress: gate half-open at ' + n + ', trial batch pending, production held at ' + m + '.' };
+    }
+    const b = HQ.format.batchLabel(dlq[dlq.length - 1].batchId);
+    return { level: 'green', text: 'Last incident: caught at the gate on ' + b + '. No bad rows reached production.' };
   };
 
   vm.kpiTiles = function kpiTiles(state) {
@@ -216,6 +231,7 @@
   vm.buildViewModel = function buildViewModel(state, ui, ctx) {
     const u = ui || {};
     return {
+      banner: vm.glanceBanner(state),
       chips: vm.stageChips(state, ctx),
       status: vm.statusRow(state),
       tiles: vm.kpiTiles(state),
