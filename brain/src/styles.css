@@ -27,9 +27,8 @@ h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
 h3 { font-size: 1rem; margin: 10px 0 .25rem; }
 p { margin: 0 0 .5rem; }
 a { color: var(--indigo); }
-header, main, footer { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+main { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
 .subtitle { color: var(--text-2); }
-footer { padding: 16px; color: var(--text-2); font-size: .85rem; }
 .region { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin: 12px 0; min-width: 0; overflow-wrap: anywhere; }
 .region:empty { display: none; }
 .skip-link { position: absolute; left: -999px; top: 0; background: var(--indigo); color: var(--on-indigo); padding: 6px 10px; }
@@ -58,7 +57,7 @@ button:hover:not(:disabled) { background: var(--border); }
 button[aria-pressed="true"] { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); font-weight: 600; }
 button:disabled { cursor: not-allowed; opacity: .55; background: transparent; border-style: dashed; color: var(--text-2); }
 :focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; }
-.region :focus-visible, header :focus-visible { outline-color: var(--text); box-shadow: 0 0 0 5px var(--indigo); }
+.region :focus-visible { outline-color: var(--text); box-shadow: 0 0 0 5px var(--indigo); }
 
 /* text, notices */
 .caption, .note, .placeholder { color: var(--text-2); }

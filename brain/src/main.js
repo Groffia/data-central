@@ -5,7 +5,7 @@
   // Footer is static in index.html and never rendered here.
   const KEYS = ['header', 'notice', 'contract', 'phi', 'lineage', 'access', 'retention', 'erasure', 'vendor'];
   // When the focused control is gone or disabled, these commands (in order) are the nearest in its group.
-  const GROUPS = { back: ['back', 'next'], next: ['next', 'back'] };
+  const GROUPS = { back: ['back', 'next'], next: ['next', 'back'], erase: ['select-subject'], 'reset-erasures': ['select-subject'] };
   // Identity attributes besides data-cmd: which control of its kind this is.
   const IDENT = ['data-id', 'data-value'];
   const NO_SCROLL = { preventScroll: true };
@@ -64,7 +64,9 @@
     let target = null;
     (GROUPS[d.cmd] || []).forEach(function (c) {
       if (target) return;
-      target = Array.prototype.filter.call(document.querySelectorAll('button[data-cmd="' + c + '"]'), enabled)[0] || null;
+      const pool = Array.prototype.slice.call(document.querySelectorAll('button[data-cmd="' + c + '"]'))
+        .concat(Array.prototype.slice.call(document.querySelectorAll('select[data-cmd="' + c + '"]')));
+      target = pool.filter(enabled)[0] || null;
     });
     if (!target) {
       const pool = Array.prototype.slice.call(document.querySelectorAll('button[data-cmd]'))
@@ -104,11 +106,12 @@
   function setHTML(el, html) { el.innerHTML = html; }
 
   // The result of a local action (erase, reset, legal hold) is announced from one persistent live element outside the
-  // regions, and only when its text changes. A render that carries no message leaves it alone.
+  // regions, and only when its text changes. A render that carries no message leaves the text alone but lets the same message be announced again later.
   function announce(model) {
     const live = document.getElementById('brain-live');
     const text = model && typeof model.message === 'string' ? model.message : '';
-    if (!live || !text) return;
+    if (!live) return;
+    if (!text) { lastLive = ''; return; } // the same message may be announced again after the state was cleared
     if (text !== lastLive) { live.textContent = text; lastLive = text; }
   }
 

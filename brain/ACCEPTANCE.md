@@ -12,7 +12,7 @@ Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/brain-v1`,
 | 6 | Keyboard path | Pass | Focus on the subject select, ArrowDown twice picks `TMH-P-009317`, Tab then Enter erases it; focus moves to the next enabled control (Reset erasures) when Erase disables itself. |
 | 7 | Deep link from HQ v1.3 | Pass | HQ at incident step 3: chip 5 links `../brain/?scenario=incident&step=3#stage-phi`, chip 8 links `...#stage-retention`, labels "opens in Brain", chip texts unchanged. A real click on chip 5 opened Brain with `#stage-phi` highlighted and scrolled to; Brain's "Open this state in HQ" and "Open this state in Pipeline" links carry the same state. |
 | 8 | Build outputs | Pass | `brain-single.html`: no external `src` or `href`, no `<script src>`, no `<link>`, no `fetch(`, no `-base` metas. Pages form keeps the `hq-base` and `pipeline-base` metas. |
-| 9 | Tests | Pass | See the suite counts in the final report of the branch. |
+| 9 | Tests | Pass | engine 278, shared 16, hq 231, pipeline 238, value 225, brain 183, scripts 41 (all passing after the review fixes; items 1 to 8 were run before them and the keyboard and focus rows were re-covered by tests). |
 
 ## Not tested by me
 

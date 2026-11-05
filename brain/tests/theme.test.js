@@ -127,6 +127,14 @@ test('no dead CSS: every class and id selector in the stylesheet appears in the 
   assert.deepEqual(dead, []);
 });
 
+test('no element selector in the stylesheet matches nothing in the page (header and footer elements do not exist)', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  ['header', 'footer', 'main', 'section', 'details', 'summary', 'code', 'pre'].forEach((tag) => {
+    const inCss = new RegExp('(^|[\s,}])' + tag + '\s*[,{:]', 'm').test(bare);
+    if (inCss) assert.ok(new RegExp('<' + tag + '\b').test(html), tag + ' is styled but not in index.html');
+  });
+});
+
 test('the six stage anchors and the deep-link rules agree with the controller ids', () => {
   ['stage-contract', 'stage-phi', 'stage-lineage', 'stage-access', 'stage-retention', 'stage-erasure'].forEach((id) => {
     assert.ok(bare.indexOf('#' + id) >= 0, id);

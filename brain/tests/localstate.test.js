@@ -85,14 +85,13 @@ test('an erasure made before the hold stays when the hold comes on', () => {
   assert.strictEqual(s.legalHold, true);
 });
 
-test('resetErasures clears the erased list only; reset returns the initial state', () => {
+test('resetErasures clears the erased list and the legal hold, and keeps the selection', () => {
   let s = run(LS.initial(), { type: 'selectSubject', id: IDS[0] }, { type: 'eraseSubject' }, { type: 'holdOn' });
   const r = run(s, { type: 'resetErasures' });
   assert.deepStrictEqual(J(r.erased), []);
   assert.strictEqual(r.message, 'Erasures reset');
-  assert.strictEqual(r.legalHold, true);
+  assert.strictEqual(r.legalHold, false);
   assert.strictEqual(r.selectedSubject, IDS[0]);
-  assert.deepStrictEqual(J(run(s, { type: 'reset' })), J(LS.initial()));
 });
 
 test('reduce never mutates or throws: frozen input, bad state, bad action', () => {
@@ -108,11 +107,10 @@ test('reduce never mutates or throws: frozen input, bad state, bad action', () =
   });
 });
 
-test('toggleList flips the edge-list toggle and clears the message; reset and scenario change close it', () => {
+test('toggleList flips the edge-list toggle and clears the message; resetErasures leaves it alone', () => {
   let s = run(LS.initial(), { type: 'holdOn' }, { type: 'toggleList' });
   assert.strictEqual(s.showList, true);
   assert.strictEqual(s.message, '');
   assert.strictEqual(run(s, { type: 'toggleList' }).showList, false);
-  assert.strictEqual(run(s, { type: 'reset' }).showList, false);
   assert.strictEqual(run(s, { type: 'resetErasures' }).showList, true);
 });

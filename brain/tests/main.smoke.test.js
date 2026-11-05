@@ -172,13 +172,29 @@ test('the subject select keeps focus and its choice after a change', () => {
   assert.ok(new RegExp('<option value="' + IDS[3] + '" selected>').test(p.html('erasure')));
 });
 
-test('when Erase disables itself, focus moves to the nearest enabled control instead of being lost', () => {
+test('when Erase disables itself, focus moves to the subject select, never to Reset erasures', () => {
   const p = boot({ search: '?scenario=incident&step=3', meta: META });
   pick(p, IDS[1]);
   p.q(ERASE).focus();
   p.log.focused.length = 0;
   p.clickRendered(ERASE);
   assert.ok(p.log.focused.length >= 1, 'something took focus');
+  assert.ok(/data-cmd="select-subject"/.test(p.log.focused[p.log.focused.length - 1]));
+  p.q('button[data-cmd="reset-erasures"]').focus();
+  p.log.focused.length = 0;
+  p.clickRendered('button[data-cmd="reset-erasures"]');
+  assert.ok(/data-cmd="select-subject"/.test(p.log.focused[p.log.focused.length - 1]));
+});
+
+test('the same message is announced again after a scenario switch cleared it', () => {
+  const p = boot({ search: '?scenario=incident&step=3', meta: META });
+  const w = watchLive(p);
+  p.clickRendered(HOLD);
+  assert.equal(w.writes, 1);
+  p.clickRendered('button[data-cmd="scenario"][data-value="healthy"]');
+  p.clickRendered(HOLD);
+  assert.equal(w.writes, 2);
+  assert.equal(w.text, 'Legal hold on');
 });
 
 test('a deep-link hash scrolls its target once and highlights it; later commands never scroll', () => {

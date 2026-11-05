@@ -33,7 +33,6 @@
     const s = normalize(state);
     if (!action || typeof action !== 'object' || typeof action.type !== 'string') return s;
     const t = action.type;
-    if (t === 'reset') return initial();
     if (t === 'selectNode') {
       if (typeof action.id !== 'string' || (action.id !== '' && !known(action.id))) return s;
       s.selectedNode = action.id;
@@ -55,7 +54,7 @@
       return s;
     }
     if (t === 'toggleList') { s.showList = !s.showList; s.message = ''; return s; }
-    if (t === 'resetErasures') { s.erased = []; s.message = 'Erasures reset'; return s; }
+    if (t === 'resetErasures') { s.erased = []; s.legalHold = false; s.message = 'Erasures reset'; return s; }
     if (t === 'holdOn') { s.legalHold = true; s.message = 'Legal hold on'; return s; }
     if (t === 'holdOff') { s.legalHold = false; s.message = 'Legal hold off'; return s; }
     return s;

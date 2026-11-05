@@ -4,7 +4,7 @@
   const vm = (Brain.viewmodel = Brain.viewmodel || {});
 
   const TITLE = 'Brain: Control and Accountability';
-  const SUBTITLE = 'Tamsworth Health: who is accountable for the data and what happens when it must be controlled, kept or deleted, stages 5 and 8';
+  const SUBTITLE = 'Tamsworth Health: who is accountable for the data and how it is controlled, kept and deleted, stages 5 and 8';
   const STAGE_GOVERNANCE = 'Stage 5: Management/Governance';
   const FOOTER_TEXT = 'All data is synthetic and generated deterministically (seed 42). Company names are fictional.';
 
@@ -266,14 +266,15 @@
     let footprint = null;
     if (selected !== '') {
       const f = Engine.subjectFootprint(scenario, actions, selected);
+      const a = Engine.eraseSubjects(scenario, actions, [selected]).footprints[0].after;
       footprint = {
         subject: selected,
         layers: [
           { layer: 'Bronze (raw files)', before: f.bronze, after: f.bronze, afterText: f.bronze + ' (unreadable)' },
-          { layer: 'Staging', before: f.staging, after: 0, afterText: '0' },
-          { layer: 'Silver (production)', before: f.silver, after: 0, afterText: '0' },
-          { layer: 'Dead-letter queue', before: f.deadLetter, after: 0, afterText: '0' },
-          { layer: 'dim_patient', before: f.dimPatient, after: 0, afterText: '0' }
+          { layer: 'Staging', before: f.staging, after: a.staging, afterText: String(a.staging) },
+          { layer: 'Silver (production)', before: f.silver, after: a.silver, afterText: String(a.silver) },
+          { layer: 'Dead-letter queue', before: f.deadLetter, after: a.deadLetter, afterText: String(a.deadLetter) },
+          { layer: 'dim_patient', before: f.dimPatient, after: a.dimPatient, afterText: String(a.dimPatient) }
         ]
       };
     }
