@@ -53,7 +53,11 @@ test("7-day KPI numbers are unchanged by the as-of fields", () => {
 
 test("todaySoFar: healthy batches publish 20 rows each", () => {
   const zero = Engine.getState("healthy", []).todaySoFar;
-  assert.deepStrictEqual(zero, { label: "Live sample: published exports today.", observations: 0, abnormalCount: 0, abnormalVitalRate: 0 });
+  assert.deepStrictEqual(zero, {
+    label: "Live sample: published exports today.",
+    note: "The first five readings are hand-picked edge cases, so early batches run above the 7-day rate.",
+    observations: 0, abnormalCount: 0, abnormalVitalRate: 0,
+  });
   const t1 = Engine.getState("healthy", run(1)).todaySoFar;
   const t2 = Engine.getState("healthy", run(2)).todaySoFar;
   assert.strictEqual(t1.observations, 20);
@@ -61,6 +65,10 @@ test("todaySoFar: healthy batches publish 20 rows each", () => {
   assert.strictEqual(t1.abnormalCount, abn(exp(1, "healthy")));
   assert.strictEqual(t2.abnormalCount, abn(exp(1, "healthy")) + abn(exp(2, "healthy")));
   assert.strictEqual(t2.abnormalVitalRate, (t2.abnormalCount / 40) * 100);
+  // Pins recorded after the explicit abnormal share (old values: 6 and 9 abnormal).
+  assert.strictEqual(t1.abnormalCount, 5);
+  assert.strictEqual(t2.abnormalCount, 5);
+  assert.strictEqual(t2.abnormalVitalRate, 12.5);
 });
 
 test("todaySoFar: the held incident batch publishes nothing", () => {
@@ -80,6 +88,7 @@ test("todaySoFar after AUTOPLAY.incident is 76 rows with an independently comput
   assert.strictEqual(t.observations, 76);
   assert.strictEqual(t.abnormalCount, abn(rows));
   assert.strictEqual(t.abnormalVitalRate, (t.abnormalCount / t.observations) * 100);
+  assert.strictEqual(t.abnormalCount, 10); // recorded pin (old value 18)
 });
 
 test("todaySoFar changes on every published batch of AUTOPLAY.healthy", () => {

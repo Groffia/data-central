@@ -7,6 +7,8 @@ const Engine = require("../engine.js");
 // Recorded on first implementation of hashValues (first 100 values of makeRng(1)).
 // A separate literal from engine.js, so editing only one of them fails the test.
 const RECORDED_HASH = "1f8ea357";
+// Recorded after the explicit-abnormal-share generator: every vital_value of healthy exports 1-8.
+const RECORDED_GENERATOR_HASH = "bc1e18dc";
 
 const NAMES = ["determinism_hash", "golden_rows_first", "healthy_exports_pass", "incident_export_blocks", "breaker_path", "repair_only_drift", "state_deterministic", "facility_reconciles"];
 
@@ -33,6 +35,13 @@ test("determinism constant matches in engine and test", () => {
   const vals = Array.from({ length: 100 }, () => rng());
   assert.strictEqual(Engine.hashValues(vals), RECORDED_HASH);
   assert.strictEqual(Engine.DETERMINISM_HASH, RECORDED_HASH);
+});
+
+test("generator hash constant matches in engine and test", () => {
+  const vals = [];
+  for (let n = 1; n <= 8; n++) Engine.generateExport(n, "healthy").rows.forEach((r) => vals.push(r.vital_value));
+  assert.strictEqual(Engine.hashValues(vals), RECORDED_GENERATOR_HASH);
+  assert.strictEqual(Engine.GENERATOR_HASH, RECORDED_GENERATOR_HASH);
 });
 
 test("the hash check can fail: a wrong input does not match the constant", () => {

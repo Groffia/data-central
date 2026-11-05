@@ -158,10 +158,48 @@ function buildPatientPool() {
 
 const exportRunEpoch = (n) => BASE_EPOCH + 1800 + (n - 1) * EXPORT_PERIOD;
 
-// Per-(n, row) salt-1 stream, so any export derives from the seed alone.
-function rowRng(n, rowIndex) {
-  const base = Math.floor(makeRng(1)() * 4294967296);
+// Per-(n, row) streams, so any export derives from the seed alone.
+// Salts in use: 1 = patient pool and per-row stream (cipher), 2 = fault injector, 4 = KPI history,
+// 6 = abnormal/normal draw (then the value index inside the chosen region).
+function rowRng(n, rowIndex, salt = 1) {
+  const base = Math.floor(makeRng(salt)() * 4294967296);
   return mulberry32((base ^ Math.imul(n, 0x9E3779B1) ^ Math.imul(rowIndex + 1, 0x85EBCA6B)) >>> 0);
+}
+
+// Value regions per vital code, derived from the contract range and thresholds. Integer grid for all
+// codes except temperature (0.1 grid). abnormal is a list of [lo, hi] bands clipped to the plausible range.
+const GRID_STEP = (code) => (code === "8310-5" ? 0.1 : 1);
+const THRESHOLD_KEY = { "8867-4": "heart_rate", "8480-6": "systolic_bp", "59408-5": "spo2", "8310-5": "temperature" };
+function vitalRegions(code) {
+  const vc = CONTRACT.vitalCodes.find((c) => c.code === code);
+  const t = CONTRACT.thresholds[THRESHOLD_KEY[code]];
+  const step = GRID_STEP(code), dp = step < 1 ? 1 : 0;
+  const clip = (lo, hi) => [Math.max(vc.min, round(lo, dp)), Math.min(vc.max, round(hi, dp))];
+  const abnormal = [];
+  let nLo = vc.min, nHi = vc.max;
+  if (t.below !== undefined) { abnormal.push(clip(vc.min, t.below - step)); nLo = t.below; }
+  if (t.above !== undefined) { abnormal.push(clip(t.above + step, vc.max)); nHi = t.above; }
+  if (t.atLeast !== undefined) { abnormal.push(clip(t.atLeast, vc.max)); nHi = t.atLeast - step; }
+  return { normal: clip(nLo, nHi), abnormal: abnormal.filter(([lo, hi]) => lo <= hi) };
+}
+
+// Uniform draw over the grid points of the given bands, one draw from rng.
+function drawFromBands(rng, bands, code) {
+  const step = GRID_STEP(code), dp = step < 1 ? 1 : 0;
+  const counts = bands.map(([lo, hi]) => Math.round((hi - lo) / step) + 1);
+  let idx = Math.floor(rng() * counts.reduce((a, b) => a + b, 0));
+  for (let i = 0; i < bands.length; i++) {
+    if (idx < counts[i]) return round(bands[i][0] + idx * step, dp);
+    idx -= counts[i];
+  }
+  return bands[0][0];
+}
+
+// Share of generated rows that are abnormal: the history's 7-day Abnormal Vital Rate as a fraction.
+let abnormalShareCache = null;
+function abnormalShare() {
+  if (abnormalShareCache === null) abnormalShareCache = computeKpis(getHistory()).find((k) => k.name === "Abnormal Vital Rate").value;
+  return abnormalShareCache;
 }
 
 function assertScenario(s) {
@@ -192,10 +230,12 @@ function generateExport(n, scenario, opts) {
     } else {
       epoch = runEpoch - EXPORT_PERIOD + Math.round((r * EXPORT_PERIOD) / (EXPORT_ROWS - 1));
     }
-    const mid = (vc.min + vc.max) / 2, sd = (vc.max - vc.min) / 5;
-    let v = mid + rngGauss(rng) * sd;
-    v = Math.min(vc.max, Math.max(vc.min, v));
-    v = vc.code === "8310-5" ? round(v, 1) : Math.round(v);
+    // Two draws are still consumed here so the cipher pick below keeps its old stream position.
+    rngGauss(rng);
+    const pick = rowRng(n, r, 6); // salt 6: abnormal/normal decided first, then the value inside that region
+    const regions = vitalRegions(vc.code);
+    const abnormalRow = pick() < abnormalShare();
+    const v = drawFromBands(pick, abnormalRow ? regions.abnormal : [regions.normal], vc.code);
     rows.push({
       patient_id: p.patient_id,
       patient_name: p.patient_name,
@@ -698,6 +738,7 @@ function getState(scenario, actions, opts) {
     held,
     todaySoFar: {
       label: "Live sample: published exports today.",
+      note: "The first five readings are hand-picked edge cases, so early batches run above the 7-day rate.",
       observations: obs, abnormalCount: abnormal, abnormalVitalRate: obs ? (abnormal / obs) * 100 : 0,
     },
     facility: facilityProfile(history),
@@ -730,6 +771,12 @@ function hashValues(values) {
   return h.toString(16).padStart(8, "0");
 }
 const DETERMINISM_HASH = "1f8ea357"; // hashValues of the first 100 values from makeRng(1)
+const GENERATOR_HASH = "bc1e18dc"; // hashValues of every vital_value of healthy exports 1-8, in row order
+function generatorHash() {
+  const vals = [];
+  for (let n = 1; n <= 8; n++) generateExport(n, "healthy").rows.forEach((r) => vals.push(r.vital_value));
+  return hashValues(vals);
+}
 
 function selfTest() {
   const gateTrail = (actions, opts) => {
@@ -741,7 +788,9 @@ function selfTest() {
     ["determinism_hash", () => {
       const rng = makeRng(1);
       const h = hashValues(Array.from({ length: 100 }, () => rng()));
-      return h === DETERMINISM_HASH ? null : "got " + h;
+      if (h !== DETERMINISM_HASH) return "got " + h;
+      const g = generatorHash();
+      return g === GENERATOR_HASH ? null : "generator hash got " + g;
     }],
     ["golden_rows_first", () => {
       const rows = generateExport(1, "healthy").rows;
@@ -810,7 +859,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost,
   getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate,
-  selfTest, hashValues, DETERMINISM_HASH,
+  selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
 
 // ===== EXPORT =====

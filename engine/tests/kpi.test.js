@@ -85,7 +85,7 @@ test("tiering cost", () => {
 test("facility bytesPerRow is measured from generated rows", () => {
   const f = Engine.facilityProfile(Engine.getHistory());
   assert.ok(f.bytesPerRow >= 100 && f.bytesPerRow <= 1000, String(f.bytesPerRow));
-  assert.strictEqual(f.bytesPerRow, 253.75);
+  assert.strictEqual(f.bytesPerRow, 253.75); // re-recorded after the explicit abnormal share: unchanged, the new values have the same total JSON length
   assert.strictEqual(f.bytesPerMonth, f.obsPerMonth * f.bytesPerRow);
   assert.strictEqual(f.bytesPerMonth, 226080 * 253.75);
   assert.deepStrictEqual(Object.keys(f).slice(0, 5), ["bedsStaffed", "patientsInHouse", "obsPerDay", "obsPer15Min", "obsPerMonth"]);

@@ -80,12 +80,13 @@ test("naiveAbnormalRate on a hand-built sample (strict rules)", () => {
 test("distortionAvoidedPts (secondary, can be negative) for the incident batch", () => {
   const bc = Engine.getState("incident", run3).businessCase;
   // Hand calculation, export 3: 20 rows. Naive drops 5 renamed rows (no patient_id key), the null-id row
-  // and the injection-id row -> 13 counted. Of those, only row 7 (temperature 38.0 >= 38.0) is abnormal
-  // (SpO2 130 is not, the mmHg heart-rate row is not): 1/13 = 7.6923 %.
-  // Valid rows (error-free): 11 counted, abnormal only row 7 = 1/11 = 9.0909 %.
-  // distortionAvoidedPts = 100/13 - 100/11 = -1.3986 (negative: the naive rate is LOWER).
-  assert.ok(Math.abs(bc.distortionAvoidedPts - (100 / 13 - 100 / 11)) < 1e-9);
-  assert.ok(Math.abs(bc.distortionAvoidedPts - -1.3986) < 1e-4);
+  // and the injection-id row -> 13 counted. Of those, rows 1 (systolic 159 > 140) and 16 (heart rate 113 > 100)
+  // are abnormal (SpO2 130 is not, the mmHg heart-rate row 78 is not): 2/13 = 15.3846 %.
+  // Valid rows (error-free): 11 counted, same two abnormal = 2/11 = 18.1818 %.
+  // distortionAvoidedPts = 200/13 - 200/11 = -2.7972 (negative: the naive rate is LOWER).
+  // Old value (generator before the explicit abnormal share): 100/13 - 100/11 = -1.3986.
+  assert.ok(Math.abs(bc.distortionAvoidedPts - (200 / 13 - 200 / 11)) < 1e-9);
+  assert.ok(Math.abs(bc.distortionAvoidedPts - -2.7972) < 1e-4);
 });
 
 test("business case outcome counts for the incident: 7 dropped, 2 reach the dashboard", () => {
