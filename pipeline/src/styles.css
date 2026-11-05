@@ -161,3 +161,5 @@ tr[data-pass="false"] td:nth-child(3) { color: var(--red); font-weight: 600; }
 .tier-hot { background: var(--red); color: var(--on-red); }
 .tier-warm { background: var(--amber); color: var(--on-amber); }
 .tier-cold { background: var(--indigo); color: var(--on-indigo); }
+
+.muted { opacity: 0.7; }

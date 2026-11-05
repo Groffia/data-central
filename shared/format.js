@@ -26,8 +26,13 @@
   }
 
   // Comma thousands separators by string manipulation only. Non-integers and negatives are rounded via toFixed(0).
+  // Non-finite or non-numeric input (NaN, Infinity, null, undefined, '', 'abc', objects, booleans) gives '' and never throws.
+  // Numeric strings are parsed. Magnitudes of 1e15 and above are written in full digits (no exponent), without separators.
   function thousands(n) {
-    var s = Number(n).toFixed(0);
+    if (typeof n === 'string') n = n.trim() === '' ? NaN : Number(n);
+    if (typeof n !== 'number' || !isFinite(n)) return '';
+    if (Math.abs(n) >= 1e15) return BigInt(Math.round(n)).toString();
+    var s = n.toFixed(0);
     var neg = s.charAt(0) === '-';
     if (neg) s = s.slice(1);
     var out = '';

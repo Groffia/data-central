@@ -37,3 +37,19 @@ test('format.js source has no forbidden APIs', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'format.js'), 'utf8');
   for (const bad of ['toLocale', 'Intl', 'fetch(']) assert.ok(!src.includes(bad), bad);
 });
+
+test('thousands hardening: non-finite and non-numeric give empty string, never throw', () => {
+  [NaN, Infinity, -Infinity, undefined, null, 'abc', '', '  ', {}, [], true].forEach((v) => {
+    assert.doesNotThrow(() => F.thousands(v));
+    assert.strictEqual(F.thousands(v), '', String(v));
+  });
+});
+test('thousands: numeric strings and huge values', () => {
+  assert.strictEqual(F.thousands('1234'), '1,234');
+  assert.strictEqual(F.thousands(' 57367800 '), '57,367,800');
+  assert.strictEqual(F.thousands('-1234.6'), '-1,235');
+  assert.strictEqual(F.thousands(1e15), '1000000000000000');
+  assert.strictEqual(F.thousands(-1e21), '-1000000000000000000000');
+  assert.strictEqual(F.thousands(1.5e300).indexOf('e'), -1);
+  assert.strictEqual(F.thousands(999999999999999), '999,999,999,999,999');
+});

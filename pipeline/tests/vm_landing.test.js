@@ -41,7 +41,7 @@ test('cells line up with columns; drift cells flagged on renamed columns only', 
   assert.deepStrictEqual(byCol(L.rows[3], 'patient_id'), { text: 'null', drift: false });
   assert.strictEqual(L.rows[3].drift, false);
 });
-test('unit and cipherSuite are shared names so they are not drift cells', () => {
+test('unit is a shared name so it is not a drift cell', () => {
   assert.strictEqual(L.rows[1].cells[L.columns.indexOf('unit')].drift, false);
 });
 test('driftNote lists the renamed names and the contract names', () => {
@@ -68,4 +68,12 @@ test('null inspect gives an empty landing zone; input not mutated', () => {
   const before = JSON.stringify(inc);
   vm.landingZone(inc);
   assert.strictEqual(JSON.stringify(inc), before);
+});
+test('missing runEpoch gives an empty run time text', () => {
+  const noEpoch = Object.assign({}, plain(inc), { runEpoch: undefined });
+  delete noEpoch.runEpoch;
+  assert.strictEqual(plain(vm.landingZone(noEpoch)).facts.runTimeText, '');
+  assert.strictEqual(plain(vm.landingZone(Object.assign({}, noEpoch, { runEpoch: 'x' }))).facts.runTimeText, '');
+  assert.strictEqual(plain(vm.landingZone(Object.assign({}, noEpoch, { runEpoch: null }))).facts.runTimeText, '');
+  assert.strictEqual(plain(vm.landingZone(Object.assign({}, noEpoch, { runEpoch: 0 }))).facts.runTimeText, '00:00:00 UTC');
 });

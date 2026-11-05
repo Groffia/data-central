@@ -126,3 +126,40 @@ test('vendorSubset: four rows, exact shared names and strings', () => {
   V.rows[0][0] = 'mutated';
   assert.strictEqual(Shared.vendor.rows[0][0], 'Batch ingestion');
 });
+
+test('tierBar grid: widths non-negative, integer tenths sum to exactly 1000, empty cold tier is 0', () => {
+  let n = 0;
+  for (let hot = 1; hot <= 90; hot += 7) {
+    for (let warm = hot + 1; warm <= 720; warm += 53) {
+      const rets = [warm];
+      for (let r = warm + 301; r <= 3650; r += 301) rets.push(r);
+      rets.push(3650);
+      rets.forEach((ret) => {
+        const inp = { hotToWarmDays: hot, warmToColdDays: warm, retentionDays: ret, dailyGB: 18 };
+        const b = vm.tierBar(inp);
+        const tenths = b.map((x) => Math.round(x.widthPct * 10));
+        const ctx = JSON.stringify(inp);
+        b.forEach((x) => assert.ok(x.widthPct >= 0, ctx));
+        assert.strictEqual(tenths[0] + tenths[1] + tenths[2], 1000, ctx);
+        b.forEach((x, i) => assert.strictEqual(x.widthPct * 10, tenths[i], ctx));
+        if (ret === warm) assert.strictEqual(b[2].widthPct, 0, ctx);
+        assert.strictEqual(b[0].days + b[1].days + b[2].days, ret);
+        n++;
+      });
+    }
+  }
+  assert.ok(n > 500);
+});
+test('tierBar known bad case: hot 1, warm 16, retention 16', () => {
+  const b = plain(vm.tierBar({ hotToWarmDays: 1, warmToColdDays: 16, retentionDays: 16, dailyGB: 1 }));
+  assert.deepStrictEqual(b.map((x) => x.widthPct), [6.3, 93.7, 0]);
+});
+
+test('whole numbers: plain integer text only', () => {
+  const ok = (v) => assert.strictEqual(vm.tiering({ ...D, hotToWarmDays: v }).valid, true, JSON.stringify(v));
+  const no = (v) => assert.strictEqual(vm.tiering({ ...D, hotToWarmDays: v }).valid, false, JSON.stringify(v));
+  ok('08'); ok(' 10 '); ok('0030'); ok(10);
+  assert.strictEqual(vm.tiering({ ...D, hotToWarmDays: '08' }).inputs.hotToWarmDays, 8);
+  ['+5', '5.', '0x10', '0b11', '1e1', '1e2', '-0', '-5', '5 5', '1_0', '', '.5', '१०'].forEach(no);
+  assert.strictEqual(vm.tiering({ ...D, dailyGB: '+5' }).message, M4);
+});

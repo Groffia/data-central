@@ -210,3 +210,13 @@ test('ten scripted states: no script, javascript:, or inline handlers', () => {
     assert.ok(!/\son[a-z]+\s*=/.test(t.replace(/data-[a-z-]+="[^"]*"/g, '')), s + k);
   });
 });
+
+test('row view shows warn tests as muted text on passing rows, escaped', () => {
+  const r = regions('incident', 3);
+  assert.strictEqual(count(r.rows, 'warn: abnormal_vital_flag'), 2);
+  assert.ok(r.rows.indexOf('<span class="muted">warn: abnormal_vital_flag</span>') >= 0);
+  const vm = JSON.parse(JSON.stringify(build('incident', 3)));
+  vm.rowView[2].warnTests = ['<b>x</b>'];
+  const h = Pipeline.render.renderRegions(vm).rows;
+  assert.ok(h.indexOf('<b>x</b>') < 0 && h.indexOf('warn: &lt;b&gt;x&lt;/b&gt;') >= 0);
+});

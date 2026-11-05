@@ -134,7 +134,8 @@
     return '<h3>Row view</h3>' +
       table('row-table', ['Row', 'Patient', 'Result', 'Failed tests'].map(th), rv.map(function (r) {
         return '<tr' + attr('data-pass', r.pass ? 'true' : 'false') + '><td>' + esc(r.index + 1) + '</td><td>' + esc(r.identifier) +
-          '</td><td>' + (r.pass ? 'Pass' : 'Fail') + '</td><td>' + esc(r.failedTests.join(', ')) + '</td></tr>';
+          '</td><td>' + (r.pass ? 'Pass' : 'Fail') + '</td><td>' + esc(r.failedTests.join(', ')) +
+          (r.warnTests && r.warnTests.length ? (r.failedTests.length ? ' ' : '') + '<span class="muted">warn: ' + esc(r.warnTests.join(', ')) + '</span>' : '') + '</td></tr>';
       }));
   }
 

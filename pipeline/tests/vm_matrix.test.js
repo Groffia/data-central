@@ -105,8 +105,8 @@ test('row view at incident batch 3: 20 entries, nine failing', () => {
   assert.strictEqual(R.length, 20);
   assert.strictEqual(R.filter((r) => !r.pass).length, 9);
   assert.deepStrictEqual(R.map((r) => r.index), inc3.rows.map((_, i) => i));
-  assert.deepStrictEqual(R[1], { index: 1, pass: false, failedTests: ['not_null', 'no_unexpected_columns'] });
-  assert.deepStrictEqual(R[0], { index: 0, pass: true, failedTests: [] });
+  assert.deepStrictEqual(R[1], { index: 1, pass: false, failedTests: ['not_null', 'no_unexpected_columns'], warnTests: [] });
+  assert.deepStrictEqual(R[0], { index: 0, pass: true, failedTests: [], warnTests: ['abnormal_vital_flag'] });
 });
 test('row view: batch 4 all pass; null inspect empty; input not mutated', () => {
   assert.ok(vm.rowView(insp('incident', L, 4)).every((r) => r.pass));
@@ -115,4 +115,16 @@ test('row view: batch 4 all pass; null inspect empty; input not mutated', () => 
   const before = JSON.stringify(inc3);
   vm.testMatrix(inc3); vm.gateDecision(inc3, st3); vm.rowView(inc3);
   assert.strictEqual(JSON.stringify(inc3), before);
+});
+
+test('row view lists warn tests separately; failedTests and pass unchanged', () => {
+  const R = plain(vm.rowView(inc3));
+  assert.deepStrictEqual(R[0], { index: 0, pass: true, failedTests: [], warnTests: ['abnormal_vital_flag'] });
+  assert.deepStrictEqual(R[15], { index: 15, pass: true, failedTests: [], warnTests: ['abnormal_vital_flag'] });
+  assert.deepStrictEqual(R[1], { index: 1, pass: false, failedTests: ['not_null', 'no_unexpected_columns'], warnTests: [] });
+  assert.strictEqual(R.filter((r) => r.warnTests.length).length, 2);
+  assert.strictEqual(R.filter((r) => !r.pass).length, 9);
+  const h = plain(vm.rowView(hand(0)));
+  assert.deepStrictEqual(h[3], { index: 3, pass: true, failedTests: [], warnTests: ['freshness'] });
+  assert.deepStrictEqual(h[4], { index: 4, pass: false, failedTests: ['range'], warnTests: [] });
 });

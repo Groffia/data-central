@@ -130,7 +130,7 @@
     return {
       facts: {
         batchId: Shared.format.batchLabel(inspect.batchId),
-        runTimeText: clockFromEpoch(inspect.runEpoch),
+        runTimeText: typeof inspect.runEpoch === 'number' && isFinite(inspect.runEpoch) ? clockFromEpoch(inspect.runEpoch) : '',
         rowCountText: src.length + ' ' + Shared.format.plural(src.length, 'row', 'rows'),
         table: table
       },
@@ -211,11 +211,13 @@
     if (!inspect) return [];
     const results = inspect.results || [];
     return (inspect.rows || []).map(function (_, i) {
-      const failed = [];
+      const failed = [], warned = [];
       results.forEach(function (r) {
-        if (r.severity === 'error' && (r.failingRows || []).indexOf(i) >= 0 && failed.indexOf(r.test) < 0) failed.push(r.test);
+        if ((r.failingRows || []).indexOf(i) < 0) return;
+        const list = r.severity === 'error' ? failed : r.severity === 'warn' ? warned : null;
+        if (list && list.indexOf(r.test) < 0) list.push(r.test);
       });
-      return { index: i, pass: failed.length === 0, failedTests: failed };
+      return { index: i, pass: failed.length === 0, failedTests: failed, warnTests: warned };
     });
   }
 
@@ -282,8 +284,10 @@
     if (typeof v === 'number') n = v;
     else if (typeof v === 'string') {
       const t = v.trim();
-      if (t === '') return null;
+      // Plain integer text only: optional minus, ASCII digits (leading zeros fine). No '+', '5.', hex, binary, exponent or '-0'.
+      if (!/^-?[0-9]+$/.test(t)) return null;
       n = Number(t);
+      if (n === 0 && t.charAt(0) === '-') return null;
     } else return null;
     return Number.isFinite(n) && Math.floor(n) === n ? n : null;
   }
@@ -338,8 +342,6 @@
     };
   }
 
-  function round1(x) { return Number(x.toFixed(1)); }
-
   // Hot, warm and cold spans in days; invalid inputs draw the policy defaults. Widths sum to 100 (cold takes the remainder).
   function tierBar(inputs) {
     const n = parseTier(inputs);
@@ -349,11 +351,13 @@
     const warm = ok ? n.warm : d.warmToColdDays;
     const ret = ok ? n.ret : d.retentionDays;
     const days = [hot, warm - hot, ret - warm];
-    const total = ret;
-    const wHot = round1(days[0] / total * 100);
-    const wWarm = round1(days[1] / total * 100);
-    const widths = [wHot, wWarm, round1(100 - wHot - wWarm)];
-    return ['hot', 'warm', 'cold'].map(function (t, i) { return { tier: t, days: days[i], widthPct: widths[i] }; });
+    // Integer tenths of a percent, so the sum is exact: hot and warm are rounded, cold takes the remainder, never negative.
+    // An empty cold tier is exactly 0 and the larger of hot and warm absorbs the rounding difference.
+    const tenths = [Math.round(1000 * days[0] / ret), Math.round(1000 * days[1] / ret), 0];
+    const rest = 1000 - tenths[0] - tenths[1];
+    if (days[2] > 0 && rest >= 0) tenths[2] = rest;
+    else tenths[tenths[0] >= tenths[1] ? 0 : 1] += rest;
+    return ['hot', 'warm', 'cold'].map(function (t, i) { return { tier: t, days: days[i], widthPct: tenths[i] / 10 }; });
   }
 
   const VENDOR_ROWS = ['Batch ingestion', 'Landing (Bronze)', 'Cleaning (Silver, Gold)', 'Quality gate'];
@@ -401,7 +405,7 @@
       fields[k] = Object.prototype.hasOwnProperty.call(raw, k) ? String(raw[k]) : String(defaults[k]);
     });
     const rv = inspect ? rowView(inspect).map(function (r) {
-      return { index: r.index, pass: r.pass, failedTests: r.failedTests, identifier: identifierText((inspect.rows || [])[r.index]) };
+      return { index: r.index, pass: r.pass, failedTests: r.failedTests, warnTests: r.warnTests, identifier: identifierText((inspect.rows || [])[r.index]) };
     }) : null;
     return {
       scenario: scenario,
