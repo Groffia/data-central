@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadHQ } = require('./helpers/load');
 
-const { Engine, HQ } = loadHQ();
-const vm = HQ.viewmodel, F = HQ.format;
+const { Engine, HQ, Shared } = loadHQ();
+const vm = HQ.viewmodel, F = Shared.format;
 function st(scenario, k) { return Engine.getState(scenario, Engine.AUTOPLAY[scenario].slice(0, k)); }
 
 test('statusRow incident k=3', () => {

@@ -34,10 +34,11 @@ test('scripts: all data-inline, exist on disk, in order', () => {
   scripts.forEach(function (s) {
     assert.ok(/\bdata-inline\b/.test(s.tag), s.src);
     if (s.src === 'engine.js') assert.ok(fs.existsSync(path.join(ROOT, '..', 'engine', 'engine.js')));
+    else if (s.src.indexOf('shared/') === 0) assert.ok(fs.existsSync(path.join(ROOT, '..', s.src)), s.src);
     else assert.ok(fs.existsSync(path.join(ROOT, s.src)), s.src);
   });
   assert.deepStrictEqual(scripts.map(function (s) { return s.src; }), [
-    'engine.js', 'src/format.js', 'src/escape.js', 'src/viewmodel.js', 'src/render.js',
+    'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'src/viewmodel.js', 'src/render.js',
     'src/controller.js', 'src/autoplay.js', 'src/main.js'
   ]);
 });

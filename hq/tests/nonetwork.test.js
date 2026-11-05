@@ -31,14 +31,21 @@ test('each scan pattern can fail on a sample', () => {
 const srcDir = path.join(ROOT, 'src');
 const srcFiles = fs.readdirSync(srcDir).map(function (n) { return path.join(srcDir, n); });
 
-test('index.html and src files have no network use', () => {
-  [path.join(ROOT, 'index.html')].concat(srcFiles).forEach(function (f) {
+const sharedDir = path.join(ROOT, '..', 'shared');
+const sharedFiles = fs.readdirSync(sharedDir).filter(function (n) { return /\.js$/.test(n); }).map(function (n) { return path.join(sharedDir, n); });
+
+test('shared folder has scripts to scan', () => {
+  assert.ok(sharedFiles.length >= 3);
+});
+
+test('index.html, src and shared files have no network use', () => {
+  [path.join(ROOT, 'index.html')].concat(srcFiles, sharedFiles).forEach(function (f) {
     assert.deepStrictEqual(scanNetwork(fs.readFileSync(f, 'utf8')), [], f);
   });
 });
 
-test('src js files have no Math.random, Date.now, new Date(', () => {
-  srcFiles.filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
+test('src and shared js files have no Math.random, Date.now, new Date(', () => {
+  srcFiles.concat(sharedFiles).filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
     assert.deepStrictEqual(scanNondet(fs.readFileSync(f, 'utf8')), [], f);
   });
 });

@@ -6,7 +6,7 @@
   const GREEN = 'green', AMBER = 'amber', RED = 'red', GREY = 'grey';
   const WAIT = 'Waiting for first export';
 
-  function pl(n, one, many) { return HQ.format.plural(n, one, many); }
+  function pl(n, one, many) { return Shared.format.plural(n, one, many); }
 
   function chip(id, name, health, text) { return { id: id, name: name, health: health, text: text }; }
 
@@ -61,7 +61,7 @@
     if (!state.batchesRun) return chip(7, name, GREY, WAIT);
     const kpis = state.kpis || [];
     const withBatch = kpis.filter(function (k) { return k.asOfBatchId; })[0];
-    const label = HQ.format.batchLabel(withBatch ? withBatch.asOfBatchId : 'batch-' + state.batchesRun);
+    const label = Shared.format.batchLabel(withBatch ? withBatch.asOfBatchId : 'batch-' + state.batchesRun);
     if (state.gate === 'HALF_OPEN') return chip(7, name, AMBER, 'KPIs at ' + label + ', trial batch pending');
     if (kpis.some(function (k) { return k.held; })) return chip(7, name, AMBER, 'KPIs held at ' + label);
     return chip(7, name, GREEN, 'KPIs current as of ' + label);
@@ -90,27 +90,27 @@
       dlqOpen: openEntries(state).length,
       dlqTotal: (state.dlq || []).length,
       openAlerts: alerts.filter(function (a) { return a.status !== 'resolved'; }).length,
-      lastGoodBatchText: HQ.format.batchLabel(state.lastGoodBatchId)
+      lastGoodBatchText: Shared.format.batchLabel(state.lastGoodBatchId)
     };
   };
 
   vm.glanceBanner = function glanceBanner(state) {
     const dlq = state.dlq || [];
     if (!dlq.length) return null;
-    const n = HQ.format.batchLabel('batch-' + state.batchesRun);
-    const m = HQ.format.batchLabel(state.lastGoodBatchId);
+    const n = Shared.format.batchLabel('batch-' + state.batchesRun);
+    const m = Shared.format.batchLabel(state.lastGoodBatchId);
     if (state.gate === 'OPEN') {
       return { level: 'amber', text: 'Incident in progress: gate open at ' + n + ', production held at ' + m + '.' };
     }
     if (state.gate === 'HALF_OPEN') {
       return { level: 'amber', text: 'Incident in progress: gate half-open at ' + n + ', trial batch pending, production held at ' + m + '.' };
     }
-    const b = HQ.format.batchLabel(dlq[dlq.length - 1].batchId);
+    const b = Shared.format.batchLabel(dlq[dlq.length - 1].batchId);
     return { level: 'green', text: 'Last incident: caught at the gate on ' + b + '. No bad rows reached production.' };
   };
 
   vm.kpiTiles = function kpiTiles(state) {
-    const f = HQ.format;
+    const f = Shared.format;
     return (state.kpis || []).map(function (k) {
       const days = k.name === 'Avg Length of Stay';
       return {
@@ -131,7 +131,7 @@
       note: t.note,
       observations: t.observations,
       abnormalCount: t.abnormalCount,
-      rateText: HQ.format.pct1(t.abnormalVitalRate),
+      rateText: Shared.format.pct1(t.abnormalVitalRate),
       notEvaluableText: t.notEvaluable > 0 ? t.notEvaluable + ' not evaluable' : null
     };
   };
@@ -167,12 +167,12 @@
 
   vm.timeline = function timeline(state) {
     return (state.events || []).map(function (e) {
-      return { iso: e.iso, timeText: HQ.format.clockLabel(e.iso), type: e.type, detail: e.detail };
+      return { iso: e.iso, timeText: Shared.format.clockLabel(e.iso), type: e.type, detail: e.detail };
     });
   };
 
   vm.businessCase = function businessCase(state) {
-    const f = HQ.format;
+    const f = Shared.format;
     if (!(state.dlq || []).length) {
       return {
         hasIncident: false,
@@ -238,21 +238,10 @@
     };
   };
 
-  const VENDOR_ROWS = [
-    ['Batch ingestion', 'Auto Loader / Lakeflow Connect', 'Snowpipe / Fivetran', 'Data Factory pipelines'],
-    ['Landing (Bronze)', 'Delta table', 'Snowflake or Iceberg table', 'OneLake lakehouse'],
-    ['Cleaning (Silver, Gold)', 'Lakeflow Pipelines (formerly Delta Live Tables) or dbt', 'dbt or Dynamic Tables', 'Dataflows or dbt'],
-    ['Quality gate', 'Pipeline expectations / dbt tests', 'Data metric functions / dbt tests', 'dbt tests'],
-    ['Alerting', 'Databricks SQL alerts', 'Snowflake alerts', 'Fabric Activator'],
-    ['Lineage and catalog', 'Unity Catalog', 'Snowflake Horizon Catalog / Atlan', 'Microsoft Purview'],
-    ['Metrics layer', 'Unity Catalog metric views', 'dbt Semantic Layer', 'Power BI semantic model'],
-    ['Orchestration', 'Lakeflow Jobs / Airflow', 'Tasks / Airflow', 'Pipelines / Airflow']
-  ];
-
   vm.vendorTable = function vendorTable() {
     return {
       columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
-      rows: VENDOR_ROWS.map(function (r) { return r.slice(); })
+      rows: Shared.vendor.rows.map(function (r) { return r.slice(); })
     };
   };
 

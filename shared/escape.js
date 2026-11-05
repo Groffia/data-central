@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  globalThis.HQ = globalThis.HQ || {};
+  globalThis.Shared = globalThis.Shared || {};
 
   var MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
@@ -9,5 +9,5 @@
     return String(value).replace(/[&<>"']/g, function (ch) { return MAP[ch]; });
   }
 
-  globalThis.HQ.escape = { esc: esc };
+  globalThis.Shared.escape = { esc: esc };
 })();

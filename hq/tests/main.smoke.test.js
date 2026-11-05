@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
-const FILES = ['format', 'escape', 'viewmodel', 'render', 'controller', 'autoplay', 'main'];
+const FILES = ['../../shared/escape', '../../shared/format', '../../shared/vendor', 'viewmodel', 'render', 'controller', 'autoplay', 'main'];
 
 function boot(search) {
   const Engine = require(path.join(ROOT, '..', 'engine', 'engine.js'));

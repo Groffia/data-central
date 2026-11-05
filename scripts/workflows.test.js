@@ -7,6 +7,7 @@ const path = require('node:path');
 const dir = path.join(__dirname, '..', '.github', 'workflows');
 const read = (n) => fs.readFileSync(path.join(dir, n), 'utf8').replace(/\r\n/g, '\n');
 const T_ENGINE = 'cd engine && node --test tests/';
+const T_SHARED = 'node --test shared/tests/';
 const T_HQ = 'cd hq && node --test tests/';
 const T_SCRIPTS = 'node --test scripts/';
 const BUILD = 'node scripts/build-site.js';
@@ -21,11 +22,11 @@ function job(text, name) {
 }
 
 function testsBeforeBuild(text) {
-  const i = [T_ENGINE, T_HQ, T_SCRIPTS].map((c) => text.indexOf(c));
+  const i = [T_ENGINE, T_SHARED, T_HQ, T_SCRIPTS].map((c) => text.indexOf(c));
   const b = text.indexOf(BUILD);
   i.forEach((x) => assert.ok(x >= 0));
   assert.ok(b >= 0);
-  assert.ok(i[0] < i[1] && i[1] < i[2] && i[2] < b, 'tests run in order before the build');
+  assert.ok(i[0] < i[1] && i[1] < i[2] && i[2] < i[3] && i[3] < b, 'tests run in order before the build');
 }
 
 for (const f of ['pages.yml', 'release.yml']) {

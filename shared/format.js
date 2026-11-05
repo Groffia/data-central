@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  globalThis.HQ = globalThis.HQ || {};
+  globalThis.Shared = globalThis.Shared || {};
 
   function pct1(n) { return n.toFixed(1) + '%'; }
   function fracPct1(f) { return (f * 100).toFixed(1) + '%'; }
@@ -27,7 +27,7 @@
 
   function plural(n, one, many) { return n === 1 ? one : many; }
 
-  globalThis.HQ.format = {
+  globalThis.Shared.format = {
     plural: plural,
     pct1: pct1, fracPct1: fracPct1, days1: days1,
     signedPct1: signedPct1, signedPts1: signedPts1,

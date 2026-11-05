@@ -3,10 +3,10 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { loadHQ } = require('./helpers/load');
+const { loadShared } = require('./helpers/load');
 
-const { HQ } = loadHQ();
-const F = HQ.format;
+const { Shared } = loadShared();
+const F = Shared.format;
 
 test('number formats', () => {
   assert.strictEqual(F.fracPct1(0.7857), '78.6%');
@@ -23,6 +23,6 @@ test('labels', () => {
   assert.strictEqual(F.clockLabel('2026-11-03T14:45:00Z'), '14:45:00 UTC');
 });
 test('format.js source has no forbidden APIs', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'format.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'format.js'), 'utf8');
   for (const bad of ['toLocale', 'Intl', 'fetch(']) assert.ok(!src.includes(bad), bad);
 });

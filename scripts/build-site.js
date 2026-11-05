@@ -7,6 +7,7 @@ const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, 'engine', 'engine.js');
+const SHARED = path.join(ROOT, 'shared');
 
 class BuildError extends Error {}
 
@@ -41,6 +42,29 @@ function checkEngineCopy(page, copyPath, enginePath) {
   if (!sameBytes(copy, engine)) {
     throw new BuildError('page "' + page.dir + '": engine copy check failed: ' + copyPath + ' is not byte-identical to ' + enginePath);
   }
+}
+
+// Every shared/*.js in the repo must be present, byte-identical, in the page's built site folder (<dest>/shared/).
+function checkSharedCopies(page, destDir, sharedDir) {
+  let names;
+  try {
+    names = fs.readdirSync(sharedDir).filter(function (n) { return /\.js$/.test(n); }).sort();
+  } catch (e) {
+    throw new BuildError('page "' + page.dir + '": shared check failed: ' + e.message);
+  }
+  if (names.length === 0) throw new BuildError('page "' + page.dir + '": shared check failed: no shared/*.js files in ' + sharedDir);
+  names.forEach(function (n) {
+    const built = path.join(destDir, 'shared', n);
+    let copy;
+    try {
+      copy = fs.readFileSync(built);
+    } catch (e) {
+      throw new BuildError('page "' + page.dir + '": shared check failed: ' + built + ' is missing');
+    }
+    if (!sameBytes(copy, fs.readFileSync(path.join(sharedDir, n)))) {
+      throw new BuildError('page "' + page.dir + '": shared check failed: ' + built + ' is not byte-identical to ' + path.join(sharedDir, n));
+    }
+  });
 }
 
 function checkSingleFile(page, singlePath, enginePath) {
@@ -97,6 +121,7 @@ function buildPage(page, out) {
   fs.cpSync(path.join(dist, 'pages'), dest, { recursive: true });
   fs.copyFileSync(path.join(dist, page.singleFile), path.join(dest, page.singleFile));
   checkEngineCopy(page, path.join(dest, 'engine.js'), ENGINE);
+  checkSharedCopies(page, dest, SHARED);
   checkSingleFile(page, path.join(dest, page.singleFile), ENGINE);
   checkEngineTag(page, ENGINE);
 }
@@ -125,6 +150,6 @@ function main(argv) {
   }
 }
 
-module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSingleFile, checkEngineTag, writeRoot };
+module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSharedCopies, checkSingleFile, checkEngineTag, writeRoot };
 
 if (require.main === module) main(process.argv.slice(2));

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 // Build: node scripts/inline.js [--out <dir>]   (default dist)
-// Writes <out>/hq-single.html and <out>/pages/ (index.html, engine.js, src/*).
+// Writes <out>/hq-single.html and <out>/pages/ (index.html, engine.js, shared/*, src/*).
 // ENGINE_PATH env var overrides the engine location (default ..\engine\engine.js).
 const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
+// Shared scripts live at the repo root (..\shared relative to hq); index.html refers to them as shared/<name>.js.
+const SHARED_DIR = path.join(ROOT, '..', 'shared');
 
 function fail(msg) {
   process.stderr.write('build failed: ' + msg + '\n');
@@ -40,6 +42,7 @@ const engineFile = process.env.ENGINE_PATH
 // Resolve a src/href as written in index.html to a file on disk.
 function resolveRef(ref) {
   if (ref === 'engine.js') return engineFile;
+  if (ref.indexOf('shared/') === 0) return path.join(SHARED_DIR, ref.slice('shared/'.length));
   return path.join(ROOT, ref);
 }
 

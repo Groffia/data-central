@@ -29,9 +29,11 @@ function fixtureEngine(text) {
 
 const srcDir = path.join(ROOT, 'src');
 const srcFiles = fs.readdirSync(srcDir).map(function (n) { return path.join(srcDir, n); });
+const sharedDir = path.join(ROOT, '..', 'shared');
+const sharedFiles = ['escape.js', 'format.js', 'vendor.js'].map(function (n) { return path.join(sharedDir, n); });
 
 test('real engine and every src file contain no </script in any case', () => {
-  [ENGINE].concat(srcFiles).forEach(function (f) {
+  [ENGINE].concat(srcFiles, sharedFiles).forEach(function (f) {
     assert.ok(!/<\/script/i.test(fs.readFileSync(f, 'utf8')), f);
   });
 });
@@ -52,6 +54,10 @@ test('hq-single.html contains the engine text, footer, and no external refs', ()
   assert.ok(!/\ssrc=/i.test(html));
   assert.ok(!/\shref=(?!"#)/i.test(html));
   assert.ok(!/data-inline/.test(html));
+  sharedFiles.forEach(function (f) {
+    const t = fs.readFileSync(f, 'utf8');
+    assert.strictEqual(html.split(t).length - 1, 1, f + ' appears exactly once');
+  });
   assert.ok(/<style>[\s\S]*<\/style>/.test(html));
 });
 
@@ -61,8 +67,12 @@ test('pages folder has engine byte-for-byte, src files, relative refs, no data-i
   srcFiles.forEach(function (f) {
     assert.ok(fs.readFileSync(path.join(pages, 'src', path.basename(f))).equals(fs.readFileSync(f)));
   });
+  sharedFiles.forEach(function (f) {
+    assert.ok(fs.readFileSync(path.join(pages, 'shared', path.basename(f))).equals(fs.readFileSync(f)), f);
+  });
   const idx = fs.readFileSync(path.join(pages, 'index.html'), 'utf8');
   assert.ok(idx.indexOf('src="engine.js"') >= 0);
+  assert.ok(idx.indexOf('src="shared/escape.js"') >= 0);
   assert.ok(idx.indexOf('src="src/main.js"') >= 0);
   assert.ok(idx.indexOf('href="src/styles.css"') >= 0);
   assert.ok(!/data-inline/.test(idx));
@@ -89,7 +99,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const html = fs.readFileSync(path.join(OUT, 'hq-single.html'), 'utf8');
   const inline = [];
   html.replace(/<script>([\s\S]*?)<\/script>/g, function (m, body) { inline.push(body); return m; });
-  assert.strictEqual(inline.length, 8);
+  assert.strictEqual(inline.length, 9);
   const a = fakeDocRun(inline);
   assert.strictEqual((a['region-stages'].match(/data-health="/g) || []).length, 8);
   assert.ok(a['region-footer'].indexOf(FOOTER) >= 0);
@@ -98,7 +108,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const idx = fs.readFileSync(path.join(pagesDir, 'index.html'), 'utf8');
   const srcs = [];
   idx.replace(/<script\s+src="([^"]+)"/g, function (m, s) { srcs.push(s); return m; });
-  assert.strictEqual(srcs.length, 8);
+  assert.strictEqual(srcs.length, 9);
   const b = fakeDocRun(srcs.map(function (s) { return fs.readFileSync(path.join(pagesDir, s), 'utf8'); }));
   assert.deepStrictEqual(b, a);
 });

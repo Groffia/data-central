@@ -10,14 +10,6 @@ const CTX = { exportRows: 1, tiering: Engine.TIERING_DEFAULTS };
 
 function incidentState() { return J(Engine.getState('incident', Engine.AUTOPLAY.incident.slice(0, 3))); }
 
-test('plural: only 1 is singular', () => {
-  const p = HQ.format.plural;
-  assert.strictEqual(p(1, 'row', 'rows'), 'row');
-  assert.strictEqual(p(0, 'row', 'rows'), 'rows');
-  assert.strictEqual(p(2, 'row', 'rows'), 'rows');
-  assert.strictEqual(p(20, 'row', 'rows'), 'rows');
-});
-
 test('single source of discard reasons is the engine', () => {
   assert.strictEqual(vm.DISCARD_REASONS, undefined);
   assert.strictEqual(HQ.controller.DISCARD_REASONS, undefined);

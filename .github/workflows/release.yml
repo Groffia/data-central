@@ -20,6 +20,8 @@ jobs:
           node-version: '20'
       - name: Engine tests
         run: cd engine && node --test tests/
+      - name: Shared tests
+        run: node --test shared/tests/
       - name: HQ tests
         run: cd hq && node --test tests/
       - name: Script tests

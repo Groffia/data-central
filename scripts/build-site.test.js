@@ -23,6 +23,47 @@ test('readPages reads and validates pages.json', () => {
   assert.throws(() => b.readPages(f), /engineTag|singleFile/);
 });
 
+test('checkSharedCopies passes on identical copies and ignores non-js files', () => {
+  const d = tmp(), s = tmp();
+  fs.mkdirSync(path.join(d, 'shared'));
+  ['escape.js', 'format.js'].forEach((n) => {
+    fs.writeFileSync(path.join(s, n), 'text ' + n);
+    fs.writeFileSync(path.join(d, 'shared', n), 'text ' + n);
+  });
+  fs.writeFileSync(path.join(s, 'notes.md'), 'x');
+  b.checkSharedCopies(page, d, s);
+});
+
+test('checkSharedCopies fails on a one-byte difference, naming the page and file', () => {
+  const d = tmp(), s = tmp();
+  fs.mkdirSync(path.join(d, 'shared'));
+  fs.writeFileSync(path.join(s, 'escape.js'), 'abc');
+  fs.writeFileSync(path.join(d, 'shared', 'escape.js'), 'abd');
+  assert.throws(() => b.checkSharedCopies(page, d, s), (e) =>
+    e instanceof b.BuildError && /page "hq"/.test(e.message) && /shared check failed/.test(e.message) && /escape\.js/.test(e.message));
+});
+
+test('checkSharedCopies fails on a missing built copy and on an empty shared folder', () => {
+  const d = tmp(), s = tmp();
+  assert.throws(() => b.checkSharedCopies(page, d, s), /no shared/);
+  fs.writeFileSync(path.join(s, 'vendor.js'), 'v');
+  assert.throws(() => b.checkSharedCopies(page, d, s), /vendor\.js is missing|missing/);
+});
+
+test('real build puts the repo shared files into the site folder byte-identical', () => {
+  const out = tmp();
+  // Tag HEAD so this test does not depend on the engine release tag (the tag check has its own tests).
+  const pj = path.join(tmp(), 'pages.json');
+  fs.writeFileSync(pj, JSON.stringify([{ dir: 'hq', engineTag: 'HEAD', singleFile: 'hq-single.html' }]));
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
+    { cwd: ROOT, encoding: 'utf8', env: Object.assign({}, process.env, { PAGES_JSON: pj }) });
+  assert.strictEqual(r.status, 0, r.stderr);
+  const names = fs.readdirSync(path.join(ROOT, 'shared')).filter((n) => /\.js$/.test(n));
+  assert.ok(names.length >= 3);
+  names.forEach((n) => assert.ok(fs.readFileSync(path.join(out, 'hq', 'shared', n)).equals(fs.readFileSync(path.join(ROOT, 'shared', n))), n));
+  b.checkSharedCopies(page, path.join(out, 'hq'), path.join(ROOT, 'shared'));
+});
+
 test('sameBytes compares buffers', () => {
   assert.strictEqual(b.sameBytes(Buffer.from('abc'), Buffer.from('abc')), true);
   assert.strictEqual(b.sameBytes(Buffer.from('abc'), Buffer.from('abd')), false);
