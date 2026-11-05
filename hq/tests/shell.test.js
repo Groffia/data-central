@@ -61,3 +61,8 @@ test('persistent notice-live container sits after controls, before incident, ari
   assert.ok(html.indexOf('id="region-controls"') < html.indexOf('id="notice-live"'));
   assert.ok(html.indexOf('id="notice-live"') < html.indexOf('id="region-incident"'));
 });
+
+test('banner region is a persistent aria-live polite container', () => {
+  const tag = /<[a-z]+[^>]*id="region-banner"[^>]*>/.exec(html);
+  assert.ok(tag && /aria-live="polite"/.test(tag[0]));
+});

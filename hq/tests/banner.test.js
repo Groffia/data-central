@@ -50,3 +50,15 @@ test('banner text and level are escaped', () => {
   assert.ok(html.indexOf('<img') < 0 && html.indexOf('<script') < 0);
   assert.ok(html.indexOf('&lt;img') >= 0);
 });
+
+// The engine appends dead-letter entries in time order, so the last entry is the most recent one.
+test('resolved banner uses the batch of the LAST dlq entry (multi-batch history)', () => {
+  const s = JSON.parse(JSON.stringify(st('incident', 16)));
+  assert.strictEqual(s.gate, 'CLOSED');
+  const mk = function (id) { return Object.assign({}, s.dlq[0], { batchId: id }); };
+  s.dlq = [mk('batch-1'), mk('batch-3')];
+  assert.strictEqual(HQ.viewmodel.glanceBanner(s).text,
+    'Last incident: caught at the gate on Batch 3. No bad rows reached production.');
+  s.dlq = [mk('batch-1'), mk('batch-2')];
+  assert.ok(HQ.viewmodel.glanceBanner(s).text.indexOf('on Batch 2.') >= 0);
+});
