@@ -29,8 +29,17 @@ Branch feat/engine-v1.1. 151 tests.
 - `distortionAvoidedPts` is secondary and signed; do not headline it.
 - `naiveAbnormalRate` no longer returns 0 for renamed-column rows; they are dropped and excluded from the count.
 - `isAbnormal` returns false for string, null, missing or non-finite `vital_value` (a string such as `"88"` used to be coerced).
+- `naiveAbnormalRate` / `naiveAbnormalStats` leave not-evaluable rows out of both numerator and denominator (they used to count as normal rows in the denominator).
+- The warn test `abnormal_vital_flag` no longer flags `NaN` or `Infinity` values (the old check was `typeof === "number"`, so an `Infinity` heart rate used to be flagged).
 - `todaySoFar.abnormalVitalRate` now divides by evaluable rows (`observations - notEvaluable`).
 - Generated `vital_value`s differ from v1.0, so every pinned abnormal count or rate changes (`bytesPerRow` and `bytesPerMonth` happen to stay the same).
+
+### Known gaps carried out of the v1.1 review (none blocks merge; none changes engine behavior)
+
+- `tests/not_evaluable.test.js` checks the evaluable-denominator rate only where `notEvaluable` is 0, so it cannot fail; the reducer cannot publish a non-evaluable row today. Fix: have `summarizePublished` return the rate and test it with `notEvaluable > 0`.
+- Nothing proves `selfTest` really checks `GENERATOR_HASH`; a test should load the engine with a wrong literal and expect `determinism_hash` to fail.
+- `tests/heldstate.test.js` lacks two closing assertions: `staging` empty with every DLQ entry repaired or discarded after recovery plus a next-batch double-publish check (96 production rows, unique keys), and a `faultExports:[6]` scenario whose discarded row is abnormal. Other tests already catch the staging bug.
+- `generateExport` depends on `HISTORY_DAYS` and `historyCache` (through `abnormalShare`), so a top-level call to it placed above them would throw; a comment should say so. Defaulting of `publishedNotEvaluable` differs between the publish path and `getState`. The salt comment omits salt 5.
 
 ## v1.0 (tag engine-v1.0, 2026-11-04)
 
