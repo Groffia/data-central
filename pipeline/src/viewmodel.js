@@ -55,4 +55,32 @@
   vm.header = header;
   vm.stepLabel = stepLabel;
   vm.batchChips = batchChips;
+
+  // ----- Task 6: generation panel -----
+
+  function generationPanel(state) {
+    const c = Engine.getContract();
+    const f = state.facility;
+    const F = Shared.format;
+    return {
+      source: 'EHR vitals table, exported as a FHIR-style bulk file',
+      cadence: 'Exported every 15 simulated minutes (batch, cursor ' + c.epochField + ')',
+      contractRows: c.fields.map(function (x) {
+        return { name: x.name, type: x.type, rule: x.rule, sensitive: x.sensitive };
+      }),
+      goldenRows: c.goldenRows,
+      facility: {
+        beds: c.facility.beds_staffed + ' ' + F.plural(c.facility.beds_staffed, 'bed', 'beds') + ' staffed',
+        patients: F.thousands(f.patientsInHouse) + ' ' + F.plural(f.patientsInHouse, 'patient', 'patients') + ' in house',
+        perDay: F.thousands(f.obsPerDay) + ' ' + F.plural(f.obsPerDay, 'observation', 'observations') + ' per day',
+        per15: f.obsPer15Min.toFixed(1) + ' observations per 15 minutes',
+        perMonth: F.thousands(f.obsPerMonth) + ' ' + F.plural(f.obsPerMonth, 'observation', 'observations') + ' per month',
+        bytesPerRow: f.bytesPerRow.toFixed(2) + ' bytes per row',
+        bytesPerMonth: F.thousands(f.bytesPerMonth) + ' bytes per month',
+        note: 'The feed is a labelled sample of a ' + c.facility.beds_staffed + '-bed facility'
+      }
+    };
+  }
+
+  vm.generationPanel = generationPanel;
 })();

@@ -25,10 +25,23 @@
     return m ? m[1] + ' UTC' : String(iso);
   }
 
+  // Comma thousands separators by string manipulation only. Non-integers and negatives are rounded via toFixed(0).
+  function thousands(n) {
+    var s = Number(n).toFixed(0);
+    var neg = s.charAt(0) === '-';
+    if (neg) s = s.slice(1);
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 === 0) out += ',';
+      out += s.charAt(i);
+    }
+    return (neg && Number(s) !== 0 ? '-' : '') + out;
+  }
+
   function plural(n, one, many) { return n === 1 ? one : many; }
 
   globalThis.Shared.format = {
-    plural: plural,
+    plural: plural, thousands: thousands,
     pct1: pct1, fracPct1: fracPct1, days1: days1,
     signedPct1: signedPct1, signedPts1: signedPts1,
     batchLabel: batchLabel, clockLabel: clockLabel
