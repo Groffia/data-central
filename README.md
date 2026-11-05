@@ -3,7 +3,7 @@
 **An end-to-end data platform demo that shows what happens when bad data arrives, and why running data this way protects the business.**
 
 **Live demo:** https://groffia.github.io/data-central/hq/
-**Pipeline:** https://groffia.github.io/data-central/pipeline/
+**Pipeline:** https://groffia.github.io/data-central/pipeline/ (live from the next release)
 **Offline copy:** `hq-single.html` on the [Releases](../../releases) page. One file, opens from disk, no network.
 
 ## Try it in 20 seconds
