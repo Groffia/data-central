@@ -54,7 +54,14 @@
     return acked ? chip(5, name, AMBER, 'Alert acknowledged') : chip(5, name, GREEN, 'Gate closed');
   }
 
-  function analysisChip() { return chip(6, 'Analysis/Modeling', GREY, 'Not in this slice'); }
+  // Chip 6 shows the engine's expected-range verdict for the live sample (no logic here; the verdict text is the cue).
+  const NO_DATA = 'Not enough data yet (fewer than 30 readings)';
+  function analysisChip(state) {
+    const check = Engine.liveSampleCheck(state);
+    const verdict = check && typeof check.verdict === 'string' ? check.verdict : NO_DATA;
+    const health = verdict === 'Within the expected range' ? GREEN : verdict === 'Above the expected range' ? AMBER : GREY;
+    return chip(6, 'Analysis/Modeling', health, 'Expected-range check: ' + verdict);
+  }
 
   function visualizationChip(state) {
     const name = 'Visualization';
@@ -81,15 +88,35 @@
     return HQ.links.pipelineUrl(base, ui.scenario, ui.actions, focus, Engine);
   }
 
+  // Deep link into the Value page, or null when the page has no (usable) Value base.
+  function valueLink(ui, ctx, focus) {
+    const base = ctx && ctx.valueBase;
+    if (!base || !ui || !HQ.links) return null;
+    if (!HQ.links.focusOk(focus)) return null;
+    return HQ.links.valueUrl(base, ui.scenario, null, ui.actions, focus, Engine);
+  }
+
   vm.stageChips = function stageChips(state, ctx, ui) {
     const chips = [
       generationChip(state), ingestionChip(state, ctx), processingChip(state), storageChip(state),
-      governanceChip(state), analysisChip(), visualizationChip(state), archivingChip(ctx)
+      governanceChip(state), analysisChip(state), visualizationChip(state), archivingChip(ctx)
     ];
     const href = pipelineLink(ui, ctx, 'stage-storage');
     if (href) chips[3].href = href;
+    const check = valueLink(ui, ctx, 'stage-check');
+    if (check) chips[5].href = check;
+    const kpi = valueLink(ui, ctx, 'kpi-abnormal-vital-rate');
+    if (kpi) chips[6].href = kpi;
     return chips;
   };
+
+  const TOO_LONG = 'State too long to link; opens at the nearest step.';
+  // The one visible note while a link had to fall back to the nearest scripted step; null otherwise (no base, no links, no note).
+  function linkNote(ui, ctx) {
+    if (!ui || !ctx || !HQ.links) return null;
+    const usable = HQ.links.safeBase(ctx.pipelineBase) || HQ.links.safeBase(ctx.valueBase);
+    return usable && HQ.links.tooLong(ui.scenario, ui.actions, Engine) ? TOO_LONG : null;
+  }
 
   vm.statusRow = function statusRow(state) {
     const alerts = state.alerts || [];
@@ -120,11 +147,13 @@
     return { level: 'green', text: 'Last incident: caught at the gate on ' + b + '. No bad rows reached production.' };
   };
 
-  vm.kpiTiles = function kpiTiles(state) {
+  function kpiId(name) { return 'kpi-' + String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+  vm.kpiTiles = function kpiTiles(state, ctx, ui) {
     const f = Shared.format;
     return (state.kpis || []).map(function (k) {
       const days = k.name === 'Avg Length of Stay';
-      return {
+      const tile = {
         name: k.name,
         valueText: days ? f.days1(k.value) : f.fracPct1(k.value),
         deltaText: f.signedPct1(k.deltaPct),
@@ -132,6 +161,9 @@
         asOfText: 'as of ' + f.batchLabel(k.asOfBatchId) + ', ' + f.clockLabel(k.asOfIso),
         held: !!k.held
       };
+      const href = valueLink(ui, ctx, kpiId(k.name));
+      if (href) tile.href = href;
+      return tile;
     });
   };
 
@@ -268,7 +300,7 @@
       banner: vm.glanceBanner(state),
       chips: vm.stageChips(state, ctx, u),
       status: vm.statusRow(state),
-      tiles: vm.kpiTiles(state),
+      tiles: vm.kpiTiles(state, ctx, u),
       today: vm.todaySoFar(state),
       incident: vm.incidentPanel(state, u, ctx),
       timeline: vm.timeline(state),
@@ -276,6 +308,7 @@
       vendor: vm.vendorTable(),
       scenario: u.scenario === undefined ? null : u.scenario,
       notice: u.notice === undefined ? null : u.notice,
+      linkNote: linkNote(u, ctx),
       error: u.error === undefined ? null : u.error
     };
   };

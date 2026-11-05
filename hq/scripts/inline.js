@@ -99,6 +99,8 @@ single = single.replace(LINK_RE, function (m, a) {
 
 // The pipeline-base meta (relative link to the Pipeline page) only makes sense beside the Pipeline folder: the single file drops it, so it shows no Pipeline link.
 single = single.replace(/[ \t]*<meta\b[^>]*\bname\s*=\s*(?:"pipeline-base"|'pipeline-base')[^>]*>[ \t]*\r?\n?/gi, function () { return ''; });
+// Likewise the value-base meta: the single file shows no Value links.
+single = single.replace(/[ \t]*<meta\b[^>]*\bname\s*=\s*(?:"value-base"|'value-base')[^>]*>[ \t]*\r?\n?/gi, function () { return ''; });
 
 // Pages form: same markup with the data-inline flag removed.
 const pagesIndex = indexText.replace(SCRIPT_RE, function (m) { return stripFlag(m); })

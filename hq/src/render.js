@@ -46,7 +46,7 @@
       return '<li class="chip"' + attr('data-health', c.health) + attr('data-stage', c.id) + '>' +
         '<span class="dot" aria-hidden="true"></span>' +
         '<span class="chip-name">' + esc(c.id + ' ' + c.name) + '</span>' +
-        '<span class="chip-text">' + (c.href ? link(c.href, 'Open ' + c.name + ' in Pipeline', c.text) : esc(c.text)) + '</span></li>';
+        '<span class="chip-text">' + (c.href ? link(c.href, 'Open ' + c.name + ' in ' + (c.id === 4 ? 'Pipeline' : 'Value'), c.text) : esc(c.text)) + '</span></li>';
     }).join('') + '</ol>';
   }
 
@@ -68,7 +68,7 @@
   function tiles(vm) {
     return '<div class="tiles">' + vm.tiles.map(function (t) {
       return '<article class="tile"' + attr('data-held', t.held ? 'true' : 'false') + '>' +
-        '<h3>' + esc(t.name) + '</h3>' +
+        '<h3>' + (t.href ? link(t.href, 'Open ' + t.name + ' in Value', t.name) : esc(t.name)) + '</h3>' +
         '<p class="tile-value">' + esc(t.valueText) + '</p>' +
         '<p class="tile-delta"' + attr('data-direction', t.deltaDirection) + '>' + esc(t.deltaText) + ' vs prior 7 days</p>' +
         '<p class="tile-asof">' + esc(t.asOfText) + '</p>' +
@@ -192,6 +192,7 @@
 
   function notice(vm) {
     return (vm.notice ? '<p class="notice" role="status">' + esc(vm.notice) + '</p>' : '') +
+      (vm.linkNote ? '<p class="notice link-note" role="status">' + esc(vm.linkNote) + '</p>' : '') +
       (vm.error ? '<p class="error" role="alert">' + esc(vm.error) + '</p>' : '');
   }
 

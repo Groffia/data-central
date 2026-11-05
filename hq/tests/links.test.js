@@ -38,8 +38,9 @@ test('pipelineUrl: exact URLs for a scripted step, the full script and a diverge
 test('pipelineUrl: healthy scenario, unencodable actions and no focus', () => {
   const U = HQ.links.pipelineUrl;
   assert.strictEqual(U(BASE, 'healthy', Engine.AUTOPLAY.healthy.slice(0, 2), '', Engine), '../pipeline/?scenario=healthy&step=2');
-  assert.strictEqual(U(BASE, 'incident', [{ type: 'bogus' }], null, Engine), '../pipeline/?scenario=incident');
-  assert.strictEqual(U(BASE, 'incident', 'nope', undefined, Engine), '../pipeline/?scenario=incident');
+  // Unencodable actions no longer drop silently: the link opens at the nearest scripted step (the scenario floor here).
+  assert.strictEqual(U(BASE, 'incident', [{ type: 'bogus' }], null, Engine), '../pipeline/?scenario=incident&step=2');
+  assert.strictEqual(U(BASE, 'incident', 'nope', undefined, Engine), '../pipeline/?scenario=incident&step=2');
 });
 
 test('pipelineUrl: base that is not a non-empty string gives null', () => {
@@ -146,7 +147,7 @@ test('no base: output is byte-identical to the pre-links baseline for ten script
 });
 
 test('with a base: stripping the added anchors gives exactly the no-base output, for ten states', () => {
-  const strip = function (html) { return html.replace(/<a href="[^"]*" aria-label="Open [^"]*in Pipeline">/g, '').replace(/<\/a>/g, ''); };
+  const strip = function (html) { return html.replace(/<a href="[^"]*" aria-label="Open [^"]*in (?:Pipeline|Value)">/g, '').replace(/<\/a>/g, ''); };
   Object.keys(BASELINE).forEach(function (key) {
     const sc = key.split(':')[0], k = Number(key.split(':')[1]);
     const acts = Engine.AUTOPLAY[sc].slice(0, k);

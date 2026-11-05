@@ -13,7 +13,16 @@
     } catch (e) { return undefined; }
   }
 
-  const controller = HQ.controller.createController(Engine, location.search, { pipelineBase: pipelineBase() });
+  // Same for the Value page: <meta name="value-base" content="...">.
+  function valueBase() {
+    try {
+      const m = document.querySelector('meta[name="value-base"]');
+      const v = m && m.getAttribute('content');
+      return typeof v === 'string' && v !== '' ? v : undefined;
+    } catch (e) { return undefined; }
+  }
+
+  const controller = HQ.controller.createController(Engine, location.search, { pipelineBase: pipelineBase(), valueBase: valueBase() });
   let player = null;
 
   function focusSelector(el) {
