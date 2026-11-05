@@ -619,17 +619,19 @@ function getHistory() {
   return historyCache.map((r) => ({ ...r }));
 }
 
+// One table of numerator/denominator history fields for the four KPIs, shared by computeKpis and metricSeries.
+const KPI_FIELDS = Object.freeze([
+  Object.freeze({ name: "Bed Occupancy", numerator: "beds_occupied", denominator: "beds_staffed" }),
+  Object.freeze({ name: "Abnormal Vital Rate", numerator: "abnormal_obs_standard", denominator: "observations" }),
+  Object.freeze({ name: "Avg Length of Stay", numerator: "patient_days", denominator: "discharges" }),
+  Object.freeze({ name: "30-Day Readmission Rate", numerator: "readmits_30d_all", denominator: "discharges" }),
+]);
+
 function computeKpis(history, windowDays = 7) {
   const cur = history.slice(-windowDays);
   const pri = history.slice(-2 * windowDays, -windowDays);
   const sum = (rows, f) => rows.reduce((s, r) => s + r[f], 0);
-  const defs = [
-    ["Bed Occupancy", "beds_occupied", "beds_staffed"],
-    ["Abnormal Vital Rate", "abnormal_obs_standard", "observations"],
-    ["Avg Length of Stay", "patient_days", "discharges"],
-    ["30-Day Readmission Rate", "readmits_30d_all", "discharges"],
-  ];
-  return defs.map(([name, num, den]) => {
+  return KPI_FIELDS.map(({ name, numerator: num, denominator: den }) => {
     const value = sum(cur, num) / sum(cur, den);
     const priorValue = sum(pri, num) / sum(pri, den);
     return { name, value, priorValue, deltaPct: ((value - priorValue) / priorValue) * 100 };
@@ -665,6 +667,33 @@ function computeMetric(history, metricName, definitionId, windowDays = 7) {
   const value = sum(cur, def.numerator) / sum(cur, def.denominator);
   const priorValue = sum(pri, def.numerator) / sum(pri, def.denominator);
   return { value, priorValue, deltaPct: ((value - priorValue) / priorValue) * 100 };
+}
+
+// Daily and trailing-window series for one metric. Fixed KPIs (Bed Occupancy, Avg Length of Stay) take no
+// definitionId; the two contested metrics default to their current definition.
+function metricSeries(history, metricName, definitionId, windowDays = 7) {
+  if (!Array.isArray(history) || !Number.isInteger(windowDays) || windowDays < 1) return null;
+  if (typeof metricName !== "string") return null;
+  let num, den;
+  if (Object.prototype.hasOwnProperty.call(METRIC_DEFINITIONS, metricName)) {
+    const m = METRIC_DEFINITIONS[metricName];
+    const def = m.definitions.find((d) => d.id === (definitionId === undefined ? m.current : definitionId));
+    if (!def) return null;
+    num = def.numerator; den = def.denominator;
+  } else {
+    const k = KPI_FIELDS.find((f) => f.name === metricName);
+    if (!k || definitionId !== undefined) return null;
+    num = k.numerator; den = k.denominator;
+  }
+  const dates = [], daily = [], trailing = [];
+  history.forEach((r, i) => {
+    dates.push(r.date);
+    daily.push(r[num] / r[den]);
+    let sn = 0, sd = 0;
+    for (let j = Math.max(0, i - windowDays + 1); j <= i; j++) { sn += history[j][num]; sd += history[j][den]; }
+    trailing.push(sn / sd);
+  });
+  return { dates, daily, trailing };
 }
 
 function facilityProfile(history) {
@@ -887,14 +916,20 @@ function inspectBatch(scenario, actions, n, opts) {
 function naiveSample(scenario, actions, opts) {
   assertScenario(scenario);
   if (!Array.isArray(actions)) return null;
-  const state = getState(scenario, actions, opts);
+  // One replay pass. On every accepted runBatch the rows are the ones inspectBatch(scenario, actions, n) would
+  // return: generateExport(n, ...) with the fault list inspectBatch picks from the state before that action.
   let counted = 0, dropped = 0, abnormal = 0, evaluable = 0;
-  for (let n = 1; n <= state.batchesRun; n++) {
-    const b = inspectBatch(scenario, actions, n, opts);
-    if (!b) continue;
-    const s = naiveAbnormalStats(b.rows);
-    counted += s.counted; dropped += s.dropped; abnormal += s.abnormal; evaluable += s.evaluable;
+  let before = replay(scenario, [], opts);
+  for (const action of actions) {
+    const after = reduce(before, action, opts);
+    if (after.batchesRun === before.batchesRun + 1) {
+      const gen = opts && Array.isArray(opts.faultExports) ? opts : before.faultExports ? { faultExports: before.faultExports } : undefined;
+      const s = naiveAbnormalStats(generateExport(after.batchesRun, scenario, gen).rows);
+      counted += s.counted; dropped += s.dropped; abnormal += s.abnormal; evaluable += s.evaluable;
+    }
+    before = after;
   }
+  const state = getState(scenario, actions, opts);
   return {
     counted, dropped,
     droppedReasons: state.businessCase.silentlyDroppedRows.map((d) => ({ dlqId: d.dlqId, reason: d.reason })),
@@ -1154,7 +1189,7 @@ const Engine = {
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
   initialState, reduce, replay,
-  getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, facilityProfile, tieringCost, TIERING_DEFAULTS,
+  getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, metricSeries, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,

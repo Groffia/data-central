@@ -62,3 +62,38 @@ test("pinned hashes unchanged", () => {
   assert.strictEqual(Engine.DETERMINISM_HASH, "1f8ea357");
   assert.strictEqual(Engine.GENERATOR_HASH, "bc1e18dc");
 });
+
+test("metricSeries: shape, trailing last equals computeKpis, daily last is the day's ratio, dates match", () => {
+  const h = Engine.getHistory();
+  const kpis = Engine.computeKpis(h);
+  const fields = { "Bed Occupancy": ["beds_occupied", "beds_staffed"], "Abnormal Vital Rate": ["abnormal_obs_standard", "observations"], "Avg Length of Stay": ["patient_days", "discharges"], "30-Day Readmission Rate": ["readmits_30d_all", "discharges"] };
+  kpis.forEach((k) => {
+    const s = Engine.metricSeries(h, k.name);
+    assert.deepStrictEqual(s.dates, h.map((r) => r.date));
+    assert.strictEqual(s.daily.length, 120);
+    assert.strictEqual(s.trailing.length, 120);
+    assert.strictEqual(s.trailing[119], k.value);
+    const [nf, df] = fields[k.name], last = h[119];
+    assert.strictEqual(s.daily[119], last[nf] / last[df]);
+    assert.strictEqual(s.trailing[0], s.daily[0]);
+    const w3 = Engine.metricSeries(h, k.name, undefined, 3);
+    assert.strictEqual(w3.trailing[1], (h[0][nf] + h[1][nf]) / (h[0][df] + h[1][df]));
+    assert.strictEqual(w3.trailing[5], (h[3][nf] + h[4][nf] + h[5][nf]) / (h[3][df] + h[4][df] + h[5][df]));
+  });
+});
+
+test("metricSeries: definitions, defaults and nulls", () => {
+  const h = Engine.getHistory();
+  const cur = Engine.metricSeries(h, "Abnormal Vital Rate");
+  assert.deepStrictEqual(cur, Engine.metricSeries(h, "Abnormal Vital Rate", "standard_thresholds"));
+  const strict = Engine.metricSeries(h, "Abnormal Vital Rate", "strict_thresholds");
+  assert.strictEqual(strict.daily[10], h[10].abnormal_obs_strict / h[10].observations);
+  const un = Engine.metricSeries(h, "30-Day Readmission Rate", "unplanned_only");
+  assert.strictEqual(un.daily[10], h[10].readmits_30d_unplanned / h[10].discharges);
+  assert.strictEqual(Engine.metricSeries(h, "Bed Occupancy", "x"), null);
+  assert.strictEqual(Engine.metricSeries(h, "Avg Length of Stay", "all_cause"), null);
+  assert.strictEqual(Engine.metricSeries(h, "Abnormal Vital Rate", "nope"), null);
+  assert.strictEqual(Engine.metricSeries(h, "Nope"), null);
+  assert.strictEqual(Engine.metricSeries(h, "toString"), null);
+  [0, -1, 1.5, "7", NaN].forEach((w) => assert.strictEqual(Engine.metricSeries(h, "Bed Occupancy", undefined, w), null));
+});

@@ -53,3 +53,76 @@ test("invalid scenario throws like getState; bad actions return null", () => {
   assert.equal(Engine.naiveSample("incident", null), null);
   assert.equal(Engine.naiveSample("incident", {}), null);
 });
+
+// ----- single-pass naiveSample equals the old per-batch computation (fix A) -----
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function oldNaiveSample(scenario, actions) {
+  const state = Engine.getState(scenario, actions);
+  let counted = 0, dropped = 0, abnormal = 0, evaluable = 0;
+  for (let n = 1; n <= state.batchesRun; n++) {
+    const b = Engine.inspectBatch(scenario, actions, n);
+    if (!b) continue;
+    const s = Engine.naiveAbnormalStats(b.rows);
+    counted += s.counted; dropped += s.dropped; abnormal += s.abnormal; evaluable += s.evaluable;
+  }
+  return {
+    counted, dropped,
+    droppedReasons: state.businessCase.silentlyDroppedRows.map((d) => ({ dlqId: d.dlqId, reason: d.reason })),
+    invalidReadings: state.businessCase.invalidRowsReachingDashboard,
+    abnormal, ratePct: evaluable ? (abnormal / evaluable) * 100 : 0,
+    published: state.todaySoFar.observations,
+  };
+}
+
+test("single-pass naiveSample deep-equals the per-batch computation at every scripted step", () => {
+  ["healthy", "incident"].forEach((sc) => {
+    const script = Engine.AUTOPLAY[sc];
+    for (let k = 0; k <= script.length; k++) {
+      assert.deepStrictEqual(Engine.naiveSample(sc, script.slice(0, k)), oldNaiveSample(sc, script.slice(0, k)), sc + " step " + k);
+    }
+  });
+});
+
+test("single-pass naiveSample deep-equals the per-batch computation for 50 seeded diverged action lists", () => {
+  const rnd = mulberry32(20261105);
+  const pick = (xs) => xs[Math.floor(rnd() * xs.length)];
+  for (let i = 0; i < 50; i++) {
+    const sc = i % 2 ? "incident" : "healthy";
+    const actions = [];
+    const len = 3 + Math.floor(rnd() * 12);
+    for (let j = 0; j < len; j++) {
+      const dlq = Engine.getState(sc, actions).dlq.map((d) => d.dlqId);
+      const kind = pick(["runBatch", "runBatch", "repairRow", "discardRow", "ackAlert", "resolveRetry", "resolveAlert"]);
+      if (kind === "repairRow" || kind === "discardRow") {
+        if (!dlq.length) { actions.push({ type: "runBatch" }); continue; }
+        const a = { type: kind, dlqId: pick(dlq) };
+        if (kind === "discardRow") a.reason = pick(Engine.DISCARD_REASONS);
+        actions.push(a);
+      } else actions.push({ type: kind });
+    }
+    assert.deepStrictEqual(Engine.naiveSample(sc, actions), oldNaiveSample(sc, actions), "list " + i);
+  }
+});
+
+test("naiveSample is fast for 200 runs and getState is not the bottleneck", () => {
+  const actions = Array.from({ length: 200 }, () => ({ type: "runBatch" }));
+  const t0 = process.hrtime.bigint();
+  const n = Engine.naiveSample("healthy", actions);
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+  const g0 = process.hrtime.bigint();
+  Engine.getState("healthy", actions);
+  const gms = Number(process.hrtime.bigint() - g0) / 1e6;
+  console.log("naiveSample 200 runs: " + ms.toFixed(0) + " ms; getState: " + gms.toFixed(0) + " ms");
+  assert.ok(n.counted > 0);
+  assert.ok(ms < 1500, "took " + ms + " ms");
+});
