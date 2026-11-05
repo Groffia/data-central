@@ -68,10 +68,18 @@ test("facility profile reconciles", () => {
 
 test("tiering cost", () => {
   const t = Engine.tieringCost();
-  assert.deepStrictEqual(Object.keys(t), ["monthlyCost", "allHotCost", "savedPct"]);
-  assert.ok(t.savedPct > 0);
-  assert.strictEqual(t.savedPct, ((t.allHotCost - t.monthlyCost) / t.allHotCost) * 100);
-  assert.ok(Engine.tieringCost({ hotToWarmDays: 10 }).monthlyCost < t.monthlyCost);
+  assert.deepStrictEqual(Object.keys(t), ["monthlyCost", "allHotCost", "allWarmCost", "savedVsHotPct", "savedVsWarmPct"]);
+  assert.ok(t.savedVsHotPct > 0);
+  assert.strictEqual(t.savedVsHotPct, ((t.allHotCost - t.monthlyCost) / t.allHotCost) * 100);
+  assert.strictEqual(t.savedVsWarmPct, ((t.allWarmCost - t.monthlyCost) / t.allWarmCost) * 100);
+  // all-warm: 18 GB/day x 2555 ages x $0.023, retrieval price 0
+  assert.ok(Math.abs(t.allWarmCost - 18 * 2555 * 0.023) < 1e-6);
+  assert.ok(Math.abs(t.allWarmCost - 1057.77) < 1e-6);
+  assert.ok(t.monthlyCost < t.allWarmCost && t.allWarmCost < t.allHotCost);
+  const faster = Engine.tieringCost({ hotToWarmDays: 10 });
+  assert.ok(faster.monthlyCost < t.monthlyCost);
+  assert.ok(faster.savedVsWarmPct > t.savedVsWarmPct);
+  assert.strictEqual(faster.allWarmCost, t.allWarmCost);
 });
 
 test("facility bytesPerRow is measured from generated rows", () => {
@@ -83,13 +91,16 @@ test("facility bytesPerRow is measured from generated rows", () => {
   assert.deepStrictEqual(Object.keys(f).slice(0, 5), ["bedsStaffed", "patientsInHouse", "obsPerDay", "obsPer15Min", "obsPerMonth"]);
 });
 
+const SAVED_VS_WARM = 78.4169; // (1057.77 - 228.3) / 1057.77 * 100 = 78.41686
 // These numbers feed the demo script. If one changes, re-record it deliberately.
 test("demo headline numbers are pinned", () => {
   const near = (a, b, tol) => assert.ok(Math.abs(a - b) < tol, a + " vs " + b);
   const t = Engine.tieringCost();
   near(t.monthlyCost, 228.3, 1e-4);
   near(t.allHotCost, 3679.2, 1e-4);
-  near(t.savedPct, 93.7948, 1e-4);
+  near(t.savedVsHotPct, 93.7948, 1e-4);
+  near(t.allWarmCost, 1057.77, 1e-6);
+  near(t.savedVsWarmPct, SAVED_VS_WARM, 1e-4);
   const s = Engine.getState("healthy", []);
   const want = [
     ["Bed Occupancy", 0.785714, 0.791071, -0.677201],

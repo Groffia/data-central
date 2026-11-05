@@ -32,7 +32,9 @@ test("incident after third runBatch: held, 9 stopped, 9 PHI rows", () => {
   assert.strictEqual(s.businessCase.distortionBatchId, "batch-3");
   assert.strictEqual(s.businessCase.minutesToDetectWithGate, 15);
   assert.strictEqual(s.businessCase.hoursToDetectWithoutGate, 24);
-  assert.strictEqual(s.businessCase.storageSavedPct, Engine.tieringCost().savedPct);
+  assert.strictEqual(s.businessCase.storageSavedVsWarmPct, Engine.tieringCost().savedVsWarmPct);
+  assert.strictEqual(s.businessCase.storageSavedVsHotPct, Engine.tieringCost().savedVsHotPct);
+  assert.strictEqual("storageSavedPct" in s.businessCase, false);
 });
 
 test("healthy scenario: nothing stopped, no distortion", () => {

@@ -593,7 +593,12 @@ function tieringCost(settings) {
   };
   const monthlyCost = cost((a) => (a < s.hotToWarmDays ? "hot" : a < s.warmToColdDays ? "warm" : "cold"));
   const allHotCost = cost(() => "hot");
-  return { monthlyCost, allHotCost, savedPct: ((allHotCost - monthlyCost) / allHotCost) * 100 };
+  const allWarmCost = cost(() => "warm");
+  return {
+    monthlyCost, allHotCost, allWarmCost,
+    savedVsHotPct: ((allHotCost - monthlyCost) / allHotCost) * 100, // secondary
+    savedVsWarmPct: ((allWarmCost - monthlyCost) / allWarmCost) * 100, // headline
+  };
 }
 
 // ===== SECTION: public interface, business case, auto-play, link params =====
@@ -662,6 +667,7 @@ function computeBusinessCase(state) {
       vital_value: p.vital_value, unit: p.unit, failedTests: d.failedTests.slice(),
     });
   });
+  const tiering = tieringCost();
   return {
     rowsStopped: dlq.length,
     rowsSilentlyDropped: silentlyDroppedRows.length,
@@ -674,7 +680,8 @@ function computeBusinessCase(state) {
     minutesToDetectWithGate: dlq.length ? 15 : null, // export cadence, an upper bound
     hoursToDetectWithoutGate: 24, // assumption: a next-day report review would catch it
     phiRowsQuarantined: dlq.filter((d) => holdsPhi(d.payload)).length,
-    storageSavedPct: tieringCost().savedPct,
+    storageSavedVsWarmPct: tiering.savedVsWarmPct, // headline
+    storageSavedVsHotPct: tiering.savedVsHotPct, // secondary
   };
 }
 
