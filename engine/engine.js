@@ -1265,6 +1265,29 @@ function accessLog(scenario, actions, erasures) {
   return out;
 }
 
+// Rows per layer for one subject: Bronze (every landed row of every batch run, held or published, counted from the same
+// exports inspectBatch returns), staging, Silver, the dead-letter queue and dim_patient. Rows with a null, missing or
+// non-cohort id match nobody, so an id outside the cohort has no footprint. Pure; null for a non-string id or bad actions.
+function subjectFootprint(scenario, actions, patientId) {
+  assertScenario(scenario);
+  if (typeof patientId !== "string" || !Array.isArray(actions)) return null;
+  const inCohort = cohortIds().has(patientId);
+  const zero = { patientId, inCohort, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 };
+  if (!inCohort) return zero;
+  let bronze = 0;
+  let before = replay(scenario, [], undefined);
+  for (const action of actions) {
+    const after = reduce(before, action, undefined);
+    if (after.batchesRun === before.batchesRun + 1) {
+      const gen = before.faultExports ? { faultExports: before.faultExports } : undefined;
+      bronze += generateExport(after.batchesRun, scenario, gen).rows.filter((r) => rowSubject(r) === patientId).length;
+    }
+    before = after;
+  }
+  const r = subjectRowsInState(before, patientId);
+  return { patientId, inCohort, bronze, staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -1277,7 +1300,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, metricSeries, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  phiFields, accessLog, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  phiFields, accessLog, subjectFootprint, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
