@@ -107,3 +107,47 @@ test("healthy: running counts after each of the 4 batches", () => {
     assert.strictEqual(t.abnormalCount, pin);
   });
 });
+
+test("after recovery: staging is empty, every DLQ entry is resolved, and the next batch does not double-publish", () => {
+  const s = Engine.replay("incident", A);
+  assert.strictEqual(s.staging.length, 0);
+  assert.strictEqual(s.dlq.length, 9);
+  s.dlq.forEach((d) => assert.ok(d.status === "repaired" || d.status === "discarded", d.dlqId + " is " + d.status));
+  const next = [...A, { type: "runBatch" }];
+  const n = Engine.replay("incident", next);
+  assert.strictEqual(n.productionRows, 96);
+  assert.strictEqual(Engine.getState("incident", next).todaySoFar.observations, 96);
+  assert.strictEqual(new Set(n.productionKeys).size, n.productionKeys.length);
+  assert.strictEqual(n.productionKeys.length, 96);
+});
+
+test("faultExports [6]: recovery after six batches, gate CLOSED, 136 observations, 14 abnormal", () => {
+  const FE = { faultExports: [6] };
+  const run = { type: "runBatch" };
+  const actions = [
+    run, run, run, run, run, run,
+    ...REPAIRED.map((i) => ({ type: "repairRow", dlqId: "dlq-6-" + i })),
+    ...DISCARDED.map((i) => ({ type: "discardRow", dlqId: "dlq-6-" + i, reason: "unrepairable" })),
+    { type: "ackAlert" }, { type: "resolveRetry" }, run, // export 7 is the trial
+  ];
+  const gx = (n) => Engine.generateExport(n, "incident", FE).rows;
+  const b6 = gx(6);
+  const valid6 = b6.filter((r, i) => ![...REPAIRED, ...DISCARDED].includes(i + 1));
+  const repaired6 = REPAIRED.map((i) => Engine.repairRow(b6[i - 1]));
+  const discarded6 = DISCARDED.map((i) => b6[i - 1]);
+  const published = [...gx(1), ...gx(2), ...gx(3), ...gx(4), ...gx(5), ...valid6, ...repaired6, ...gx(7)];
+  // Independent expectations: 5 clean exports (100) + 11 valid + 5 repaired from export 6 + export 7 (20) = 136.
+  assert.strictEqual(published.length, 136);
+  assert.strictEqual(abn(published), 14);
+  // A bug that counted discarded rows would change abnormalCount only if a discarded row is abnormal: row 4 is
+  // a systolic 154 (above 140), so it is. This makes the assertions below sensitive to that bug.
+  assert.ok(abn(discarded6) >= 1, "at least one discarded row must be abnormal");
+  const s = Engine.getState("incident", actions, FE);
+  assert.strictEqual(s.gate, "CLOSED");
+  assert.strictEqual(s.todaySoFar.observations, published.length);
+  assert.strictEqual(s.todaySoFar.abnormalCount, abn(published));
+  assert.strictEqual(s.todaySoFar.observations, 136);
+  assert.strictEqual(s.todaySoFar.abnormalCount, 14);
+  assert.notStrictEqual(s.todaySoFar.abnormalCount, abn([...published, ...discarded6]));
+  assert.strictEqual(s.staging.length, 0);
+});

@@ -78,6 +78,36 @@ test("the source scanner can fail", () => {
     assert.deepStrictEqual(scan(s), [], "false hit: " + s));
 });
 
+// Load the engine text into a vm after a string replace; the replace must change the text.
+function loadWithReplace(from, to) {
+  const src = fs.readFileSync(path.join(__dirname, "..", "engine.js"), "utf8");
+  const out = src.replace(from, to);
+  assert.notStrictEqual(out, src, "replace changed nothing: " + from);
+  const ctx = {};
+  require("node:vm").runInNewContext(out, ctx);
+  return ctx.Engine;
+}
+
+test("selfTest fails on a wrong GENERATOR_HASH literal", () => {
+  const E = loadWithReplace('const GENERATOR_HASH = "' + RECORDED_GENERATOR_HASH + '"', 'const GENERATOR_HASH = "00000000"');
+  const r = E.selfTest();
+  assert.strictEqual(r.passed, false);
+  const c = r.checks.find((x) => x.name === "determinism_hash");
+  assert.strictEqual(c.ok, false);
+  assert.ok(c.detail.includes("generator hash got"), c.detail);
+  r.checks.filter((x) => x.name !== "determinism_hash").forEach((x) => assert.strictEqual(x.ok, true, x.name));
+});
+
+test("selfTest fails on a wrong DETERMINISM_HASH literal", () => {
+  const E = loadWithReplace('const DETERMINISM_HASH = "' + RECORDED_HASH + '"', 'const DETERMINISM_HASH = "00000000"');
+  const r = E.selfTest();
+  assert.strictEqual(r.passed, false);
+  const c = r.checks.find((x) => x.name === "determinism_hash");
+  assert.strictEqual(c.ok, false);
+  assert.ok(c.detail.startsWith("got "), c.detail);
+  assert.ok(!c.detail.includes("generator hash"), c.detail);
+});
+
 test("engine.js leaks nothing to global scope", () => {
   const vm = require("node:vm");
   const src = fs.readFileSync(path.join(__dirname, "..", "engine.js"), "utf8");

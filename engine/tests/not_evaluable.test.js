@@ -1,5 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
 const Engine = require("../engine.js");
 
 // One block per vital code: [code, unit, a clearly abnormal value, a clearly normal value].
@@ -43,7 +46,8 @@ CASES.forEach(([code, unit, high, normal]) => {
 
   test("summarizePublished on a mixed list: " + code, () => {
     const rows = [mk(code, unit, high), mk(code, unit, normal), mk(code, unit, null), mk(code, unit, NaN), mk(code, unit, "88")];
-    assert.deepStrictEqual(Engine.summarizePublished(rows), { observations: 5, abnormalCount: 1, notEvaluable: 3 });
+    // 5 rows, 3 not evaluable, so evaluable = 2; 1 abnormal; rate = 1 / 2 * 100 = 50.
+    assert.deepStrictEqual(Engine.summarizePublished(rows), { observations: 5, abnormalCount: 1, notEvaluable: 3, abnormalVitalRate: 50 });
   });
 });
 
@@ -57,7 +61,65 @@ test("naiveAbnormalStats edge cases", () => {
 });
 
 test("summarizePublished on an empty list", () => {
-  assert.deepStrictEqual(Engine.summarizePublished([]), { observations: 0, abnormalCount: 0, notEvaluable: 0 });
+  assert.deepStrictEqual(Engine.summarizePublished([]), { observations: 0, abnormalCount: 0, notEvaluable: 0, abnormalVitalRate: 0 });
+});
+
+test("summarizePublished rate divides by EVALUABLE rows when notEvaluable > 0", () => {
+  // 10 rows: 5 normal heart rates, 3 abnormal heart rates, 2 not evaluable (null and NaN).
+  // Hand calculation: evaluable = 10 - 2 = 8; abnormal = 3; rate = 3 / 8 * 100 = 37.5.
+  // Dividing by all 10 rows would give 3 / 10 * 100 = 30, which is wrong.
+  const rows = [
+    ...Array.from({ length: 5 }, () => mk("8867-4", "/min", 80)),
+    ...Array.from({ length: 3 }, () => mk("8867-4", "/min", 120)),
+    mk("8867-4", "/min", null), mk("8867-4", "/min", NaN),
+  ];
+  const sum = Engine.summarizePublished(rows);
+  assert.strictEqual(sum.observations, 10);
+  assert.strictEqual(sum.notEvaluable, 2);
+  assert.strictEqual(sum.abnormalCount, 3);
+  assert.strictEqual(sum.abnormalVitalRate, (3 / 8) * 100);
+  assert.notStrictEqual(sum.abnormalVitalRate, (3 / 10) * 100);
+});
+
+test("summarizePublished rate is 0 when every row is not evaluable", () => {
+  const rows = [mk("8867-4", "/min", null), mk("8480-6", "mm[Hg]", NaN), mk("8310-5", "Cel", "38.5")];
+  const sum = Engine.summarizePublished(rows);
+  assert.strictEqual(sum.notEvaluable, 3);
+  assert.strictEqual(sum.abnormalVitalRate, 0);
+});
+
+// getState cannot take a hand-made state, so the old shape is produced by deleting the counter keys from
+// initialState in a copy of the engine source loaded into a vm.
+const loadEngine = (transform) => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "engine.js"), "utf8");
+  const out = transform(src);
+  assert.notStrictEqual(out, src, "transform changed nothing");
+  const ctx = {};
+  vm.runInNewContext(out, ctx);
+  return ctx.Engine;
+};
+const ALL_KEYS = "publishedObservations: 0, publishedAbnormal: 0, publishedNotEvaluable: 0,";
+
+test("getState on an old-shaped state (no publishedNotEvaluable key) gives notEvaluable 0 and a finite rate", () => {
+  const E = loadEngine((src) => src.replace(ALL_KEYS, "publishedObservations: 0, publishedAbnormal: 0,"));
+  assert.ok(!("publishedNotEvaluable" in E.initialState("healthy")));
+  ["healthy", "incident"].forEach((sc) => {
+    [[], E.AUTOPLAY[sc]].forEach((actions) => {
+      const t = E.getState(sc, actions).todaySoFar;
+      assert.strictEqual(t.notEvaluable, 0);
+      assert.ok(Number.isFinite(t.abnormalVitalRate));
+    });
+  });
+  assert.strictEqual(E.getState("incident", E.AUTOPLAY.incident).todaySoFar.observations, 76);
+});
+
+test("the publish path defaults all three published counters on a hand-made old-shaped state", () => {
+  const old = Engine.initialState("healthy");
+  delete old.publishedObservations; delete old.publishedAbnormal; delete old.publishedNotEvaluable;
+  const next = Engine.reduce(old, { type: "runBatch" });
+  assert.strictEqual(next.publishedObservations, 20);
+  assert.strictEqual(next.publishedNotEvaluable, 0);
+  assert.ok(Number.isFinite(next.publishedAbnormal));
 });
 
 test("todaySoFar.notEvaluable is 0 for the scripted incident and the rate uses the evaluable denominator", () => {

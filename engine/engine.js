@@ -169,6 +169,7 @@ const exportRunEpoch = (n) => BASE_EPOCH + 1800 + (n - 1) * EXPORT_PERIOD;
 
 // Per-(n, row) streams, so any export derives from the seed alone.
 // Salts in use: 1 = patient pool and per-row stream (cipher), 2 = fault injector, 4 = KPI history,
+// 5 = study tokens (reserved for the Brain, not used in this file),
 // 6 = abnormal/normal draw (then the value index inside the chosen region).
 function rowRng(n, rowIndex, salt = 1) {
   const base = Math.floor(makeRng(salt)() * 4294967296);
@@ -215,6 +216,9 @@ function assertScenario(s) {
   if (s !== "healthy" && s !== "incident") throw new Error("scenario must be 'healthy' or 'incident'");
 }
 
+// NOTE: generateExport (through abnormalShare -> computeKpis(getHistory())) depends on HISTORY_DAYS and
+// historyCache, which are defined LATER in this file (KPI history section). A top-level call to generateExport
+// or abnormalShare placed above them would throw at load time (temporal dead zone). Call it only inside functions.
 function generateExport(n, scenario, opts) {
   assertScenario(scenario);
   const faultExports = opts && Array.isArray(opts.faultExports) ? opts.faultExports : scenario === "incident" ? [3] : [];
@@ -447,14 +451,19 @@ function runBatchAction(s, opts) {
   return failed.size === 0 ? publishBatch(next, batchId, exp.rows) : failBatch(next, batchId, n, exp.rows, failed);
 }
 
+// The one place the Abnormal Vital Rate formula lives: percent over EVALUABLE rows, 0 when there are none.
+function abnormalRatePct(abnormal, observations, notEvaluable) {
+  const evaluable = observations - notEvaluable;
+  return evaluable > 0 ? (abnormal / evaluable) * 100 : 0;
+}
+
 // Counts for a list of published rows. observations includes not-evaluable rows.
 function summarizePublished(rows) {
   const list = Array.isArray(rows) ? rows : [];
-  return {
-    observations: list.length,
-    abnormalCount: list.filter((r) => isAbnormal(r)).length,
-    notEvaluable: list.filter((r) => !isEvaluable(r)).length,
-  };
+  const observations = list.length;
+  const abnormalCount = list.filter((r) => isAbnormal(r)).length;
+  const notEvaluable = list.filter((r) => !isEvaluable(r)).length;
+  return { observations, abnormalCount, notEvaluable, abnormalVitalRate: abnormalRatePct(abnormalCount, observations, notEvaluable) };
 }
 
 function publishBatch(s, batchId, rows) {
@@ -463,8 +472,8 @@ function publishBatch(s, batchId, rows) {
   const wasTrial = s.gate === "HALF_OPEN";
   let next = {
     ...s, productionRows: s.productionRows + published.length,
-    publishedObservations: s.publishedObservations + sum.observations,
-    publishedAbnormal: s.publishedAbnormal + sum.abnormalCount,
+    publishedObservations: (s.publishedObservations || 0) + sum.observations,
+    publishedAbnormal: (s.publishedAbnormal || 0) + sum.abnormalCount,
     publishedNotEvaluable: (s.publishedNotEvaluable || 0) + sum.notEvaluable,
     productionKeys: [...s.productionKeys, ...published.map(keyOf).filter((k) => k !== null)],
     staging: [], lastGoodBatchId: batchId, gate: "CLOSED",
@@ -759,8 +768,7 @@ function getState(scenario, actions, opts) {
   const held = state.gate === "OPEN";
   const asOfBatchId = state.lastGoodBatchId;
   const asOfIso = isoFromEpoch(asOfBatchId === null ? BASE_EPOCH : exportRunEpoch(Number(asOfBatchId.slice(6))));
-  const obs = state.publishedObservations, abnormal = state.publishedAbnormal, notEval = state.publishedNotEvaluable;
-  const evaluable = obs - notEval;
+  const obs = state.publishedObservations || 0, abnormal = state.publishedAbnormal || 0, notEval = state.publishedNotEvaluable || 0;
   return {
     ...state,
     kpis: computeKpis(history).map((k) => ({ ...k, asOfBatchId, asOfIso, held })),
@@ -769,7 +777,7 @@ function getState(scenario, actions, opts) {
       label: "Live sample: published exports today.",
       note: "The first five readings are hand-picked edge cases, so early batches run above the 7-day rate.",
       observations: obs, abnormalCount: abnormal, notEvaluable: notEval,
-      abnormalVitalRate: evaluable > 0 ? (abnormal / evaluable) * 100 : 0,
+      abnormalVitalRate: abnormalRatePct(abnormal, obs, notEval),
     },
     facility: facilityProfile(history),
     businessCase: computeBusinessCase(state),
