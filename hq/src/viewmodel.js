@@ -77,4 +77,45 @@
       governanceChip(state), analysisChip(), visualizationChip(state), archivingChip(ctx)
     ];
   };
+
+  vm.statusRow = function statusRow(state) {
+    const alerts = state.alerts || [];
+    return {
+      gate: state.gate === 'HALF_OPEN' ? 'HALF-OPEN' : state.gate,
+      bronzeRows: state.bronzeRows,
+      heldRows: (state.staging || []).length,
+      productionRows: state.productionRows,
+      dlqOpen: openEntries(state).length,
+      dlqTotal: (state.dlq || []).length,
+      openAlerts: alerts.filter(function (a) { return a.status !== 'resolved'; }).length,
+      lastGoodBatchText: HQ.format.batchLabel(state.lastGoodBatchId)
+    };
+  };
+
+  vm.kpiTiles = function kpiTiles(state) {
+    const f = HQ.format;
+    return (state.kpis || []).map(function (k) {
+      const days = k.name === 'Avg Length of Stay';
+      return {
+        name: k.name,
+        valueText: days ? f.days1(k.value) : f.fracPct1(k.value),
+        deltaText: f.signedPct1(k.deltaPct),
+        deltaDirection: k.deltaPct > 0 ? 'up' : k.deltaPct < 0 ? 'down' : 'flat',
+        asOfText: 'as of ' + f.batchLabel(k.asOfBatchId) + ', ' + f.clockLabel(k.asOfIso),
+        held: !!k.held
+      };
+    });
+  };
+
+  vm.todaySoFar = function todaySoFar(state) {
+    const t = state.todaySoFar;
+    return {
+      label: t.label,
+      note: t.note,
+      observations: t.observations,
+      abnormalCount: t.abnormalCount,
+      rateText: HQ.format.pct1(t.abnormalVitalRate),
+      notEvaluableText: t.notEvaluable > 0 ? t.notEvaluable + ' not evaluable' : null
+    };
+  };
 })();
