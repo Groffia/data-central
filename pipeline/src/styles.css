@@ -137,3 +137,27 @@ summary { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+.stage-label { color: var(--indigo); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+.stepper, .batch-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.step-label { font-weight: 600; }
+.hq-link { color: var(--indigo); }
+.step-text, .batch-decision { margin-top: 8px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0 0 10px; }
+.drift-note { color: var(--amber); font-weight: 600; }
+tr[data-drift="true"] td { background: rgba(245, 185, 66, .14); }
+td[data-drift="true"] { color: var(--amber); }
+tr[data-focus="true"], #stage-storage[data-focus="true"] { outline: 3px solid var(--indigo); outline-offset: 2px; }
+.gate-decision { font-weight: 700; padding: 8px 12px; border-radius: 6px; margin-top: 8px; }
+.gate-decision[data-level="green"] { background: var(--green); color: var(--on-green); }
+.gate-decision[data-level="red"] { background: var(--red); color: var(--on-red); }
+tr[data-pass="false"] td:nth-child(3) { color: var(--red); font-weight: 600; }
+.tier-inputs { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 8px; }
+.tier-field { display: grid; gap: 2px; }
+.tier-field input { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; width: 9rem; }
+.tier-field .default { color: var(--text-2); font-size: .8rem; }
+.tier-bar { display: flex; width: 100%; height: 28px; border-radius: 6px; overflow: hidden; margin: 10px 0; border: 1px solid var(--border); }
+.tier { display: block; overflow: hidden; white-space: nowrap; font-size: .75rem; line-height: 28px; padding: 0 6px; }
+.tier-hot { background: var(--red); color: var(--on-red); }
+.tier-warm { background: var(--amber); color: var(--on-amber); }
+.tier-cold { background: var(--indigo); color: var(--on-indigo); }

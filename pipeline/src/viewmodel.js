@@ -371,4 +371,63 @@
   vm.tiering = tiering;
   vm.tierBar = tierBar;
   vm.vendorSubset = vendorSubset;
+
+  // ----- Task 11: combined view model -----
+
+  function identifierText(row) {
+    if (!row) return '';
+    if (Object.prototype.hasOwnProperty.call(row, 'patient_id')) return cellText(row.patient_id);
+    if (Object.prototype.hasOwnProperty.call(row, 'patientId')) return cellText(row.patientId);
+    const k = Object.keys(row)[0];
+    return k === undefined ? '' : cellText(row[k]);
+  }
+
+  // Pure: reads its input, builds new objects, never writes to them.
+  function buildViewModel(input) {
+    const inp = input || {};
+    const scenario = inp.scenario;
+    const step = inp.step;
+    const actions = inp.actions || [];
+    const state = inp.state || Engine.getState(scenario, actions);
+    const inspect = inp.inspect || null;
+    const hqLink = typeof inp.hqLink === 'string' ? inp.hqLink : '';
+    const total = state.batchesRun || 0;
+    const selected = inp.selectedBatch === null || inp.selectedBatch === undefined ? (total || null) : inp.selectedBatch;
+    const raw = inp.tieringInputs && typeof inp.tieringInputs === 'object' ? inp.tieringInputs : {};
+    const tier = tiering(raw, inp.tieringPrevious);
+    const defaults = tierDefaults();
+    const fields = {};
+    TIER_KEYS.forEach(function (k) {
+      fields[k] = Object.prototype.hasOwnProperty.call(raw, k) ? String(raw[k]) : String(defaults[k]);
+    });
+    const rv = inspect ? rowView(inspect).map(function (r) {
+      return { index: r.index, pass: r.pass, failedTests: r.failedTests, identifier: identifierText((inspect.rows || [])[r.index]) };
+    }) : null;
+    return {
+      scenario: scenario,
+      header: header(state, scenario, step, hqLink),
+      batches: {
+        chips: batchChips(state, inp.selectedBatch === undefined ? null : inp.selectedBatch),
+        decisionText: inspect ? (inspect.decision === 'PUBLISHED' ? 'Published' : 'Held at the gate') : ''
+      },
+      generation: generationPanel(state),
+      landing: inspect ? landingZone(inspect) : null,
+      matrix: testMatrix(inspect),
+      gate: inspect ? gateDecision(inspect, state) : null,
+      rowView: rv,
+      dlq: dlqView(state, hqLink),
+      medallion: medallion(state),
+      storage: {
+        inputs: tier.inputs, valid: tier.valid, message: tier.message, result: tier.result,
+        tierBar: tierBar(raw), fields: fields, defaults: defaults
+      },
+      vendor: vendorSubset(),
+      focus: inp.focus === undefined || inp.focus === null ? '' : String(inp.focus),
+      notice: inp.notice || '',
+      error: inp.error || '',
+      selectedBatch: selected
+    };
+  }
+
+  vm.buildViewModel = buildViewModel;
 })();
