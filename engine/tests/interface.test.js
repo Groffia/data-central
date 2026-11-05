@@ -53,30 +53,75 @@ test("PRELUDE.incident leaves batchesRun 2; one more runBatch makes the 9-row DL
   assert.strictEqual(next.dlq.length, 9);
 });
 
-test("naiveAbnormalRate on a hand-built 4-row sample", () => {
+test("naiveAbnormalRate on a hand-built sample (strict rules)", () => {
   const base = { patient_id: "SGH-P-100001", vital_code: "8480-6", vital_value: 120 };
   const rows = [
-    { patientId: "SGH-P-100002", vitalCode: "8867-4", vitalValue: "72" }, // renamed HR: 0 -> abnormal, counted
-    { ...base, patient_id: null, vital_code: "8867-4", vital_value: 200 }, // dropped
-    { ...base, patient_id: "'; DROP TABLE silver_vital_observation;--", vital_value: 200 }, // dropped
-    { ...base, vital_code: "59408-5", vital_value: 130 }, // SpO2 130: not abnormal, counted
+    { patientId: "SGH-P-100002", vitalCode: "8867-4", vitalValue: "72" }, // renamed columns: no patient_id key, dropped
+    { ...base, patient_id: null, vital_code: "8867-4", vital_value: 200 }, // null id, dropped
+    { ...base, patient_id: "", vital_value: 200 }, // empty id, dropped
+    { vital_code: "8480-6", vital_value: 200 }, // no patient_id key, dropped
+    { ...base, patient_id: "'; DROP TABLE silver_vital_observation;--", vital_value: 200 }, // pattern mismatch, dropped
+    { ...base, vital_code: "59408-5", vital_value: 130 }, // SpO2 130: counted, not abnormal
+    { ...base, vital_value: 200 }, // systolic 200 > 140: counted, abnormal
+    { ...base, vital_code: "8867-4", vital_value: 120, unit: "mmHg" }, // HR 120 > 100: counted, abnormal (unit ignored)
   ];
-  assert.strictEqual(Engine.naiveAbnormalRate(rows), 50); // 1 abnormal / 2 counted
+  // Hand calculation: 5 rows dropped; 3 counted (SpO2 130, systolic 200, HR 120); 2 abnormal.
+  // 2 / 3 * 100 = 66.6667 %.
+  assert.ok(Math.abs(Engine.naiveAbnormalRate(rows) - 200 / 3) < 1e-9);
   assert.strictEqual(Engine.naiveAbnormalRate([]), 0);
-  // renamed systolic and temperature: 0 is normal
+  // renamed rows lose every key, so nothing is counted: 0
   assert.strictEqual(Engine.naiveAbnormalRate([
     { patientId: "x", vitalCode: "8480-6" }, { patientId: "x", vitalCode: "8310-5" },
-    { patientId: "x", vitalCode: "59408-5" }, { patientId: "x", vitalCode: "8867-4" }]), 50);
+    { patientId: "x", vitalCode: "59408-5" }, { patientId: "x", vitalCode: "8867-4" }]), 0);
 });
 
-test("distortionAvoidedPts for the incident batch is the pinned value", () => {
+test("distortionAvoidedPts (secondary, can be negative) for the incident batch", () => {
   const bc = Engine.getState("incident", run3).businessCase;
-  // Hand calculation, export 3. Batch rows: 20, dropped 2 (null id row 4, injection row 13) -> 18 counted.
-  // Abnormal: renamed rows 2, 6, 10 (SpO2 shown as 0 < 92) = 3; rows 15, 19 (temperature 0) normal;
-  // row 7 (temperature 38.0 >= 38.0) = 1. Total 4/18 = 22.222%.
-  // Valid rows (error-free): 11 counted (1,3,5,7,8,11,12,14,16,18,20), abnormal only row 7 = 1/11 = 9.091%.
-  // Avoided distortion = 22.222 - 9.091 = 13.1313 points (= 400/18 - 100/11).
-  assert.ok(Math.abs(bc.distortionAvoidedPts - 13.131313131313131) < 1e-9);
+  // Hand calculation, export 3: 20 rows. Naive drops 5 renamed rows (no patient_id key), the null-id row
+  // and the injection-id row -> 13 counted. Of those, only row 7 (temperature 38.0 >= 38.0) is abnormal
+  // (SpO2 130 is not, the mmHg heart-rate row is not): 1/13 = 7.6923 %.
+  // Valid rows (error-free): 11 counted, abnormal only row 7 = 1/11 = 9.0909 %.
+  // distortionAvoidedPts = 100/13 - 100/11 = -1.3986 (negative: the naive rate is LOWER).
+  assert.ok(Math.abs(bc.distortionAvoidedPts - (100 / 13 - 100 / 11)) < 1e-9);
+  assert.ok(Math.abs(bc.distortionAvoidedPts - -1.3986) < 1e-4);
+});
+
+test("business case outcome counts for the incident: 7 dropped, 2 reach the dashboard", () => {
+  const bc = Engine.getState("incident", run3).businessCase;
+  const RENAMED = "renamed columns: patient_id key missing, dropped by join to dim_patient";
+  assert.strictEqual(bc.rowsSilentlyDropped, 7);
+  const want = {
+    "dlq-3-2": RENAMED, "dlq-3-6": RENAMED, "dlq-3-10": RENAMED, "dlq-3-15": RENAMED, "dlq-3-19": RENAMED,
+    "dlq-3-4": "null patient_id: dropped by join to dim_patient",
+    "dlq-3-13": "patient_id matches no dim_patient row",
+  };
+  // listed in DLQ order
+  assert.deepStrictEqual(bc.silentlyDroppedRows.map((r) => r.dlqId), ["dlq-3-2", "dlq-3-4", "dlq-3-6", "dlq-3-10", "dlq-3-13", "dlq-3-15", "dlq-3-19"]);
+  bc.silentlyDroppedRows.forEach((r) => assert.strictEqual(r.reason, want[r.dlqId]));
+  assert.strictEqual(bc.invalidRowsReachingDashboard, 2);
+  assert.deepStrictEqual(bc.invalidRowsListing.map((r) => r.dlqId).sort(), ["dlq-3-17", "dlq-3-9"]);
+  const s = Engine.getState("incident", run3);
+  s.dlq.filter((d) => ["dlq-3-9", "dlq-3-17"].includes(d.dlqId)).forEach((d) => {
+    const r = bc.invalidRowsListing.find((x) => x.dlqId === d.dlqId);
+    assert.deepStrictEqual(r, {
+      dlqId: d.dlqId, patient_id: d.payload.patient_id, vital_code: d.payload.vital_code,
+      vital_value: d.payload.vital_value, unit: d.payload.unit, failedTests: d.failedTests,
+    });
+  });
+  const spo2 = bc.invalidRowsListing.find((r) => r.vital_code === "59408-5");
+  assert.strictEqual(spo2.vital_value, 130);
+  const hr = bc.invalidRowsListing.find((r) => r.vital_code === "8867-4");
+  assert.strictEqual(hr.unit, "mmHg");
+  assert.strictEqual(bc.rowsSilentlyDropped + bc.invalidRowsReachingDashboard, bc.rowsStopped);
+  assert.strictEqual(bc.rowsStopped, 9);
+});
+
+test("business case outcome counts for healthy are zero", () => {
+  const bc = Engine.getState("healthy", Engine.AUTOPLAY.healthy).businessCase;
+  assert.strictEqual(bc.rowsSilentlyDropped, 0);
+  assert.strictEqual(bc.invalidRowsReachingDashboard, 0);
+  assert.deepStrictEqual(bc.silentlyDroppedRows, []);
+  assert.deepStrictEqual(bc.invalidRowsListing, []);
 });
 
 test("getTimeline events are in nondecreasing iso order", () => {

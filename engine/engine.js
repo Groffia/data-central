@@ -612,21 +612,24 @@ const AUTOPLAY = {
   ],
 };
 
+// A naive pipeline joins to dim_patient on patient_id. Renamed-column rows lose EVERY key (including
+// patient_id), so they have no usable id and the join drops them. Returns the drop reason, or null.
+function naiveDropReason(row) {
+  const r = isObj(row) ? row : {};
+  if (!("patient_id" in r)) return "renamed columns: patient_id key missing, dropped by join to dim_patient";
+  if (r.patient_id === null || r.patient_id === undefined || r.patient_id === "") return "null patient_id: dropped by join to dim_patient";
+  if (typeof r.patient_id !== "string" || !PATIENT_ID_RE.test(r.patient_id)) return "patient_id matches no dim_patient row";
+  return null;
+}
+
 // Models a pipeline with no gate. Returns a percent 0..100.
-// NOTE: this follows Stephen's rules literally. A camelCased row also loses patient_id and vital_code,
-// so a stricter pipeline would drop it or fail to classify it.
+// Rows without a usable patient_id are dropped by the join; every other row is evaluated as-is (unit ignored).
 function naiveAbnormalRate(rows) {
   let counted = 0, abnormal = 0;
   (Array.isArray(rows) ? rows : []).forEach((row) => {
-    const r = isObj(row) ? row : {};
-    if ("patientId" in r) { // renamed columns: vital_value dropped -> null -> shown as 0
-      counted++;
-      if (isAbnormal({ vital_code: r.vitalCode, vital_value: 0 })) abnormal++;
-      return;
-    }
-    if ("patient_id" in r && (typeof r.patient_id !== "string" || !PATIENT_ID_RE.test(r.patient_id))) return; // dim_patient join drops it
+    if (naiveDropReason(row) !== null) return;
     counted++;
-    if (typeof r.vital_value === "number" && isAbnormal(r)) abnormal++;
+    if (isAbnormal(row)) abnormal++;
   });
   return counted ? (abnormal / counted) * 100 : 0;
 }
@@ -648,8 +651,24 @@ function computeBusinessCase(state) {
     const failed = errorFailures(rows, [], exportRunEpoch(n));
     distortionAvoidedPts = naiveAbnormalRate(rows) - naiveAbnormalRate(rows.filter((r, i) => !failed.has(i)));
   }
+  // Outcome counts describe what a naive pipeline would have done with every DLQ entry ever created.
+  const silentlyDroppedRows = [], invalidRowsListing = [];
+  dlq.forEach((d) => {
+    const reason = naiveDropReason(d.payload);
+    if (reason !== null) { silentlyDroppedRows.push({ dlqId: d.dlqId, reason }); return; }
+    const p = d.payload;
+    invalidRowsListing.push({
+      dlqId: d.dlqId, patient_id: p.patient_id, vital_code: p.vital_code,
+      vital_value: p.vital_value, unit: p.unit, failedTests: d.failedTests.slice(),
+    });
+  });
   return {
     rowsStopped: dlq.length,
+    rowsSilentlyDropped: silentlyDroppedRows.length,
+    silentlyDroppedRows,
+    invalidRowsReachingDashboard: invalidRowsListing.length,
+    invalidRowsListing,
+    // SECONDARY: signed (naive minus valid), can be negative, so it must not be headlined.
     distortionAvoidedPts,
     distortionBatchId,
     minutesToDetectWithGate: dlq.length ? 15 : null, // export cadence, an upper bound
