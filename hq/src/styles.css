@@ -39,7 +39,7 @@ footer { padding: 16px; color: var(--text-2); font-size: .85rem; }
   position: sticky; top: 0; z-index: 5; max-width: 1200px; margin: 0 auto; padding: 8px 16px;
   background: var(--panel-2); border-bottom: 2px solid var(--indigo); color: var(--text);
 }
-.caption-bar:empty { display: none; }
+.caption-bar:empty { padding: 0; min-height: 0; border-bottom: 0; margin-bottom: 0; }
 
 .header-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
 .scenario-switch, .watch-controls, .run-controls, .playback-controls, .alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
