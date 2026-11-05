@@ -83,4 +83,62 @@
   }
 
   vm.generationPanel = generationPanel;
+
+  // ----- Task 7: landing zone -----
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // Seconds since the epoch to "HH:MM:SS UTC" with integer arithmetic only.
+  function clockFromEpoch(sec) {
+    const d = ((sec % 86400) + 86400) % 86400;
+    return pad2(Math.floor(d / 3600)) + ':' + pad2(Math.floor((d % 3600) / 60)) + ':' + pad2(d % 60) + ' UTC';
+  }
+
+  function cellText(v) {
+    if (v === null || v === undefined) return 'null';
+    return typeof v === 'string' ? v : String(v);
+  }
+
+  function hasContractKeys(row, names) {
+    const keys = Object.keys(row);
+    return keys.length === names.length && names.every(function (n, i) { return keys[i] === n; });
+  }
+
+  function landingZone(inspect) {
+    const names = Engine.getContract().fields.map(function (f) { return f.name; });
+    const table = Engine.getContract().names.bronze;
+    if (!inspect) {
+      return { facts: { batchId: Shared.format.batchLabel(null), runTimeText: '', rowCountText: '0 rows', table: table }, columns: [], rows: [], driftNote: null };
+    }
+    const src = inspect.rows || [];
+    const columns = [];
+    src.forEach(function (r) {
+      Object.keys(r).forEach(function (k) { if (columns.indexOf(k) < 0) columns.push(k); });
+    });
+    let firstDrift = null;
+    const rows = src.map(function (r) {
+      const drift = !hasContractKeys(r, names);
+      if (drift && firstDrift === null) firstDrift = Object.keys(r);
+      return {
+        cells: columns.map(function (c) {
+          const has = Object.prototype.hasOwnProperty.call(r, c);
+          return { text: has ? cellText(r[c]) : '', drift: has && names.indexOf(c) < 0 };
+        }),
+        drift: drift
+      };
+    });
+    return {
+      facts: {
+        batchId: Shared.format.batchLabel(inspect.batchId),
+        runTimeText: clockFromEpoch(inspect.runEpoch),
+        rowCountText: src.length + ' ' + Shared.format.plural(src.length, 'row', 'rows'),
+        table: table
+      },
+      columns: columns,
+      rows: rows,
+      driftNote: firstDrift === null ? null : 'Columns arrived as ' + firstDrift.join(', ') + ' instead of ' + names.join(', ')
+    };
+  }
+
+  vm.landingZone = landingZone;
 })();
