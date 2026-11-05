@@ -102,3 +102,12 @@ test('the model is deterministic and does not mutate the actions', () => {
   assert.deepStrictEqual(a, b);
   assert.deepStrictEqual(J(actions), copy);
 });
+
+test('vendor: the lineage-and-catalog row and the access-and-audit-log row, from the shared table', () => {
+  const v = build('healthy', 4).vendor;
+  assert.deepStrictEqual(v.columns, ['Component', 'Databricks', 'Snowflake', 'Fabric']);
+  assert.deepStrictEqual(v.rows, [
+    ['Lineage and catalog', 'Unity Catalog', 'Snowflake Horizon Catalog / Atlan', 'Microsoft Purview'],
+    ['Access and audit log', 'Audit log system table', 'ACCESS_HISTORY view', 'Microsoft Purview audit log']
+  ]);
+});

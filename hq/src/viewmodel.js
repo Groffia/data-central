@@ -284,8 +284,8 @@
     };
   };
 
-  // Rows added to the shared constant for other pages (for example Dashboards, stage 7 on the Value page) are left out of HQ.
-  const VENDOR_EXCLUDED = ['Dashboards'];
+  // Rows added to the shared constant for other pages (Dashboards, stage 7 on the Value page; Access and audit log, stage 5 on the Brain page) are left out of HQ.
+  const VENDOR_EXCLUDED = ['Dashboards', 'Access and audit log'];
 
   vm.vendorTable = function vendorTable() {
     return {

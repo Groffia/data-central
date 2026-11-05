@@ -314,6 +314,21 @@
     };
   }
 
+  // ----- vendor table -----
+
+  // The rows of the shared vendor table for stages 5 and 8 (Lineage and catalog already existed; the audit-log row was added for this page).
+  const VENDOR_ROWS = ['Lineage and catalog', 'Access and audit log'];
+
+  function vendorSubset() {
+    return {
+      columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
+      rows: VENDOR_ROWS.map(function (name) {
+        const row = Shared.vendor.rows.filter(function (r) { return r[0] === name; })[0];
+        return row ? row.slice() : [name, '', '', ''];
+      })
+    };
+  }
+
   // ----- model assembly -----
 
   function selfTestBanner() {
@@ -361,7 +376,7 @@
         access: accessPanel(scenario, actions, local),
         retention: retentionPanel(local, pipelineHref === null ? null : pipelineHref + '#stage-storage'),
         erasure: erasurePanel(scenario, actions, state, local, applied),
-        vendor: null,
+        vendor: vendorSubset(),
         notice: notice,
         message: local.message,
         footer: FOOTER_TEXT

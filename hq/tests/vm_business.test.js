@@ -82,6 +82,11 @@ test('vendor table matches spec 3b', () => {
   assert.ok(withAct[0].indexOf('Alerting') === 0);
 });
 
+test('rows added to the shared vendor constant for other pages are left out of HQ', () => {
+  const names = vm.vendorTable().rows.map(function (r) { return r[0]; });
+  ['Dashboards', 'Access and audit log'].forEach(function (n) { assert.ok(names.indexOf(n) < 0, n); });
+});
+
 test('buildViewModel combines everything', () => {
   const s = st('incident', 3);
   const m = vm.buildViewModel(s, { notice: 'n', error: 'e' }, CTX);

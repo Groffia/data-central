@@ -7,9 +7,9 @@ const { loadShared } = require('./helpers/load');
 
 const { Shared } = loadShared();
 
-test('vendor rows: 9 rows of 4 strings, first column is the component', () => {
+test('vendor rows: 10 rows of 4 strings, first column is the component', () => {
   const rows = Shared.vendor.rows;
-  assert.strictEqual(rows.length, 9);
+  assert.strictEqual(rows.length, 10);
   rows.forEach(function (r) {
     assert.strictEqual(r.length, 4);
     r.forEach(function (c) { assert.strictEqual(typeof c, 'string'); });
@@ -27,6 +27,13 @@ test('Dashboards row: three non-empty vendor names, no URL, Metrics layer unchan
   const m = rows.filter(function (r) { return r[0] === 'Metrics layer'; });
   assert.strictEqual(m.length, 1);
   assert.deepStrictEqual([...m[0]], ['Metrics layer', 'Unity Catalog metric views', 'dbt Semantic Layer', 'Power BI semantic model']);
+});
+
+test('Access and audit log row: three non-empty vendor names, no URL', () => {
+  const r = Shared.vendor.rows.filter(function (x) { return x[0] === 'Access and audit log'; });
+  assert.strictEqual(r.length, 1);
+  assert.deepStrictEqual([...r[0]], ['Access and audit log', 'Audit log system table', 'ACCESS_HISTORY view', 'Microsoft Purview audit log']);
+  r[0].forEach(function (c) { assert.ok(c.trim().length > 0); assert.ok(!/https?:|www./i.test(c)); });
 });
 
 test('vendor.js source has no forbidden APIs', () => {
