@@ -7,30 +7,37 @@
 
   const NO_BATCH_TEXT = 'No batch has run yet';
 
-  // The detail of the first engine event the last applied action added. The prior state is the same scripted
-  // prefix one action shorter; at or below the scenario floor (nothing was added) it is the last event.
-  function stepText(state, scenario, step) {
+  // The detail of the first engine event the last action added (replay the actions without it to count the events
+  // that existed before). At or below the scenario floor (the opening prelude) it is the last event.
+  function stepText(state, scenario, actions) {
     const events = state.events || [];
     if (!events.length) return NO_BATCH_TEXT;
-    const prev = Engine.getState(scenario, Engine.actionsForStep(scenario, step - 1));
-    const added = events[(prev.events || []).length];
+    const list = Array.isArray(actions) ? actions : [];
+    if (list.length <= Engine.PRELUDE[scenario].length) return events[events.length - 1].detail;
+    let before;
+    try { before = (Engine.getState(scenario, list.slice(0, -1)).events || []).length; } catch (e) { before = events.length - 1; }
+    const added = events[before];
     return (added || events[events.length - 1]).detail;
   }
 
-  function header(state, scenario, step, hqLink) {
+  // `step` is the scripted step number, or null for a diverged state (actions that are not a scripted prefix).
+  function header(state, scenario, step, hqLink, actions) {
     const m = Engine.AUTOPLAY[scenario].length;
     const floor = Engine.PRELUDE[scenario].length;
+    const list = Array.isArray(actions) ? actions : Engine.actionsForStep(scenario, step === null ? floor : step);
+    const steps = { n: step, m: m, text: stepText(state, scenario, list) };
+    if (step === null) steps.label = 'Custom state from HQ (' + list.length + ' ' + Shared.format.plural(list.length, 'action', 'actions') + ')';
     return {
       title: 'Pipeline: Under the Hood',
       subtitle: 'Tamsworth Health: how a vitals export becomes trusted data, stages 1 to 4',
-      steps: { n: step, m: m, text: stepText(state, scenario, step) },
-      canBack: step > floor,
-      canNext: step < m,
+      steps: steps,
+      canBack: step === null ? true : step > floor,
+      canNext: step === null ? true : step < m,
       hqHref: hqLink
     };
   }
 
-  function stepLabel(steps) { return 'Step ' + steps.n + ' of ' + steps.m; }
+  function stepLabel(steps) { return typeof steps.label === 'string' ? steps.label : 'Step ' + steps.n + ' of ' + steps.m; }
 
   // The batch whose rows are held back: the batch of the dead-letter entries, only while the gate is not closed.
   function isHeld(state, n) {
@@ -393,7 +400,7 @@
     const inp = input && typeof input === 'object' ? input : {};
     const scenario = Engine.AUTOPLAY[inp.scenario] ? inp.scenario : 'healthy';
     const floor = Engine.PRELUDE[scenario].length;
-    const step = Number.isInteger(inp.step) ? inp.step : floor;
+    const step = Number.isInteger(inp.step) ? inp.step : inp.step === null ? null : floor;
     const actions = Array.isArray(inp.actions) ? inp.actions : Engine.actionsForStep(scenario, floor);
     const state = inp.state && typeof inp.state === 'object' ? inp.state : Engine.getState(scenario, actions);
     const inspect = inp.inspect && typeof inp.inspect === 'object' ? inp.inspect : null;
@@ -412,7 +419,7 @@
     }) : null;
     return {
       scenario: scenario,
-      header: header(state, scenario, step, hqLink),
+      header: header(state, scenario, step, hqLink, actions),
       batches: {
         chips: batchChips(state, inp.selectedBatch === undefined ? null : inp.selectedBatch),
         decisionText: inspect ? (inspect.decision === 'PUBLISHED' ? 'Published' : 'Held at the gate') : ''

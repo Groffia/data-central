@@ -59,7 +59,7 @@
       '</div>' +
       '<div class="stepper" role="group" aria-label="Stepper">' +
       button('Back', 'back', { disabled: !h.canBack }) +
-      '<span class="step-label">' + esc('Step ' + s.n + ' of ' + s.m) + '</span>' +
+      '<span class="step-label">' + esc(typeof s.label === 'string' ? s.label : 'Step ' + s.n + ' of ' + s.m) + '</span>' +
       button('Next', 'next', { disabled: !h.canNext }) +
       '</div>' +
       (link ? '<a class="hq-link"' + attr('href', link) + '>Open this state in HQ</a>' : '') +
