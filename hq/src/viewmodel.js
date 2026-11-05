@@ -177,17 +177,42 @@
       return {
         hasIncident: false,
         placeholder: 'No incident yet. Switch to Incident to see what the gate prevents.',
-        headline: null, rowsStopped: null, droppedList: [], invalidList: [],
+        headline: null, columns: null, rowsStopped: null, droppedList: [], invalidList: [],
         timeToDetect: null, phiText: null, storage: null, secondary: null
       };
     }
     const b = state.businessCase;
+    const dlq = state.dlq;
+    const repaired = dlq.filter(function (d) { return d.status === 'repaired'; }).length;
+    const discarded = dlq.filter(function (d) { return d.status === 'discarded'; }).length;
+    // No engine field counts invalid rows in production; the gate holds failing rows, so the count is the literal 0.
+    const invalidInProduction = 0;
     return {
       hasIncident: true,
       placeholder: null,
       headline: 'Without the gate: ' + b.rowsSilentlyDropped + ' ' + pl(b.rowsSilentlyDropped, 'row vanishes', 'rows vanish') +
         ' silently and ' + b.invalidRowsReachingDashboard + ' impossible ' +
         pl(b.invalidRowsReachingDashboard, 'reading reaches', 'readings reach') + ' the dashboard.',
+      columns: {
+        without: {
+          title: 'Without this system',
+          lines: [
+            b.rowsSilentlyDropped + ' ' + pl(b.rowsSilentlyDropped, 'row vanishes', 'rows vanish') + ' silently',
+            b.invalidRowsReachingDashboard + ' impossible ' +
+              pl(b.invalidRowsReachingDashboard, 'reading reaches', 'readings reach') + ' the dashboard',
+            'Detected at the next scheduled review (assumed ' + b.hoursToDetectWithoutGate + ' hours, an assumption).'
+          ]
+        },
+        with: {
+          title: 'With this system',
+          lines: [
+            b.rowsStopped + ' ' + pl(b.rowsStopped, 'row', 'rows') + ' stopped at the batch',
+            invalidInProduction + ' invalid ' + pl(invalidInProduction, 'reading', 'readings') + ' in production',
+            'Caught at the batch (at most ' + b.minutesToDetectWithGate + ' simulated minutes).',
+            repaired + ' repaired, ' + discarded + ' discarded with logged reasons'
+          ]
+        }
+      },
       rowsStopped: b.rowsStopped,
       droppedList: (b.silentlyDroppedRows || []).map(function (r) { return { dlqId: r.dlqId, reason: r.reason }; }),
       invalidList: (b.invalidRowsListing || []).map(function (r) {

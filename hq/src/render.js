@@ -145,6 +145,11 @@
     }).join('') + '</ol>';
   }
 
+  function bizCol(cls, col) {
+    return '<section class="biz-col ' + cls + '"><h3>' + esc(col.title) + '</h3><ul>' +
+      col.lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></section>';
+  }
+
   function business(vm) {
     const b = vm.business;
     const head = '<h2>Business case</h2>';
@@ -157,11 +162,9 @@
     }).join('');
     return head +
       '<p class="headline">' + esc(b.headline) + '</p>' +
-      '<p>Rows stopped at the gate: ' + esc(b.rowsStopped) + '</p>' +
+      '<div class="biz-columns">' + bizCol('biz-without', b.columns.without) + bizCol('biz-with', b.columns.with) + '</div>' +
       '<details><summary>Rows that would vanish silently</summary><ul>' + dropped + '</ul></details>' +
       '<details><summary>Impossible readings that would reach the dashboard</summary><ul>' + invalid + '</ul></details>' +
-      '<p>' + esc(b.timeToDetect.withGate) + '</p>' +
-      '<p>' + esc(b.timeToDetect.withoutGate) + '</p>' +
       '<p>' + esc(b.phiText) + '</p>' +
       '<p class="storage-headline">' + esc(b.storage.headline) + '</p>' +
       '<p class="storage-secondary">' + esc(b.storage.secondary) + '</p>' +

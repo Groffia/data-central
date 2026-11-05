@@ -119,6 +119,16 @@ time { color: var(--text-2); }
 details { margin: 6px 0; }
 summary { cursor: pointer; }
 
+.biz-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+.biz-col { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.biz-col h3 { margin: 0 0 6px; }
+.biz-col ul { margin: 0; padding-left: 18px; }
+.biz-without { border-color: var(--red); }
+.biz-with { border-color: var(--green); }
+
+@media (max-width: 1023px) {
+  .biz-columns { grid-template-columns: 1fr; }
+}
 @media (max-width: 1100px) {
   .stage-strip { grid-template-columns: repeat(2, 1fr); }
   .tiles { grid-template-columns: repeat(2, 1fr); }

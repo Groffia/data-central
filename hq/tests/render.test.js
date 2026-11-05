@@ -128,7 +128,7 @@ test('business: placeholder at healthy k=1, headline at incident k=3', () => {
   assert.ok(b.indexOf('Without the gate: ') >= 0);
   assert.ok(b.indexOf('Illustrative figures for comparison, not vendor quotes') >= 0);
   assert.ok(b.indexOf('Rows containing PHI quarantined for review: ') >= 0);
-  assert.ok(b.indexOf('(an assumption)') >= 0);
+  assert.ok(b.indexOf('an assumption).') >= 0);
   assert.ok(b.indexOf('(secondary)') >= 0);
 });
 
