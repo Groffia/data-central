@@ -205,6 +205,94 @@ function generateExport(n, scenario) { // scenario: only "healthy" is implemente
   return { n, runEpoch, rows };
 }
 
+// ===== SECTION: quality tests =====
+const FIELD_NAMES = CONTRACT.fields.map((f) => f.name);
+const FRESHNESS_WINDOW = 24 * 3600;
+const isNil = (v) => v === null || v === undefined;
+const isObj = (r) => r !== null && typeof r === "object" && !Array.isArray(r);
+const codeSpec = (code) => (typeof code === "string" ? CONTRACT.vitalCodes.find((c) => c.code === code) : undefined);
+const ENUMS = {
+  vital_code: CONTRACT.vitalCodes.map((c) => c.code),
+  unit: CONTRACT.vitalCodes.map((c) => c.unit),
+  cipher_suite: CIPHERS,
+};
+const PATTERNS = {
+  patient_id: /^SGH-P-\d{6}$/,
+  patient_zip5: /^\d{5}$/,
+  birth_date: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
+};
+const keyOf = (r) => {
+  const [a, b] = CONTRACT.primaryKey;
+  return isNil(r[a]) || isNil(r[b]) ? null : r[a] + "|" + r[b];
+};
+
+// Each check: (rows, ctx) -> failing row indexes for one column. Null/missing values are skipped
+// where not_null already reports them.
+const rowsWhere = (rows, fn) => { const out = []; rows.forEach((r, i) => { if (fn(r, i)) out.push(i); }); return out; };
+
+const QUALITY_TESTS = {
+  not_null: { severity: "error", columns: FIELD_NAMES,
+    run: (rows, ctx, col) => rowsWhere(rows, (r) => isNil(r[col])) },
+  unique_combination_of_columns: { severity: "error", columns: [CONTRACT.primaryKey.join(",")],
+    run: (rows, ctx) => {
+      const seen = new Map();
+      rows.forEach((r, i) => { const k = keyOf(r); if (k !== null) seen.set(k, (seen.get(k) || 0) + 1); });
+      return rowsWhere(rows, (r) => { const k = keyOf(r); return k !== null && (seen.get(k) > 1 || ctx.priorKeys.has(k)); });
+    } },
+  accepted_values: { severity: "error", columns: ["vital_code", "unit", "cipher_suite"],
+    run: (rows, ctx, col) => rowsWhere(rows, (r) => !isNil(r[col]) && !ENUMS[col].includes(r[col])) },
+  range: { severity: "error", columns: ["vital_value"],
+    run: (rows) => rowsWhere(rows, (r) => {
+      const spec = codeSpec(r.vital_code), v = r.vital_value;
+      if (!spec || isNil(v)) return false;
+      return typeof v !== "number" || !Number.isFinite(v) || v < spec.min || v > spec.max;
+    }) },
+  matches_pattern: { severity: "error", columns: ["patient_id", "patient_zip5", "birth_date"],
+    run: (rows, ctx, col) => rowsWhere(rows, (r) => !isNil(r[col]) && !(typeof r[col] === "string" && PATTERNS[col].test(r[col]))) },
+  unit_matches_code: { severity: "error", columns: ["unit"],
+    run: (rows) => rowsWhere(rows, (r) => {
+      const spec = codeSpec(r.vital_code);
+      return !!spec && !isNil(r.unit) && r.unit !== spec.unit;
+    }) },
+  no_unexpected_columns: { severity: "error", columns: ["*"],
+    run: (rows) => rowsWhere(rows, (r) => Object.keys(r).some((k) => !FIELD_NAMES.includes(k))) },
+  freshness: { severity: "warn", columns: [CONTRACT.epochField],
+    run: (rows, ctx) => rowsWhere(rows, (r) => {
+      const e = r[CONTRACT.epochField];
+      return ctx.refTime !== null && typeof e === "number" && Number.isFinite(e) && ctx.refTime - e > FRESHNESS_WINDOW;
+    }) },
+  abnormal_vital_flag: { severity: "warn", columns: ["vital_value"],
+    run: (rows) => rowsWhere(rows, (r) => typeof r.vital_value === "number" && isAbnormal(r)) },
+};
+
+// refTime (unix seconds) is the simulation time freshness is measured against. Default: the latest
+// numeric encounter_epoch in the batch, so a batch is judged against its own newest row.
+function runTests(rows, priorKeys, refTime) {
+  const list = (Array.isArray(rows) ? rows : []).map((r) => (isObj(r) ? r : {}));
+  let ref = typeof refTime === "number" && Number.isFinite(refTime) ? refTime : null;
+  if (ref === null) {
+    const epochs = list.map((r) => r[CONTRACT.epochField]).filter((e) => typeof e === "number" && Number.isFinite(e));
+    ref = epochs.length ? Math.max(...epochs) : null;
+  }
+  const ctx = { priorKeys: priorKeys instanceof Set ? priorKeys : new Set(), refTime: ref };
+  const results = [];
+  const perRow = new Map();
+  Object.entries(QUALITY_TESTS).forEach(([test, def]) => {
+    def.columns.forEach((column) => {
+      const failingRows = def.run(list, ctx, column);
+      results.push({ test, severity: def.severity, column, failingRows });
+      failingRows.forEach((i) => {
+        const t = perRow.get(i) || [];
+        if (!t.includes(test)) t.push(test);
+        perRow.set(i, t);
+      });
+    });
+  });
+  const rowFailures = [...perRow.entries()].sort((a, b) => a[0] - b[0]).map(([rowIndex, tests]) => ({ rowIndex, tests }));
+  const hasErrors = results.some((r) => r.severity === "error" && r.failingRows.length > 0);
+  return { results, rowFailures, hasErrors };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -213,6 +301,7 @@ const Engine = {
   rngPick, rngRange, rngGauss, round,
   PATIENT_POOL_SIZE, getContract, isAbnormal,
   buildPatientPool, exportRunEpoch, generateExport,
+  runTests,
 };
 
 // ===== EXPORT =====
