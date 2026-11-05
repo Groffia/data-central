@@ -192,13 +192,13 @@ const EXT = /\b(?:src|href)\s*=\s*["']?\s*(?:https?:)?\/\//i;
 const NET_CALLS = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'importScripts', 'sendBeacon'];
 const pagesJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'pages.json'), 'utf8'));
 
-test('pages.json: hq, pipeline and value are all pinned to engine-v1.8', () => {
+test('pages.json: hq, pipeline and value are all pinned to engine-v1.9', () => {
   assert.deepStrictEqual(pagesJson.map((p) => p.dir).sort(), ['hq', 'pipeline', 'value']);
-  pagesJson.forEach((p) => assert.strictEqual(p.engineTag, 'engine-v1.8', p.dir));
+  pagesJson.forEach((p) => assert.strictEqual(p.engineTag, 'engine-v1.9', p.dir));
   assert.strictEqual(pagesJson.find((p) => p.dir === 'value').singleFile, 'value-single.html');
 });
 
-test('the local tag engine-v1.8 matches engine/engine.js for every page (checkEngineTag)', () => {
+test('the local tag engine-v1.9 matches engine/engine.js for every page (checkEngineTag)', () => {
   pagesJson.forEach((p) => b.checkEngineTag(p, path.join(ROOT, 'engine', 'engine.js')));
 });
 
