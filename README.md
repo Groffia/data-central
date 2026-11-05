@@ -41,6 +41,6 @@ Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve
 ## Notes
 
 - All data is synthetic and generated deterministically (seed 42). Company and patient names are fictional. Money and time figures are labelled illustrative.
-- Built by Stephen Groff ([LinkedIn](https://www.linkedin.com/in/YOUR-PROFILE-HERE)).
+- Built by Stephen Groff ([LinkedIn](https://www.linkedin.com/in/groffstephen)).
 - Built with Claude, working from written specs, test-first plans and independent reviews of each task.
 - Licensed under the [MIT License](LICENSE).
