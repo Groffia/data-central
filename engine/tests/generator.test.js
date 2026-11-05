@@ -11,7 +11,7 @@ test("pool: size, unique ids, id pattern, golden first", () => {
   assert.strictEqual(pool.length, 40);
   const ids = pool.map((p) => p.patient_id);
   assert.strictEqual(new Set(ids).size, 40);
-  ids.forEach((id) => assert.match(id, /^SGH-P-\d{6}$/));
+  ids.forEach((id) => assert.match(id, /^TMH-P-\d{6}$/));
   GOLDEN.forEach((g, i) => assert.strictEqual(pool[i].patient_id, g.patient_id));
 });
 
@@ -93,7 +93,7 @@ test("exports 1-8 conform to contract; keys unique", () => {
   for (let n = 1; n <= 8; n++) {
     Engine.generateExport(n, "healthy").rows.forEach((r) => {
       assert.deepStrictEqual(Object.keys(r), contract.fields.map((f) => f.name));
-      assert.match(r.patient_id, /^SGH-P-\d{6}$/);
+      assert.match(r.patient_id, /^TMH-P-\d{6}$/);
       assert.match(r.patient_zip5, /^\d{5}$/);
       assert.match(r.birth_date, /^\d{4}-\d{2}-\d{2}$/);
       assert.ok(Number.isInteger(r.encounter_epoch));

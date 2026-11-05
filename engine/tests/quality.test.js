@@ -104,7 +104,7 @@ test("duplicate key within batch fails unique_combination_of_columns", () => {
 });
 
 test("key already in priorKeys fails unique_combination_of_columns", () => {
-  const prior = new Set(["SGH-P-009317|1"]);
+  const prior = new Set(["TMH-P-009317|1"]);
   const res = Engine.runTests(clone(GOLDEN), prior);
   assert.deepStrictEqual(failed(res, "unique_combination_of_columns"), [1]);
   assert.strictEqual(res.hasErrors, true);

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6 (2026-11-05)
+
+Tenant rename before publication: "Stargate Healthcare" is now "Tamsworth Health". Patient-ID prefix `SGH-P-` is now `TMH-P-` (same length, six characters), the bronze table is `bronze_tamsworth_vitals`, the alert key is `dq-tamsworth-silver_vital_observation`, and the source comment reads Tamsworth. No logic changed.
+
+What moved (verified): only those strings. `DETERMINISM_HASH` (1f8ea357) and `GENERATOR_HASH` (bc1e18dc) are unchanged, `bytesPerRow` is still 253.75 (bytesPerMonth 57,367,800), the headline storage figures are still 78.4% saved versus warm and 93.8% versus hot, and the business-case numbers are unchanged (9 stopped, 7 silently dropped, 2 invalid readings reaching the dashboard, secondary distortion -2.7972). Across all 22 scripted states (healthy and incident), the complete state matches engine-v1.5.1 exactly once `TMH-P-` is mapped back to `SGH-P-` and `tamsworth` to `stargate`.
+
+Two tests hold frozen fingerprints recorded before the rename (`abnormal_share`: the non-value fields of exports 1-8; `clock`: incident exports 1-5). They are fingerprints, not data, so each now maps `TMH-P-` back to `SGH-P-` in the text before hashing and the recorded fingerprint constants are unchanged. That proves nothing but the prefix changed. 182 tests.
+
 ## v1.5.1 (2026-11-05)
 
 Comment-only change before publication: removed a reference to a private working document from a source comment. No behavior change; hashes and every test unchanged (182).

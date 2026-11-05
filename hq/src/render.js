@@ -22,7 +22,7 @@
 
   function header(vm) {
     return '<h1>' + esc('HQ: Data Platform Control Room') + '</h1>' +
-      '<p class="subtitle">' + esc('Stargate Healthcare, synthetic hospital data platform') + '</p>' +
+      '<p class="subtitle">' + esc('Tamsworth Health, synthetic hospital data platform') + '</p>' +
       '<div class="header-controls">' +
       '<div class="scenario-switch" role="group" aria-label="Scenario">' +
       scenarioButton('Healthy', 'healthy', vm.scenario) + scenarioButton('Incident', 'incident', vm.scenario) +

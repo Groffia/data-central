@@ -125,7 +125,7 @@ test("export data and run epochs are the same as v1.1", () => {
   assert.deepStrictEqual([1, 2, 3, 4, 5].map(run), [1793716200, 1793717100, 1793718000, 1793718900, 1793719800]);
   assert.strictEqual(Engine.exportRunEpoch(1), Engine.BASE_EPOCH + 1800);
   // Fingerprint (FNV-1a over the JSON text of incident exports 1-5), recorded from engine-v1.1 before the clock change.
-  const text = JSON.stringify([1, 2, 3, 4, 5].map((n) => Engine.generateExport(n, "incident")));
+  const text = JSON.stringify([1, 2, 3, 4, 5].map((n) => Engine.generateExport(n, "incident"))).replace(/TMH-P-/g, "SGH-P-"); // fingerprint recorded before the v1.6 rename: only the patient-ID prefix changed
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i) & 0xff; h = Math.imul(h, 0x01000193) >>> 0; }
   assert.strictEqual(h.toString(16), "cb6deb8b");

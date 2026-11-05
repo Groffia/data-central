@@ -52,7 +52,7 @@ test("incident: three batches open the gate with 9 DLQ entries and one alert", (
   assert.strictEqual(s.alerts[0].count, 1);
   assert.strictEqual(s.alerts[0].status, "open");
   assert.strictEqual(s.alerts[0].severity, "SEV-2");
-  assert.strictEqual(s.alerts[0].dedupeKey, "dq-stargate-silver_vital_observation");
+  assert.strictEqual(s.alerts[0].dedupeKey, "dq-tamsworth-silver_vital_observation");
   assert.strictEqual(s.alerts[0].title, "DQ gate opened: 9 error-severity failures in batch batch-3");
   assert.strictEqual(s.lastGoodBatchId, "batch-2");
   assert.deepStrictEqual(s.dlq.map((d) => d.dlqId), [2, 4, 6, 9, 10, 13, 15, 17, 19].map((p) => "dlq-3-" + p));

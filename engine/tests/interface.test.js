@@ -56,9 +56,9 @@ test("PRELUDE.incident leaves batchesRun 2; one more runBatch makes the 9-row DL
 });
 
 test("naiveAbnormalRate on a hand-built sample (strict rules)", () => {
-  const base = { patient_id: "SGH-P-100001", vital_code: "8480-6", vital_value: 120 };
+  const base = { patient_id: "TMH-P-100001", vital_code: "8480-6", vital_value: 120 };
   const rows = [
-    { patientId: "SGH-P-100002", vitalCode: "8867-4", vitalValue: "72" }, // renamed columns: no patient_id key, dropped
+    { patientId: "TMH-P-100002", vitalCode: "8867-4", vitalValue: "72" }, // renamed columns: no patient_id key, dropped
     { ...base, patient_id: null, vital_code: "8867-4", vital_value: 200 }, // null id, dropped
     { ...base, patient_id: "", vital_value: 200 }, // empty id, dropped
     { vital_code: "8480-6", vital_value: 200 }, // no patient_id key, dropped

@@ -65,11 +65,11 @@ test("determinism: generateExport is pure for n 1..40 and golden rows are unchan
 
 test("only vital_value changed: all other fields match the old generator", () => {
   let s = "";
-  for (let n = 1; n <= 8; n++) exp(n).forEach((r) => { const { vital_value, ...rest } = r; s += JSON.stringify(rest); });
+  for (let n = 1; n <= 8; n++) exp(n).forEach((r) => { const { vital_value, ...rest } = r; s += JSON.stringify(rest).replace(/TMH-P-/g, "SGH-P-"); }); // fingerprint recorded before the v1.6 rename: only the patient-ID prefix changed
   assert.strictEqual(fnv(s), OLD_NON_VALUE_FINGERPRINT);
   // Literal fields captured from the old generator (export 1, rows 6-8).
   const r = exp(1);
-  assert.strictEqual(r[5].patient_id, "SGH-P-458121");
+  assert.strictEqual(r[5].patient_id, "TMH-P-458121");
   assert.strictEqual(r[5].encounter_epoch, 1793715600);
   assert.strictEqual(r[5].vital_code, "8480-6");
   assert.strictEqual(r[5].cipher_suite, "TLS_AES_256_GCM_SHA384");

@@ -12,7 +12,7 @@ const CASES = [
   ["59408-5", "%", 90, 97],
   ["8310-5", "Cel", 39.0, 36.8],
 ];
-const ID = "SGH-P-100001";
+const ID = "TMH-P-100001";
 const mk = (code, unit, value) => ({ patient_id: ID, vital_code: code, vital_value: value, unit });
 
 CASES.forEach(([code, unit, high, normal]) => {

@@ -1,6 +1,6 @@
 # HQ: Data Platform Control Room
 
-A demo page that shows how a data platform is run end to end: what healthy looks like, what happens when bad data arrives, and what the business gains from running it this way. Fictional company (Stargate Healthcare), synthetic data generated in the browser (seed 42), no network access at runtime.
+A demo page that shows how a data platform is run end to end: what healthy looks like, what happens when bad data arrives, and what the business gains from running it this way. Fictional company (Tamsworth Health), synthetic data generated in the browser (seed 42), no network access at runtime.
 
 ## Release note: hq-v1.0
 

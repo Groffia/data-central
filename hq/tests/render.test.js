@@ -139,7 +139,7 @@ test('incident region is empty string when not visible', () => {
 test('header: title, subtitle, scenario switch with aria-pressed, watch buttons', () => {
   const h = regions('incident', 3).header;
   assert.ok(h.indexOf('HQ: Data Platform Control Room') >= 0);
-  assert.ok(h.indexOf('Stargate Healthcare') >= 0);
+  assert.ok(h.indexOf('Tamsworth Health') >= 0);
   assert.ok(/data-cmd="scenario" data-scenario="incident" aria-pressed="true"/.test(h));
   assert.ok(/data-cmd="scenario" data-scenario="healthy" aria-pressed="false"/.test(h));
   assert.ok(h.indexOf('data-cmd="watch"') >= 0 && h.indexOf('data-cmd="watchFull"') >= 0);

@@ -57,8 +57,8 @@ test('incident k=3 lists', () => {
     { dlqId: 'dlq-3-4', reason: 'null patient_id: dropped by join to dim_patient' });
   assert.strictEqual(b.invalidList.length, 2);
   assert.deepStrictEqual({ ...b.invalidList[0] },
-    { dlqId: 'dlq-3-9', summary: 'patient SGH-P-957039, code 59408-5, value 130 %' });
-  assert.strictEqual(b.invalidList[1].summary, 'patient SGH-P-664228, code 8867-4, value 78 mmHg');
+    { dlqId: 'dlq-3-9', summary: 'patient TMH-P-957039, code 59408-5, value 130 %' });
+  assert.strictEqual(b.invalidList[1].summary, 'patient TMH-P-664228, code 8867-4, value 78 mmHg');
 });
 
 test('hasIncident stays true after recovery (k=16)', () => {

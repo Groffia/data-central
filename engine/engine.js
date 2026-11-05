@@ -5,7 +5,7 @@
 // ===== SECTION: constants, PRNG, clock =====
 const SEED = 42;
 const BASE_EPOCH = 1793714400; // 2026-11-03T14:00:00Z
-const STREAM_INDEX = 1; // Stargate
+const STREAM_INDEX = 1; // Tamsworth
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -61,7 +61,7 @@ const deepFreeze = (o) => {
 
 const CONTRACT = deepFreeze({
   fields: [
-    { name: "patient_id", type: "string", rule: "^SGH-P-\\d{6}$", sensitive: true },
+    { name: "patient_id", type: "string", rule: "^TMH-P-\\d{6}$", sensitive: true },
     { name: "patient_name", type: "string", rule: "free text", sensitive: true },
     { name: "patient_zip5", type: "string", rule: "^\\d{5}$", sensitive: true },
     { name: "birth_date", type: "string", rule: "YYYY-MM-DD", sensitive: true },
@@ -77,14 +77,14 @@ const CONTRACT = deepFreeze({
   epochField: "encounter_epoch",
   driftField: "vital_value",
   goldenRows: [
-    {"patient_id":"SGH-P-004821","patient_name":"Avery Lindqvist","patient_zip5":"55102","birth_date":"1958-03-14","encounter_epoch":1793714400,"vital_sequence":1,"vital_code":"8867-4","vital_value":88,"unit":"/min","cipher_suite":"TLS_AES_256_GCM_SHA384"},
-    {"patient_id":"SGH-P-009317","patient_name":"Marcus Oyelaran","patient_zip5":"55455","birth_date":"1991-07-22","encounter_epoch":1793714700,"vital_sequence":1,"vital_code":"8480-6","vital_value":146,"unit":"mm[Hg]","cipher_suite":"TLS_AES_256_GCM_SHA384"},
-    {"patient_id":"SGH-P-001156","patient_name":"Eleanor Brandvold","patient_zip5":"69201","birth_date":"1934-01-09","encounter_epoch":1793715000,"vital_sequence":1,"vital_code":"59408-5","vital_value":91,"unit":"%","cipher_suite":"TLS_CHACHA20_POLY1305_SHA256"},
-    {"patient_id":"SGH-P-012004","patient_name":"Diego Ramirez-Holt","patient_zip5":"10001","birth_date":"2004-11-30","encounter_epoch":1793715300,"vital_sequence":1,"vital_code":"8310-5","vital_value":38.4,"unit":"Cel","cipher_suite":"TLS_AES_256_GCM_SHA384"},
-    {"patient_id":"SGH-P-007730","patient_name":"Priya Natarajan","patient_zip5":"60614","birth_date":"1976-05-02","encounter_epoch":1793715600,"vital_sequence":1,"vital_code":"8867-4","vital_value":72,"unit":"/min","cipher_suite":"TLS_CHACHA20_POLY1305_SHA256"},
+    {"patient_id":"TMH-P-004821","patient_name":"Avery Lindqvist","patient_zip5":"55102","birth_date":"1958-03-14","encounter_epoch":1793714400,"vital_sequence":1,"vital_code":"8867-4","vital_value":88,"unit":"/min","cipher_suite":"TLS_AES_256_GCM_SHA384"},
+    {"patient_id":"TMH-P-009317","patient_name":"Marcus Oyelaran","patient_zip5":"55455","birth_date":"1991-07-22","encounter_epoch":1793714700,"vital_sequence":1,"vital_code":"8480-6","vital_value":146,"unit":"mm[Hg]","cipher_suite":"TLS_AES_256_GCM_SHA384"},
+    {"patient_id":"TMH-P-001156","patient_name":"Eleanor Brandvold","patient_zip5":"69201","birth_date":"1934-01-09","encounter_epoch":1793715000,"vital_sequence":1,"vital_code":"59408-5","vital_value":91,"unit":"%","cipher_suite":"TLS_CHACHA20_POLY1305_SHA256"},
+    {"patient_id":"TMH-P-012004","patient_name":"Diego Ramirez-Holt","patient_zip5":"10001","birth_date":"2004-11-30","encounter_epoch":1793715300,"vital_sequence":1,"vital_code":"8310-5","vital_value":38.4,"unit":"Cel","cipher_suite":"TLS_AES_256_GCM_SHA384"},
+    {"patient_id":"TMH-P-007730","patient_name":"Priya Natarajan","patient_zip5":"60614","birth_date":"1976-05-02","encounter_epoch":1793715600,"vital_sequence":1,"vital_code":"8867-4","vital_value":72,"unit":"/min","cipher_suite":"TLS_CHACHA20_POLY1305_SHA256"},
   ],
   names: {
-    bronze: "bronze_stargate_vitals",
+    bronze: "bronze_tamsworth_vitals",
     silver: "silver_vital_observation",
     gold: ["fct_vital_observation", "dim_patient", "dim_vital_code", "fct_census_daily"],
     kpis: ["Bed Occupancy", "Abnormal Vital Rate", "Avg Length of Stay", "30-Day Readmission Rate"],
@@ -150,7 +150,7 @@ function buildPatientPool() {
   for (let i = GOLDEN_COUNT; i < PATIENT_POOL_SIZE; i++) {
     let id;
     do {
-      id = "SGH-P-" + String(100000 + Math.floor(rng() * 900000));
+      id = "TMH-P-" + String(100000 + Math.floor(rng() * 900000));
     } while (used.has(id));
     used.add(id);
     const name = rngPick(rng, FIRST_NAMES) + " " + rngPick(rng, SURNAMES);
@@ -310,7 +310,7 @@ const ENUMS = {
   cipher_suite: CIPHERS,
 };
 const PATTERNS = {
-  patient_id: /^SGH-P-\d{6}$/,
+  patient_id: /^TMH-P-\d{6}$/,
   patient_zip5: /^\d{5}$/,
   birth_date: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
 };
@@ -387,7 +387,7 @@ function runTests(rows, priorKeys, refTime) {
 }
 
 // ===== SECTION: gate, DLQ, alerts, reducer =====
-const ALERT_KEY = "dq-stargate-silver_vital_observation";
+const ALERT_KEY = "dq-tamsworth-silver_vital_observation";
 
 function initialState(scenario) {
   assertScenario(scenario);
@@ -681,7 +681,7 @@ function tieringCost(settings) {
 
 // ===== SECTION: public interface, business case, auto-play, link params =====
 const PHI_FIELDS = ["patient_id", "patient_name", "patient_zip5", "birth_date", "encounter_epoch"];
-const PATIENT_ID_RE = /^SGH-P-\d{6}$/;
+const PATIENT_ID_RE = /^TMH-P-\d{6}$/;
 const runBatchAct = () => ({ type: "runBatch" });
 
 // Discard reasons: the single source for the engine and every page. suggestedReason(entry) picks one from a
