@@ -479,6 +479,103 @@ function replay(scenario, actions, opts) {
   return (actions || []).reduce((s, a) => reduce(s, a, opts), initialState(scenario));
 }
 
+// ===== SECTION: KPI history, facility profile, tiering =====
+const HISTORY_DAYS = 120;
+const BED_STAFFED_CAP = () => getContract().facility.beds_staffed;
+
+function buildHistory() {
+  const rng = makeRng(4);
+  const staffed = BED_STAFFED_CAP();
+  const rows = [];
+  for (let i = 0; i < HISTORY_DAYS; i++) {
+    const epoch = BASE_EPOCH - (HISTORY_DAYS - 1 - i) * 86400;
+    const dow = (Math.floor(epoch / 86400) + 4) % 7; // 0 = Sunday
+    const weekend = dow === 0 || dow === 6;
+    // Fixed number of draws per row keeps the stream stable.
+    const nOcc = rngGauss(rng), nDis = rngGauss(rng), nRe = rngGauss(rng), nUn = rngGauss(rng), nAb = rngGauss(rng), nSt = rngGauss(rng);
+    const trend = ((i / (HISTORY_DAYS - 1)) - 0.5) * 0.02; // gentle +/-1 pt drift
+    const occ = Math.min(0.97, Math.max(0.5, 0.782 + trend - (weekend ? 0.02 : 0) + nOcc * 0.012));
+    const occupied = Math.min(staffed, Math.round(staffed * occ));
+    const discharges = Math.max(1, Math.round((occupied / 4.5) * (weekend ? 0.7 : 1.08) * (1 + nDis * 0.05)));
+    const readAll = Math.min(discharges, Math.max(0, Math.round(discharges * (0.14 + nRe * 0.02))));
+    const readUnp = Math.min(readAll, Math.max(0, Math.round(readAll * (0.68 + nUn * 0.08))));
+    const observations = occupied * 24;
+    const standard = Math.min(observations, Math.max(0, Math.round(observations * (0.06 + nAb * 0.004))));
+    const strict = Math.min(standard, Math.max(0, Math.round(standard * (0.55 + nSt * 0.04))));
+    rows.push({
+      date: isoFromEpoch(epoch).slice(0, 10),
+      beds_staffed: staffed,
+      beds_occupied: occupied,
+      discharges,
+      readmits_30d_all: readAll,
+      readmits_30d_unplanned: readUnp,
+      observations,
+      abnormal_obs_strict: strict,
+      abnormal_obs_standard: standard,
+      patient_days: occupied,
+    });
+  }
+  return rows;
+}
+
+let historyCache = null;
+function getHistory() {
+  if (!historyCache) historyCache = buildHistory();
+  return historyCache.map((r) => ({ ...r }));
+}
+
+function computeKpis(history, windowDays = 7) {
+  const cur = history.slice(-windowDays);
+  const pri = history.slice(-2 * windowDays, -windowDays);
+  const sum = (rows, f) => rows.reduce((s, r) => s + r[f], 0);
+  const defs = [
+    ["Bed Occupancy", "beds_occupied", "beds_staffed"],
+    ["Abnormal Vital Rate", "abnormal_obs_standard", "observations"],
+    ["Avg Length of Stay", "patient_days", "discharges"],
+    ["30-Day Readmission Rate", "readmits_30d_all", "discharges"],
+  ];
+  return defs.map(([name, num, den]) => {
+    const value = sum(cur, num) / sum(cur, den);
+    const priorValue = sum(pri, num) / sum(pri, den);
+    return { name, value, priorValue, deltaPct: ((value - priorValue) / priorValue) * 100 };
+  });
+}
+
+function facilityProfile(history) {
+  const bedsStaffed = BED_STAFFED_CAP();
+  const occupancy = computeKpis(history)[0].value;
+  const patientsInHouse = Math.round(bedsStaffed * occupancy);
+  const obsPerDay = patientsInHouse * 6 * 4; // 6 rounds x 4 vital types per patient
+  return { bedsStaffed, patientsInHouse, obsPerDay, obsPer15Min: obsPerDay / 96, obsPerMonth: obsPerDay * 30 };
+}
+
+// Prices are illustrative, not vendor quotes (Build File 2, B3).
+const TIER_STORAGE = { hot: 0.080, warm: 0.023, cold: 0.002 }; // $/GB-month
+const TIER_RETRIEVAL = { hot: 0, warm: 0, cold: 0.020 }; // $/GB
+const TIERING_DEFAULTS = { hotToWarmDays: 30, warmToColdDays: 180, retentionDays: 2555, dailyGB: 18, halfLifeDays: 45 };
+
+function tieringCost(settings) {
+  const s = { ...TIERING_DEFAULTS, ...(settings || {}) };
+  const ages = [];
+  let totalW = 0;
+  for (let a = 0; a < s.retentionDays; a++) {
+    const w = Math.pow(2, -a / s.halfLifeDays);
+    ages.push(w);
+    totalW += w;
+  }
+  const cost = (tierOf) => {
+    let total = 0;
+    ages.forEach((w, a) => {
+      const t = tierOf(a);
+      total += s.dailyGB * TIER_STORAGE[t] + 30 * 1000 * (w / totalW) * 1 * TIER_RETRIEVAL[t];
+    });
+    return total;
+  };
+  const monthlyCost = cost((a) => (a < s.hotToWarmDays ? "hot" : a < s.warmToColdDays ? "warm" : "cold"));
+  const allHotCost = cost(() => "hot");
+  return { monthlyCost, allHotCost, savedPct: ((allHotCost - monthlyCost) / allHotCost) * 100 };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -490,6 +587,7 @@ const Engine = {
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
   initialState, reduce, replay,
+  getHistory, computeKpis, facilityProfile, tieringCost,
 };
 
 // ===== EXPORT =====
