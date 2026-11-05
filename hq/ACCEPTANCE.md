@@ -110,3 +110,18 @@ Built-in browser pane against `https://groffia.github.io/data-central/hq/`.
 | Links into Pipeline | Pass | Ten links (nine dead-letter ids and the Storage chip) in the form `../pipeline/?scenario=incident&step=3#dlq-3-13`. A real click on the `dlq-3-13` link opened Pipeline at that state, "Held at the gate", anchor present. |
 | `a=` state | Pass | `?scenario=incident&a=r.r.r.p:dlq-3-2.d:dlq-3-4:1` opens a diverged state (7 rows to resolve, banner "7 DLQ rows unresolved"); its Pipeline links carry the same `a=`. |
 | Release asset | Pass | Release hq-v1.1 holds `hq-single.html` (110,929 bytes, sha256 a8ff4b92...), attached by the Release workflow on the tag push, its first real run. The file equals the deployed `/hq/hq-single.html` byte for byte and the local build apart from line endings. |
+
+
+## Live acceptance (GitHub Pages, hq-v1.2 on commit 3c95e0a, 2026-11-05)
+
+Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Pages were opened at the link URLs the other pages produce; I did not click through each link by hand.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42118902271 green on main 3c95e0a (all suites and the engine tag check against `engine-v1.8`). |
+| `?scenario=healthy&step=4` chip 6 | Pass | Reads "Expected-range check: Within the expected range" and links `../value/?scenario=healthy&step=4#stage-check`. |
+| KPI links into Value | Pass | Four tile links plus the "KPIs current as of" link, each `../value/?scenario=...&step=...#kpi-<id>` (bed-occupancy, abnormal-vital-rate, avg-length-of-stay, 30-day-readmission-rate). |
+| Links with `a=` | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r`: every Value and Pipeline link carries the same `a=`. |
+| Too-long-state notice | Pass | Starting from a 1,997-character `a=` and running two more batches shows "State too long to link; opens at the nearest step." and the Value link falls back to `&step=4#stage-check`. |
+| Console, network, layout | Pass | No console messages on the first page loaded; no external requests; no horizontal scroll. Console was not re-read after the long click run. |
+| Release asset | Pass | Release run 42119078221 green. `hq-single.html` (123,367 bytes, sha256 88e97797...) equals the file served on Pages. It equals my local build only after removing carriage returns: that working copy has CRLF in one source file, while CI builds from the LF checkout. |

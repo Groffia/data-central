@@ -49,3 +49,14 @@ Built-in browser pane against `https://groffia.github.io/data-central/pipeline/`
 | Release asset | Pass | Release pipeline-v1.0 holds `pipeline-single.html` (115,694 bytes), attached by the Release workflow; sha256 f0b5cab3... equals the local build. |
 
 Parked for HQ v1.2: when an encoded state exceeds 2,000 characters, show a short "state too long to link, opens at the nearest step" notice instead of dropping `a=` silently.
+
+## Live acceptance (GitHub Pages, pipeline-v1.0.1 on commit 3c95e0a, 2026-11-05)
+
+Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Pages were opened at the link URLs the other pages produce; I did not click through each link by hand.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42118902271 green on main 3c95e0a (all suites and the engine tag check against `engine-v1.8`). |
+| Link from HQ with `a=` | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r#dlq-3-2` opens with the `dlq-3-2` anchor present and highlighted; all ten HQ links keep the same `a=`. |
+| Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42119219602 green. `pipeline-single.html` (123,518 bytes, sha256 23fec9bf...) equals the local build and the file served on Pages. |

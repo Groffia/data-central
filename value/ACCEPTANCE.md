@@ -22,3 +22,18 @@ Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/value-v1` 
 ## Known gaps
 
 - Parked: the chart axis widens for a huge finite spike (real data has none).
+
+## Live acceptance (GitHub Pages, value-v1.0 on commit 3c95e0a, 2026-11-05)
+
+Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) against `https://groffia.github.io/data-central/`. Pages were opened at the link URLs the other pages produce; I did not click through each link by hand.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42118902271 green on main 3c95e0a (all suites and the engine tag check against `engine-v1.8`). |
+| `/value/?scenario=incident&step=3` | Pass | Four tiles Held "as of Batch 2, 14:45:00 UTC": 78.6%, 6.2%, 4.7 days, 13.4%. Panel C: 40 readings 12.5% against 53 counted, 7 dropped (5 renamed columns, 1 null patient_id, 1 no dim_patient match), 2 invalid, 13.2%. Panel E: 5 of 40 = 12.5% with the hand-picked rows, 2 of 35 = 5.7% without. |
+| Definitions, governed | Pass | Strict published: tile 3.6%, both consumers 3.6%, message "Published Abnormal Vital Rate v2"; roll back: 6.2%, "Rolled back Abnormal Vital Rate to v1". |
+| Definitions, hardcoded | Pass | After publishing strict: tile 3.6%, Trend chart 6.2%, banner "Definition conflict: 1 report disagrees (values: 3.6%, 6.2%)", announced once; panel B summary keeps 6.2%. Back to governed clears it. |
+| Check disclosure | Pass | "How this check works" stays open across Next and Back. |
+| Diverged `a=` link | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r#kpi-abnormal-vital-rate` from HQ opens with the tile highlighted; the HQ and Pipeline links back keep the same `a=`. |
+| Console, network, layout | Pass | No console messages; no external requests; no duplicate ids; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42119360787 green. `value-single.html` (138,462 bytes, sha256 4d99f37d...) equals the local build and the file served on Pages. |
