@@ -141,4 +141,85 @@
   }
 
   vm.landingZone = landingZone;
+
+  // ----- Task 8: test matrix, gate decision, row view -----
+
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+    'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  function numberWord(n) { return n >= 1 && n <= 20 && Math.floor(n) === n ? WORDS[n] : String(n); }
+
+  function testMatrix(inspect) {
+    if (!inspect) return { rows: [], notes: [] };
+    const F = Shared.format;
+    const results = inspect.results || [];
+    const rows = results.map(function (r) {
+      const idx = (r.failingRows || []).slice();
+      return {
+        test: r.test, column: r.column, severity: r.severity,
+        failing: idx.length, rowIndexes: idx,
+        labelText: r.test + ' on ' + r.column
+      };
+    });
+    const names = Engine.getContract().fields.map(function (f) { return f.name; });
+    const driftIdx = [];
+    (inspect.rows || []).forEach(function (r, i) { if (!hasContractKeys(r, names)) driftIdx.push(i); });
+    const notes = [];
+    if (driftIdx.length) {
+      const cols = results.filter(function (r) {
+        return r.test === 'not_null' && driftIdx.every(function (i) { return r.failingRows.indexOf(i) >= 0; });
+      }).length;
+      const d = driftIdx.length;
+      const counts = cols * d;
+      const sum = '(' + cols + ' ' + F.plural(cols, 'column', 'columns') + ' x ' + d + ' ' +
+        F.plural(d, 'row', 'rows') + ' = ' + counts + ' ' + F.plural(counts, 'count', 'counts') + ')';
+      const colText = numberWord(cols) + ' contract ' + F.plural(cols, 'column', 'columns');
+      const failures = counts + ' ' + F.plural(counts, 'failure', 'failures');
+      if (d === 1) {
+        notes.push('Note: the 1 schema-drift row fails not_null on ' + colText + ', because its columns arrived renamed ' + sum +
+          '. Read it as one row, not ' + failures + '.');
+      } else {
+        notes.push('Note: the ' + numberWord(d) + ' schema-drift rows fail not_null on ' + colText + ' each, because their columns arrived renamed ' + sum +
+          '. Read them as ' + numberWord(d) + ' rows, not ' + failures + '.');
+      }
+    }
+    return { rows: rows, notes: notes };
+  }
+
+  // Row indexes failing at least one error-severity test.
+  function quarantinedIndexes(inspect) {
+    const seen = {};
+    (inspect.results || []).forEach(function (r) {
+      if (r.severity === 'error') (r.failingRows || []).forEach(function (i) { seen[i] = true; });
+    });
+    return Object.keys(seen);
+  }
+
+  // The staged count comes from this batch (rows that passed), never from the live state, which a later batch may have changed.
+  function gateDecision(inspect, state) {
+    const q = quarantinedIndexes(inspect).length;
+    const F = Shared.format;
+    if (q === 0) return { text: 'Gate decision: Published (0 error-severity failures)', level: 'green' };
+    const held = (inspect.rows || []).length - q;
+    return {
+      text: 'Gate decision: Held (' + q + ' ' + F.plural(q, 'row', 'rows') + ' quarantined, ' +
+        held + ' ' + F.plural(held, 'row', 'rows') + ' held in staging)',
+      level: 'red'
+    };
+  }
+
+  function rowView(inspect) {
+    if (!inspect) return [];
+    const results = inspect.results || [];
+    return (inspect.rows || []).map(function (_, i) {
+      const failed = [];
+      results.forEach(function (r) {
+        if (r.severity === 'error' && (r.failingRows || []).indexOf(i) >= 0 && failed.indexOf(r.test) < 0) failed.push(r.test);
+      });
+      return { index: i, pass: failed.length === 0, failedTests: failed };
+    });
+  }
+
+  vm.testMatrix = testMatrix;
+  vm.gateDecision = gateDecision;
+  vm.rowView = rowView;
 })();
