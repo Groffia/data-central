@@ -86,7 +86,7 @@ test('buildViewModel combines everything', () => {
   const s = st('incident', 3);
   const m = vm.buildViewModel(s, { notice: 'n', error: 'e' }, CTX);
   assert.deepStrictEqual(Object.keys(m).sort(),
-    ['business', 'chips', 'error', 'incident', 'notice', 'status', 'tiles', 'timeline', 'today', 'vendor']);
+    ['business', 'chips', 'error', 'incident', 'notice', 'scenario', 'status', 'tiles', 'timeline', 'today', 'vendor']);
   assert.strictEqual(m.notice, 'n');
   assert.strictEqual(m.error, 'e');
   assert.strictEqual(m.chips.length, 8);
@@ -97,4 +97,6 @@ test('buildViewModel combines everything', () => {
   assert.strictEqual(d.notice, null);
   assert.strictEqual(d.error, null);
   assert.strictEqual(vm.buildViewModel(st('healthy', 1), null, CTX).notice, null);
+  assert.strictEqual(d.scenario, null);
+  assert.strictEqual(vm.buildViewModel(st('incident', 3), { scenario: 'incident' }, CTX).scenario, 'incident');
 });

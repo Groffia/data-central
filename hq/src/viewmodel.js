@@ -234,6 +234,7 @@
       timeline: vm.timeline(state),
       business: vm.businessCase(state),
       vendor: vm.vendorTable(),
+      scenario: u.scenario === undefined ? null : u.scenario,
       notice: u.notice === undefined ? null : u.notice,
       error: u.error === undefined ? null : u.error
     };
