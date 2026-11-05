@@ -2,6 +2,10 @@
 
 A demo page that shows how a data platform is run end to end: what healthy looks like, what happens when bad data arrives, and what the business gains from running it this way. Fictional company (Tamsworth Health), synthetic data generated in the browser (seed 42), no network access at runtime.
 
+## Release note: hq-v1.3
+
+Adds links into the Brain page (requires `engine-v1.9`). In the Pages form, stage chip 5 (Governance) opens Brain at `#stage-phi` and chip 8 (Archiving/Retirement) opens it at `#stage-retention`, each with the same scenario and step (or `a=`); the chip texts do not change. The link label says "opens in Brain". In the single-file form there is no `brain-base` meta, so no Brain link.
+
 ## Release note: hq-v1.2
 
 Adds links into the Value page and shows the expected-range verdict (requires `engine-v1.8`). In the Pages form, stage chips 6 and 7 and the four KPI tiles open Value at the same state: chip 6 goes to `#stage-check`, chip 7 to `#kpi-abnormal-vital-rate`, each tile to its own `#kpi-<name>` (for example `../value/?scenario=incident&step=3#kpi-bed-occupancy`); a state that has left the script is carried as `a=`. The links come from `<meta name="value-base" content="../value/">` in `index.html`; the single-file build removes it, so it shows no Value links. Chip 6 now reads `Expected-range check: <verdict>`, taken from `Engine.liveSampleCheck` (grey for "Not enough data yet (fewer than 30 readings)", green for "Within the expected range", amber for "Above the expected range"). When a state is too long to encode in a link (over 2,000 characters), the Pipeline and Value links open at the nearest scripted step and the page shows "State too long to link; opens at the nearest step." while that holds (this replaces the earlier silent drop of the state from the link). There is no separate CHANGELOG file; release notes live here.

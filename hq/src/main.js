@@ -22,7 +22,16 @@
     } catch (e) { return undefined; }
   }
 
-  const controller = HQ.controller.createController(Engine, location.search, { pipelineBase: pipelineBase(), valueBase: valueBase() });
+  // Same for the Brain page: <meta name="brain-base" content="...">.
+  function brainBase() {
+    try {
+      const m = document.querySelector('meta[name="brain-base"]');
+      const v = m && m.getAttribute('content');
+      return typeof v === 'string' && v !== '' ? v : undefined;
+    } catch (e) { return undefined; }
+  }
+
+  const controller = HQ.controller.createController(Engine, location.search, { pipelineBase: pipelineBase(), valueBase: valueBase(), brainBase: brainBase() });
   let player = null;
 
   function focusSelector(el) {

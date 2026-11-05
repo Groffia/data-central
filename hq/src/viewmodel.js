@@ -96,6 +96,14 @@
     return HQ.links.valueUrl(base, ui.scenario, null, ui.actions, focus, Engine);
   }
 
+  // Deep link into the Brain page, or null when the page has no (usable) Brain base.
+  function brainLink(ui, ctx, focus) {
+    const base = ctx && ctx.brainBase;
+    if (!base || !ui || !HQ.links) return null;
+    if (!HQ.links.focusOk(focus)) return null;
+    return HQ.links.brainUrl(base, ui.scenario, ui.actions, focus, Engine);
+  }
+
   vm.stageChips = function stageChips(state, ctx, ui) {
     const chips = [
       generationChip(state), ingestionChip(state, ctx), processingChip(state), storageChip(state),
@@ -103,10 +111,14 @@
     ];
     const href = pipelineLink(ui, ctx, 'stage-storage');
     if (href) chips[3].href = href;
+    const phi = brainLink(ui, ctx, 'stage-phi');
+    if (phi) chips[4].href = phi;
     const check = valueLink(ui, ctx, 'stage-check');
     if (check) chips[5].href = check;
     const kpi = valueLink(ui, ctx, 'kpi-abnormal-vital-rate');
     if (kpi) chips[6].href = kpi;
+    const retention = brainLink(ui, ctx, 'stage-retention');
+    if (retention) chips[7].href = retention;
     return chips;
   };
 
@@ -114,7 +126,7 @@
   // The one visible note while a link had to fall back to the nearest scripted step; null otherwise (no base, no links, no note).
   function linkNote(ui, ctx) {
     if (!ui || !ctx || !HQ.links) return null;
-    const usable = HQ.links.safeBase(ctx.pipelineBase) || HQ.links.safeBase(ctx.valueBase);
+    const usable = HQ.links.safeBase(ctx.pipelineBase) || HQ.links.safeBase(ctx.valueBase) || HQ.links.safeBase(ctx.brainBase);
     return usable && HQ.links.tooLong(ui.scenario, ui.actions, Engine) ? TOO_LONG : null;
   }
 

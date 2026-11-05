@@ -57,6 +57,7 @@
     const ctx = { exportRows: Engine.generateExport(1, 'healthy').rows.length, tiering: Engine.TIERING_DEFAULTS };
     if (opts && typeof opts.pipelineBase === 'string') ctx.pipelineBase = opts.pipelineBase;
     if (opts && typeof opts.valueBase === 'string') ctx.valueBase = opts.valueBase;
+    if (opts && typeof opts.brainBase === 'string') ctx.brainBase = opts.brainBase;
 
     function state() { return Engine.getState(scenario, actions); }
     function getModel() {

@@ -70,10 +70,16 @@
     return build(base, scenario, step, actions, hash, Engine || globalThis.Engine);
   }
 
+  // Link into the Brain page: same allowlist, safeBase and a= rules as pipelineUrl.
+  function brainUrl(base, scenario, actions, focus, Engine) {
+    return build(base, scenario, null, actions, focus, Engine);
+  }
+
   links.safeBase = safeBase;
   links.focusOk = focusOk;
   links.pipelineUrl = pipelineUrl;
   links.valueUrl = valueUrl;
+  links.brainUrl = brainUrl;
   links.nearestStep = nearestStep;
   links.tooLong = tooLong;
 })();

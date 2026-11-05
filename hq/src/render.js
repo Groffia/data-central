@@ -41,12 +41,15 @@
     return b ? '<div class="banner"' + attr('data-level', b.level) + '>' + esc(b.text) + '</div>' : '';
   }
 
+  // The page a stage chip opens: Pipeline for Storage, Value for Analysis/Modeling and Visualization, Brain for Governance and Archiving/Retirement.
+  const CHIP_TARGET = { 4: 'Pipeline', 5: 'Brain', 6: 'Value', 7: 'Value', 8: 'Brain' };
+
   function stages(vm) {
     return '<ol class="stage-strip">' + vm.chips.map(function (c) {
       return '<li class="chip"' + attr('data-health', c.health) + attr('data-stage', c.id) + '>' +
         '<span class="dot" aria-hidden="true"></span>' +
         '<span class="chip-name">' + esc(c.id + ' ' + c.name) + '</span>' +
-        '<span class="chip-text">' + (c.href ? link(c.href, c.text + ' (opens in ' + (c.id === 4 ? 'Pipeline' : 'Value') + ')', c.text) : esc(c.text)) + '</span></li>';
+        '<span class="chip-text">' + (c.href ? link(c.href, c.text + ' (opens in ' + CHIP_TARGET[c.id] + ')', c.text) : esc(c.text)) + '</span></li>';
     }).join('') + '</ol>';
   }
 
