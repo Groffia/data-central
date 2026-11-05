@@ -261,4 +261,114 @@
 
   vm.dlqView = dlqView;
   vm.medallion = medallion;
+
+  // ----- Task 10: storage tiering and vendor subset -----
+
+  const TIER_KEYS = ['hotToWarmDays', 'warmToColdDays', 'retentionDays', 'dailyGB'];
+  const MSG_HOT = 'Hot to warm must be a whole number from 1 to 90 days.';
+  const MSG_WARM = 'Warm to cold must be a whole number of days, longer than hot to warm, up to 720.';
+  const MSG_WARM_ORDER = 'Warm to cold must be longer than hot to warm.';
+  const MSG_RETENTION = 'Retention must be a whole number of days, at least warm to cold, up to 3650.';
+  const MSG_DAILY = 'Daily volume must be a whole number from 1 to 500 GB.';
+
+  function tierDefaults() {
+    const d = Engine.TIERING_DEFAULTS;
+    return { hotToWarmDays: d.hotToWarmDays, warmToColdDays: d.warmToColdDays, retentionDays: d.retentionDays, dailyGB: d.dailyGB };
+  }
+
+  // A whole number from a number or a form string; null for anything else (empty, text, NaN, Infinity, decimals).
+  function wholeNumber(v) {
+    let n;
+    if (typeof v === 'number') n = v;
+    else if (typeof v === 'string') {
+      const t = v.trim();
+      if (t === '') return null;
+      n = Number(t);
+    } else return null;
+    return Number.isFinite(n) && Math.floor(n) === n ? n : null;
+  }
+
+  // The first violated rule's message, or ''. `n` holds parsed numbers or null.
+  function tierMessage(n) {
+    if (n.hot === null || n.hot < 1 || n.hot > 90) return MSG_HOT;
+    if (n.warm === null || n.warm < 1 || n.warm > 720) return MSG_WARM;
+    if (n.warm <= n.hot) return MSG_WARM_ORDER;
+    if (n.ret === null || n.ret < n.warm || n.ret > 3650) return MSG_RETENTION;
+    if (n.gb === null || n.gb < 1 || n.gb > 500) return MSG_DAILY;
+    return '';
+  }
+
+  function parseTier(inputs) {
+    const d = tierDefaults();
+    const src = inputs && typeof inputs === 'object' ? inputs : {};
+    function pick(k) { return Object.prototype.hasOwnProperty.call(src, k) ? src[k] : d[k]; }
+    return { hot: wholeNumber(pick('hotToWarmDays')), warm: wholeNumber(pick('warmToColdDays')), ret: wholeNumber(pick('retentionDays')), gb: wholeNumber(pick('dailyGB')) };
+  }
+
+  function money(n) {
+    const parts = n.toFixed(2).split('.');
+    return '$' + Shared.format.thousands(parts[0]) + '.' + parts[1];
+  }
+
+  function tierResult(inp) {
+    const e = Engine.tieringCost({ hotToWarmDays: inp.hotToWarmDays, warmToColdDays: inp.warmToColdDays, retentionDays: inp.retentionDays, dailyGB: inp.dailyGB });
+    return {
+      monthlyCostText: money(e.monthlyCost),
+      allHotText: money(e.allHotCost),
+      allWarmText: money(e.allWarmCost),
+      headlineText: e.savedVsWarmPct.toFixed(1) + '% saved versus keeping everything in warm storage',
+      secondaryText: e.savedVsHotPct.toFixed(1) + '% saved versus keeping everything in hot storage',
+      label: 'Illustrative figures for comparison, not vendor quotes'
+    };
+  }
+
+  function tiering(inputs, previous) {
+    const n = parseTier(inputs);
+    const message = tierMessage(n);
+    if (message === '') {
+      const inp = { hotToWarmDays: n.hot, warmToColdDays: n.warm, retentionDays: n.ret, dailyGB: n.gb };
+      return { inputs: inp, valid: true, message: '', result: tierResult(inp) };
+    }
+    const src = inputs && typeof inputs === 'object' ? inputs : {};
+    const shown = tierDefaults();
+    TIER_KEYS.forEach(function (k) { if (Object.prototype.hasOwnProperty.call(src, k)) shown[k] = src[k]; });
+    return {
+      inputs: shown, valid: false, message: message,
+      result: previous && previous.result ? previous.result : tierResult(tierDefaults())
+    };
+  }
+
+  function round1(x) { return Number(x.toFixed(1)); }
+
+  // Hot, warm and cold spans in days; invalid inputs draw the policy defaults. Widths sum to 100 (cold takes the remainder).
+  function tierBar(inputs) {
+    const n = parseTier(inputs);
+    const d = tierDefaults();
+    const ok = tierMessage(n) === '';
+    const hot = ok ? n.hot : d.hotToWarmDays;
+    const warm = ok ? n.warm : d.warmToColdDays;
+    const ret = ok ? n.ret : d.retentionDays;
+    const days = [hot, warm - hot, ret - warm];
+    const total = ret;
+    const wHot = round1(days[0] / total * 100);
+    const wWarm = round1(days[1] / total * 100);
+    const widths = [wHot, wWarm, round1(100 - wHot - wWarm)];
+    return ['hot', 'warm', 'cold'].map(function (t, i) { return { tier: t, days: days[i], widthPct: widths[i] }; });
+  }
+
+  const VENDOR_ROWS = ['Batch ingestion', 'Landing (Bronze)', 'Cleaning (Silver, Gold)', 'Quality gate'];
+
+  function vendorSubset() {
+    return {
+      columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
+      rows: VENDOR_ROWS.map(function (name) {
+        const row = Shared.vendor.rows.filter(function (r) { return r[0] === name; })[0];
+        return row ? row.slice() : [name, '', '', ''];
+      })
+    };
+  }
+
+  vm.tiering = tiering;
+  vm.tierBar = tierBar;
+  vm.vendorSubset = vendorSubset;
 })();
