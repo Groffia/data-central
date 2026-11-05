@@ -116,6 +116,95 @@ function isAbnormal(row) {
   }
 }
 
+// ===== SECTION: patient pool and export generator =====
+const FIRST_NAMES = ["Alma", "Bram", "Celia", "Dario", "Esme", "Felix", "Greta", "Hugo", "Ingrid", "Jonas",
+  "Kira", "Leif", "Mina", "Nolan", "Odette", "Pavel", "Quinn", "Rosa", "Soren", "Tamsin",
+  "Ulrich", "Vera", "Wendell", "Xia", "Yusuf", "Zara"];
+const SURNAMES = ["Abernathy", "Brightwater", "Castellano", "Dunmore", "Eriksen", "Fairbanks", "Galloway", "Hollis",
+  "Ibarra", "Jorgensen", "Kowalczyk", "Lennox", "Marchetti", "Nakamura", "Okafor", "Pemberton",
+  "Quillen", "Rasmussen", "Sandoval", "Thorne", "Underhill", "Vasquez", "Whitlock", "Yamada"];
+const ZIP_LIST = ["55101", "55104", "55407", "55414", "55901", "56301", "58102", "57104", "68102", "50309",
+  "53202", "60601", "46204", "48201", "43215", "10027", "02115", "30303", "73301", "98101"];
+const CIPHERS = ["TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"];
+const CODE_CYCLE = CONTRACT.vitalCodes.map((c) => c.code);
+const EXPORT_ROWS = 20;
+const EXPORT_PERIOD = 900;
+const GOLDEN_COUNT = CONTRACT.goldenRows.length;
+
+function buildPatientPool() {
+  const rng = makeRng(1);
+  const pool = CONTRACT.goldenRows.map((g) => ({
+    patient_id: g.patient_id, patient_name: g.patient_name, patient_zip5: g.patient_zip5, birth_date: g.birth_date,
+  }));
+  const used = new Set(pool.map((p) => p.patient_id));
+  for (let i = GOLDEN_COUNT; i < PATIENT_POOL_SIZE; i++) {
+    let id;
+    do {
+      id = "SGH-P-" + String(100000 + Math.floor(rng() * 900000));
+    } while (used.has(id));
+    used.add(id);
+    const name = rngPick(rng, FIRST_NAMES) + " " + rngPick(rng, SURNAMES);
+    const zip = rngPick(rng, ZIP_LIST);
+    // Ages 18-95 on 2026-11-03. The first generated patient is forced to 90+.
+    const year = i === GOLDEN_COUNT ? 1932 + Math.floor(rng() * 4) : 1931 + Math.floor(rng() * 77);
+    const month = 1 + Math.floor(rng() * 12);
+    const day = 1 + Math.floor(rng() * 28);
+    const birth = year + "-" + pad2(month) + "-" + pad2(day);
+    pool.push({ patient_id: id, patient_name: name, patient_zip5: zip, birth_date: birth });
+  }
+  return pool;
+}
+
+const exportRunEpoch = (n) => BASE_EPOCH + 1800 + (n - 1) * EXPORT_PERIOD;
+
+// Per-(n, row) salt-1 stream, so any export derives from the seed alone.
+function rowRng(n, rowIndex) {
+  const base = Math.floor(makeRng(1)() * 4294967296);
+  return mulberry32((base ^ Math.imul(n, 0x9E3779B1) ^ Math.imul(rowIndex + 1, 0x85EBCA6B)) >>> 0);
+}
+
+function generateExport(n, scenario) { // scenario: only "healthy" is implemented here
+  const pool = buildPatientPool();
+  const runEpoch = exportRunEpoch(n);
+  const block = (n - 1) % 2;
+  const appearance = Math.floor((n - 1) / 2) + 1; // 1-based count of this patient's appearances
+  const rows = [];
+  for (let r = 0; r < EXPORT_ROWS; r++) {
+    if (n === 1 && r < GOLDEN_COUNT) {
+      rows.push({ ...CONTRACT.goldenRows[r] });
+      continue;
+    }
+    const pi = block * EXPORT_ROWS + r;
+    const p = pool[pi];
+    const rng = rowRng(n, r);
+    const startIdx = pi < GOLDEN_COUNT ? CODE_CYCLE.indexOf(CONTRACT.goldenRows[pi].vital_code) : pi % 4;
+    const vc = CONTRACT.vitalCodes[(startIdx + appearance - 1) % 4];
+    let epoch;
+    if (n === 1) { // 15 generated rows spread evenly across 14:20-14:30
+      epoch = BASE_EPOCH + 1200 + Math.round(((r - GOLDEN_COUNT) * 600) / (EXPORT_ROWS - GOLDEN_COUNT - 1));
+    } else {
+      epoch = runEpoch - EXPORT_PERIOD + Math.round((r * EXPORT_PERIOD) / (EXPORT_ROWS - 1));
+    }
+    const mid = (vc.min + vc.max) / 2, sd = (vc.max - vc.min) / 5;
+    let v = mid + rngGauss(rng) * sd;
+    v = Math.min(vc.max, Math.max(vc.min, v));
+    v = vc.code === "8310-5" ? round(v, 1) : Math.round(v);
+    rows.push({
+      patient_id: p.patient_id,
+      patient_name: p.patient_name,
+      patient_zip5: p.patient_zip5,
+      birth_date: p.birth_date,
+      encounter_epoch: epoch,
+      vital_sequence: appearance,
+      vital_code: vc.code,
+      vital_value: v,
+      unit: vc.unit,
+      cipher_suite: rngPick(rng, CIPHERS),
+    });
+  }
+  return { n, runEpoch, rows };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -123,6 +212,7 @@ const Engine = {
   mulberry32, makeRng, isoFromEpoch,
   rngPick, rngRange, rngGauss, round,
   PATIENT_POOL_SIZE, getContract, isAbnormal,
+  buildPatientPool, exportRunEpoch, generateExport,
 };
 
 // ===== EXPORT =====
