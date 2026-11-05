@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7 (in progress)
+
+Action link encoding, so a page can carry any state HQ reached in a URL. New exports: `Engine.encodeActions(actions)`, `Engine.decodeActions(text)`, `Engine.stepForActions(scenario, actions)`. `Engine.parseLinkParams` now also returns `actions` (decoded array, or null when `a=` is absent or invalid) and `batch` (positive integer, else null); `scenario` and `step` behave as before. Task 2 will add `inspectBatch` to this release; the tag `engine-v1.7` follows Task 2.
+
+Encoding: actions joined by `.`; `runBatch` r, `ackAlert` k, `resolveRetry` y, `resolveAlert` z, `repairRow` `p:<dlqId>`, `discardRow` `d:<dlqId>:<index into DISCARD_REASONS>`. The empty list is `-` (the empty string is invalid). Only `[a-z0-9:.-]` is allowed; dlq ids must match `dlq-N-N` (1 to 3 digits each). Decoding is strict (unknown token, bad id, reason index out of range, stray character, empty segment: null) and any string over 2,000 characters is rejected (exactly 2,000 is accepted). `encodeActions` returns null for a list it cannot encode, including a discard whose reason is not in `DISCARD_REASONS`, an unknown action type, a bad id, or a result over 2,000 characters. `stepForActions` returns N when the actions equal the first N scripted actions (N from the scenario's prelude length to the end of the script), else null. Repeated `a=` or `batch=` in a link: the first wins.
+
+What moved: nothing pinned (no hash, no engine state). `parseLinkParams` returns two more keys, so the existing `parseLinkParams` expectations in `interface.test.js` now also list `actions: null, batch: null`; no other existing test changed. 195 tests (13 new in `link.test.js`).
+
 ## v1.6 (2026-11-05)
 
 Tenant rename before publication: "Stargate Healthcare" is now "Tamsworth Health". Patient-ID prefix `SGH-P-` is now `TMH-P-` (same length, six characters), the bronze table is `bronze_tamsworth_vitals`, the alert key is `dq-tamsworth-silver_vital_observation`, and the source comment reads Tamsworth. No logic changed.

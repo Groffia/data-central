@@ -138,14 +138,14 @@ test("getState is deterministic", () => {
 });
 
 test("parseLinkParams", () => {
-  assert.deepStrictEqual(Engine.parseLinkParams("?scenario=incident&step=3"), { scenario: "incident", step: 3 });
-  assert.deepStrictEqual(Engine.parseLinkParams("scenario=incident&step=3"), { scenario: "incident", step: 3 });
-  const def = { scenario: "healthy", step: 0 };
+  assert.deepStrictEqual(Engine.parseLinkParams("?scenario=incident&step=3"), { scenario: "incident", step: 3, actions: null, batch: null });
+  assert.deepStrictEqual(Engine.parseLinkParams("scenario=incident&step=3"), { scenario: "incident", step: 3, actions: null, batch: null });
+  const def = { scenario: "healthy", step: 0, actions: null, batch: null };
   assert.deepStrictEqual(Engine.parseLinkParams("?scenario=bogus"), def);
   assert.deepStrictEqual(Engine.parseLinkParams(""), def);
   assert.deepStrictEqual(Engine.parseLinkParams(undefined), def);
   assert.deepStrictEqual(Engine.parseLinkParams(42), def);
-  assert.deepStrictEqual(Engine.parseLinkParams("?scenario=incident&step=-1"), { scenario: "incident", step: 0 });
+  assert.deepStrictEqual(Engine.parseLinkParams("?scenario=incident&step=-1"), { scenario: "incident", step: 0, actions: null, batch: null });
   assert.deepStrictEqual(Engine.parseLinkParams("?step=2.5"), def);
   assert.deepStrictEqual(Engine.parseLinkParams("?step=abc"), def);
 });

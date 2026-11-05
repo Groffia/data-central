@@ -820,14 +820,86 @@ function getState(scenario, actions, opts) {
 
 const getTimeline = (scenario, actions, opts) => getState(scenario, actions, opts).events;
 
+// ----- action link encoding (v1.7) -----
+// Grammar: actions joined by ".". runBatch r, ackAlert k, resolveRetry y, resolveAlert z, repairRow p:<dlqId>,
+// discardRow d:<dlqId>:<index into DISCARD_REASONS>. The empty list is the single character "-" (the empty string is
+// invalid). Only [a-z0-9:.-] is allowed and no string over LINK_MAX_CHARS is accepted. Decoding is strict.
+const LINK_MAX_CHARS = 2000;
+const LINK_DLQ_ID = /^dlq-[0-9]{1,3}-[0-9]{1,3}$/;
+const LINK_SIMPLE = { runBatch: "r", ackAlert: "k", resolveRetry: "y", resolveAlert: "z" };
+const LINK_SIMPLE_REV = { r: "runBatch", k: "ackAlert", y: "resolveRetry", z: "resolveAlert" };
+
+// Returns the encoded string, or null when the list cannot be encoded: not an array, an unknown action type, a bad
+// dlq id, a discard whose reason is not in DISCARD_REASONS (the index is the encoding), or a result over the cap.
+function encodeActions(actions) {
+  if (!Array.isArray(actions)) return null;
+  const parts = [];
+  for (const a of actions) {
+    if (a === null || typeof a !== "object") return null;
+    if (Object.prototype.hasOwnProperty.call(LINK_SIMPLE, a.type)) parts.push(LINK_SIMPLE[a.type]);
+    else if (a.type === "repairRow") {
+      if (typeof a.dlqId !== "string" || !LINK_DLQ_ID.test(a.dlqId)) return null;
+      parts.push("p:" + a.dlqId);
+    } else if (a.type === "discardRow") {
+      const i = DISCARD_REASONS.indexOf(a.reason);
+      if (typeof a.dlqId !== "string" || !LINK_DLQ_ID.test(a.dlqId) || i < 0) return null;
+      parts.push("d:" + a.dlqId + ":" + i);
+    } else return null;
+  }
+  const text = parts.length ? parts.join(".") : "-";
+  return text.length > LINK_MAX_CHARS ? null : text;
+}
+
+// Returns a fresh action array, or null for anything invalid. Never throws.
+function decodeActions(text) {
+  if (typeof text !== "string" || text.length === 0 || text.length > LINK_MAX_CHARS) return null;
+  if (!/^[a-z0-9:.-]+$/.test(text)) return null;
+  if (text === "-") return [];
+  const out = [];
+  for (const seg of text.split(".")) {
+    if (Object.prototype.hasOwnProperty.call(LINK_SIMPLE_REV, seg)) { out.push({ type: LINK_SIMPLE_REV[seg] }); continue; }
+    const f = seg.split(":");
+    if (f[0] === "p" && f.length === 2 && LINK_DLQ_ID.test(f[1])) out.push({ type: "repairRow", dlqId: f[1] });
+    else if (f[0] === "d" && f.length === 3 && LINK_DLQ_ID.test(f[1]) && /^[0-9]$/.test(f[2]) && Number(f[2]) < DISCARD_REASONS.length) {
+      out.push({ type: "discardRow", dlqId: f[1], reason: DISCARD_REASONS[Number(f[2])] });
+    } else return null;
+  }
+  return out;
+}
+
+const sameAction = (x, y) => x !== null && typeof x === "object" && x.type === y.type && x.dlqId === y.dlqId && x.reason === y.reason;
+
+// N when `actions` equals the first N scripted actions of the scenario (N between the prelude length and the whole
+// script, as actionsForStep allows), else null. Never throws.
+function stepForActions(scenario, actions) {
+  if (scenario !== "healthy" && scenario !== "incident") return null;
+  if (!Array.isArray(actions)) return null;
+  const script = AUTOPLAY[scenario], n = actions.length;
+  if (n < PRELUDE[scenario].length || n > script.length) return null;
+  for (let i = 0; i < n; i++) if (!sameAction(actions[i], script[i])) return null;
+  return n;
+}
+
 function parseLinkParams(search) {
-  const out = { scenario: "healthy", step: 0 };
+  const out = { scenario: "healthy", step: 0, actions: null, batch: null };
   if (typeof search !== "string") return out;
-  search.replace(/^\?/, "").split("&").forEach((pair) => {
+  let seenA = false, seenBatch = false; // first a= and first batch= win
+  search.replace(/^[?]/, "").split("&").forEach((pair) => {
     const i = pair.indexOf("=");
     const k = i < 0 ? pair : pair.slice(0, i), v = i < 0 ? "" : pair.slice(i + 1);
     if (k === "scenario" && (v === "healthy" || v === "incident")) out.scenario = v;
-    if (k === "step" && /^\d+$/.test(v)) out.step = Number(v);
+    if (k === "step" && /^[0-9]+$/.test(v)) out.step = Number(v);
+    if (k === "a" && !seenA) {
+      seenA = true;
+      let text = null;
+      try { text = decodeURIComponent(v); } catch (e) { text = null; }
+      out.actions = decodeActions(text);
+    }
+    if (k === "batch" && !seenBatch) {
+      seenBatch = true;
+      const n = /^[0-9]+$/.test(v) ? Number(v) : 0;
+      out.batch = Number.isSafeInteger(n) && n > 0 ? n : null;
+    }
   });
   return out;
 }
@@ -940,7 +1012,8 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep,naiveAbnormalRate, naiveAbnormalStats,
+  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  naiveAbnormalRate, naiveAbnormalStats,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
