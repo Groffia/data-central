@@ -77,7 +77,9 @@
   }
 
   function controls(vm) {
-    return '<div class="run-controls">' + button('Run next batch', 'run') + button('Reset', 'reset') + '</div>';
+    return '<div class="run-controls">' + button('Run next batch', 'run') + button('Reset', 'reset') + '</div>' +
+      '<div class="playback-controls" role="group" aria-label="Auto-play">' + button('Pause', 'pause') +
+      button('Resume', 'resume') + button('Skip scene', 'skip') + button('Stop', 'stop') + '</div>';
   }
 
   function alertCard(a) {

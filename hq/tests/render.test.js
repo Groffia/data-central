@@ -169,3 +169,11 @@ test('notice and error render escaped', () => {
   assert.ok(r.notice.indexOf('&lt;i&gt;e&lt;/i&gt;') >= 0);
   assert.strictEqual(regions('healthy', 1).notice, '');
 });
+
+test('controls: playback buttons pause, resume, skip, stop are present', () => {
+  const c = regions('healthy', 1).controls;
+  ['pause', 'resume', 'skip', 'stop'].forEach(function (cmd) {
+    assert.ok(c.indexOf('data-cmd="' + cmd + '"') >= 0, cmd);
+  });
+  assert.ok(c.indexOf('class="playback-controls"') >= 0);
+});
