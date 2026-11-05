@@ -332,7 +332,8 @@
     }
   }
 
-  // Never throws. ctx = { scenario, actions, step, local, links: { hqBase, pipelineBase } }.
+  // Never throws. ctx = { scenario, actions, step, local, links: { hqBase, pipelineBase } }. `message` is the result of the last
+  // local action, for the live element.
   function buildViewModel(ctx) {
     const c = ctx && typeof ctx === 'object' ? ctx : {};
     let scenario = 'healthy';
@@ -362,6 +363,7 @@
         erasure: erasurePanel(scenario, actions, state, local, applied),
         vendor: null,
         notice: notice,
+        message: local.message,
         footer: FOOTER_TEXT
       };
     } catch (e) {
@@ -379,6 +381,7 @@
         erasure: null,
         vendor: null,
         notice: notice || 'Engine self-test failed: ' + String(e && e.message),
+        message: '',
         footer: FOOTER_TEXT
       };
     }
