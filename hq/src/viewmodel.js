@@ -118,4 +118,52 @@
       notEvaluableText: t.notEvaluable > 0 ? t.notEvaluable + ' not evaluable' : null
     };
   };
+
+  vm.DISCARD_REASONS = Object.freeze(['Missing patient ID', 'Physiologically impossible value',
+    'Malformed or suspicious input', 'Wrong unit, source must resend', 'Other, see note']);
+
+  function suggestedReason(d) {
+    const tests = d.failedTests || [];
+    const has = function (n) { return tests.indexOf(n) >= 0; };
+    if (d.column === 'patient_id' && has('not_null')) return vm.DISCARD_REASONS[0];
+    if (d.column === 'vital_value' && has('range')) return vm.DISCARD_REASONS[1];
+    if (has('matches_pattern')) return vm.DISCARD_REASONS[2];
+    if (d.column === 'unit' && (has('unit_matches_code') || has('accepted_values'))) return vm.DISCARD_REASONS[3];
+    return vm.DISCARD_REASONS[4];
+  }
+
+  function observedText(v) { return v === null || v === undefined ? 'null' : JSON.stringify(v); }
+
+  vm.incidentPanel = function incidentPanel(state) {
+    const dlq = state.dlq || [], alerts = state.alerts || [];
+    const a = alerts.length ? alerts[alerts.length - 1] : null;
+    const open = openEntries(state).length;
+    const gateOpen = state.gate === 'OPEN';
+    return {
+      visible: dlq.length > 0 || alerts.length > 0,
+      alert: a ? {
+        severity: a.severity, title: a.title, count: a.count, status: a.status,
+        canAck: a.status === 'open',
+        canResolve: a.status === 'open' || a.status === 'acknowledged'
+      } : null,
+      rows: dlq.map(function (d) {
+        return {
+          dlqId: d.dlqId, failedTests: (d.failedTests || []).slice(), column: d.column,
+          observedValueText: observedText(d.observedValue), reason: d.reason,
+          suggestedReason: suggestedReason(d), repairable: !!d.repairable, status: d.status,
+          canRepair: !!d.repairable && d.status === 'open', canDiscard: d.status === 'open'
+        };
+      }),
+      discardReasons: vm.DISCARD_REASONS.slice(),
+      canResolveRetry: gateOpen && open === 0,
+      resolveRetryBlockedReason: gateOpen && open > 0
+        ? open + (open === 1 ? ' DLQ row unresolved' : ' DLQ rows unresolved') : null
+    };
+  };
+
+  vm.timeline = function timeline(state) {
+    return (state.events || []).map(function (e) {
+      return { iso: e.iso, timeText: HQ.format.clockLabel(e.iso), type: e.type, detail: e.detail };
+    });
+  };
 })();
