@@ -192,6 +192,67 @@
     };
   }
 
+  // ----- F: erasure -----
+
+  const ERASURE_STATEMENT = "This shows how a deletion is carried out across every layer. Whether a request must be granted, and which records must be kept, depends on the law and the organization's policy. This demo does not decide that.";
+  const RAW_LINE = "Raw files in Bronze are immutable. Erasure destroys the subject's data key, so their rows there can no longer be read (simulated: no real keys or encryption are used).";
+  const EFFECTS_SENTENCE = 'The seven-day KPI tiles do not move: the KPI history is aggregate-only and holds no patient rows.';
+
+  // The footprint table, effects and checks for the erasure list in the local state. `result` is Engine.eraseSubjects for that
+  // list (null when nothing is erased); the numbers all come from the engine.
+  function erasurePanel(scenario, actions, base, local, result) {
+    const ids = Engine.buildPatientPool().map(function (p) { return p.patient_id; });
+    const erased = result ? result.erased : [];
+    const selected = ids.indexOf(local.selectedSubject) >= 0 ? local.selectedSubject : '';
+    let footprint = null;
+    if (selected !== '') {
+      const f = Engine.subjectFootprint(scenario, actions, selected);
+      footprint = {
+        subject: selected,
+        layers: [
+          { layer: 'Bronze (raw files)', before: f.bronze, after: f.bronze, afterText: f.bronze + ' (unreadable)' },
+          { layer: 'Staging', before: f.staging, after: 0, afterText: '0' },
+          { layer: 'Silver (production)', before: f.silver, after: 0, afterText: '0' },
+          { layer: 'Dead-letter queue', before: f.deadLetter, after: 0, afterText: '0' },
+          { layer: 'dim_patient', before: f.dimPatient, after: 0, afterText: '0' }
+        ]
+      };
+    }
+    let effects = null;
+    if (erased.length) {
+      const b = Engine.liveSampleCheck(base), a = Engine.liveSampleCheck(result.state);
+      effects = {
+        before: { published: b.published, abnormal: b.abnormal },
+        after: { published: a.published, abnormal: a.abnormal },
+        text: 'Published readings: ' + b.published + ' before, ' + a.published + ' after. Abnormal readings: ' + b.abnormal + ' before, ' + a.abnormal + ' after.'
+      };
+    }
+    let eraseReason = '';
+    if (local.legalHold) eraseReason = Engine.eraseSubjects(scenario, [], [], { legalHold: true }).reason;
+    else if (selected === '') eraseReason = 'Choose a subject first';
+    else if (erased.indexOf(selected) >= 0) eraseReason = 'Already erased';
+    return {
+      stage: 'Stage 8: Archiving/Retirement',
+      title: 'Erasure',
+      options: ids.map(function (id) { return { id: id }; }),
+      selected: selected,
+      footprint: footprint,
+      statement: ERASURE_STATEMENT,
+      rawLine: RAW_LINE,
+      effects: effects,
+      effectsEmptyText: 'No subject has been erased yet.',
+      effectsSentence: EFFECTS_SENTENCE,
+      checks: result ? result.checks.map(function (c) {
+        return { id: c.id, label: c.label, pass: c.pass, passText: c.pass ? 'Pass' : 'Fail', mark: c.pass ? '✓' : '✗' };
+      }) : [],
+      checksEmptyText: 'Checks appear after an erasure.',
+      erased: erased.slice(),
+      canErase: eraseReason === '',
+      eraseReason: eraseReason,
+      canReset: erased.length > 0
+    };
+  }
+
   // ----- model assembly -----
 
   function selfTestBanner() {
@@ -226,14 +287,18 @@
       const state = Engine.getState(scenario, actions);
       const local = Brain.localstate.normalize(c.local);
       const pipelineHref = link(links.pipelineBase, scenario, actions);
+      // The erasure list applies to whatever step is shown; panel B and the effects follow it.
+      const result = local.erased.length ? Engine.eraseSubjects(scenario, actions, local.erased) : null;
+      const applied = result && result.erased.length ? result : null;
+      const shown = applied ? applied.state : state;
       return {
         header: Object.assign({}, header(state, scenario, step, links, actions), { scenario: scenario }),
         contract: contractPanel(),
-        phi: phiPanel(state),
+        phi: phiPanel(shown),
         lineage: null,
         access: accessPanel(scenario, actions, local),
         retention: retentionPanel(local, pipelineHref === null ? null : pipelineHref + '#stage-storage'),
-        erasure: null,
+        erasure: erasurePanel(scenario, actions, state, local, applied),
         vendor: null,
         notice: notice,
         footer: FOOTER_TEXT
