@@ -22,9 +22,9 @@ test('one section container per region key, exactly once, nothing extra', () => 
   assert.strictEqual((html.match(/id="region-/g) || []).length, KEYS.length);
 });
 
-test('deep-link stage anchors exist once', () => {
-  assert.strictEqual(count(html, 'id="stage-definitions"'), 1);
-  assert.strictEqual(count(html, 'id="stage-check"'), 1);
+test('deep-link stage anchors are emitted by the renderer, not the static page', () => {
+  assert.strictEqual(count(html, 'id="stage-definitions"'), 0);
+  assert.strictEqual(count(html, 'id="stage-check"'), 0);
 });
 
 test('caption is an aria-live polite element, once', () => {

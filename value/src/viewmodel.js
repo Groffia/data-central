@@ -227,4 +227,166 @@
   }
 
   vm.checkPanel = checkPanel;
+
+  // ----- Task 12: model assembly -----
+
+  const FOOTER_TEXT = 'All data is synthetic and generated deterministically (seed 42). Company names are fictional.';
+  const TRAILING_NOTE = 'trailing window is shorter for the first six days';
+  const VENDOR_ROWS = ['Metrics layer', 'Dashboards'];
+
+  // Days since 1970-01-01 for a proleptic Gregorian date (no Date constructor).
+  function daysFromCivil(y, m, d) {
+    const yy = m <= 2 ? y - 1 : y;
+    const era = Math.floor(yy / 400);
+    const yoe = yy - era * 400;
+    const doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
+    const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+    return era * 146097 + doe - 719468;
+  }
+
+  // 0 = Sunday ... 6 = Saturday for 'YYYY-MM-DD'; -1 when the text is not a real calendar date.
+  function dayOfWeek(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+    if (!m) return -1;
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    if (mo < 1 || mo > 12 || d < 1) return -1;
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+    if (d > dim) return -1;
+    return (((daysFromCivil(y, mo, d) + 4) % 7) + 7) % 7;
+  }
+
+  // The inverse of Shared.escape.esc, so a summary built with escaped parts is stored as plain text.
+  function unesc(t) {
+    return String(t).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  }
+
+  // Same wording as Pipeline's controller. null when the self-test passes.
+  function selfTestBanner() {
+    let r;
+    try { r = Engine.selfTest(); } catch (e) { return 'Engine self-test failed: ' + String(e && e.message); }
+    const checks = (r && r.checks) || [];
+    const good = r && (r.passed !== undefined ? r.passed : r.ok !== undefined ? r.ok : r.pass);
+    if (good) return null;
+    const failing = checks.filter(function (c) { return !(c.ok !== undefined ? c.ok : c.passed); }).map(function (c) { return c.name; });
+    return 'Engine self-test failed: ' + (failing.length ? failing.join(', ') : 'unknown check');
+  }
+
+  function vendorSubset() {
+    return {
+      columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'],
+      rows: VENDOR_ROWS.map(function (name) {
+        const row = Shared.vendor.rows.filter(function (r) { return r[0] === name; })[0];
+        return row ? row.slice() : [name, '', '', ''];
+      })
+    };
+  }
+
+  // Daily and 7-day trailing series for one tile, using the published definition. The window is shorter for the first six days.
+  function trendOf(tile, history, published, openTables) {
+    const fx = FIXED[tile.name];
+    const sel = selection(tile.name, published);
+    const num = sel.def ? sel.def.numerator : fx.num;
+    const den = sel.def ? sel.def.denominator : fx.den;
+    const daily = [], trailing = [];
+    for (let i = 0; i < history.length; i++) {
+      daily.push(history[i][num] / history[i][den]);
+      let n = 0, d = 0;
+      for (let j = Math.max(0, i - 6); j <= i; j++) { n += history[j][num]; d += history[j][den]; }
+      trailing.push(n / d);
+    }
+    const dates = history.map(function (r) { return r.date; });
+    const weekendIndexes = [];
+    dates.forEach(function (dt, i) { const w = dayOfWeek(dt); if (w === 0 || w === 6) weekendIndexes.push(i); });
+    const unit = fx.kind === 'days' ? 'days' : 'pct';
+    const series = [{ name: 'Daily', values: daily, className: 'daily' }, { name: '7-day trailing', values: trailing, className: 'trailing' }];
+    return {
+      id: tile.id, title: tile.name, unit: unit, dates: dates, weekendIndexes: weekendIndexes, series: series,
+      summary: unesc(Value.chart.summary({ title: tile.name, series: series, dates: dates, unit: unit, weekendIndexes: weekendIndexes })),
+      tableNote: TRAILING_NOTE,
+      tableOpen: !!(openTables && typeof openTables === 'object' && openTables[tile.id] === true)
+    };
+  }
+
+  function definitionsModel(ds, history) {
+    const cons = Value.definitions.consumers(ds, history);
+    return {
+      governed: ds.governed !== false,
+      message: ds.message || '',
+      changelog: Value.definitions.changelog(ds),
+      metrics: cons.map(function (c) {
+        const m = ds.metrics[c.metric];
+        const meta = Engine.METRIC_DEFINITIONS[c.metric];
+        return {
+          name: c.metric, selectedId: m.selected, publishedId: m.published, version: m.version,
+          options: meta.definitions.map(function (d) { return { id: d.id, label: d.label }; }),
+          yaml: Value.definitions.yamlPreview(c.metric, m.selected),
+          consumers: c.rows, conflict: c.conflict
+        };
+      })
+    };
+  }
+
+  function emptyCheck() {
+    try { return checkPanel(null); } catch (e) {
+      return { title: CHECK_TITLE, withHandPickedText: '', withoutHandPickedText: '', rangeText: '', verdict: CHECK_NEUTRAL, level: 'neutral', explain: CHECK_EXPLAIN.slice() };
+    }
+  }
+
+  function safeVendor() {
+    try { return vendorSubset(); } catch (e) { return { columns: ['Component', 'Databricks', 'Snowflake', 'Fabric'], rows: [] }; }
+  }
+
+  // Never throws. ctx = { scenario, actions, step, defState, links: { hqBase, pipelineBase }, openTables }.
+  function buildViewModel(ctx) {
+    const c = ctx && typeof ctx === 'object' ? ctx : {};
+    let scenario = 'healthy';
+    try { if (typeof c.scenario === 'string' && Engine.AUTOPLAY[c.scenario]) scenario = c.scenario; } catch (e) { scenario = 'healthy'; }
+    const links = c.links && typeof c.links === 'object' ? c.links : {};
+    let notice = null;
+    try {
+      notice = selfTestBanner();
+      const floor = Engine.PRELUDE[scenario].length;
+      const actions = Array.isArray(c.actions) ? c.actions : Engine.actionsForStep(scenario, floor);
+      let step = Number.isInteger(c.step) ? c.step : null;
+      if (c.step === undefined) { const n = Engine.stepForActions(scenario, actions); step = typeof n === 'number' ? n : null; }
+      const state = Engine.getState(scenario, actions);
+      const history = Engine.getHistory();
+      const naive = Engine.naiveSample(scenario, actions);
+      const ds = Value.definitions.reduce(c.defState, { type: 'none' });
+      const pub = Value.definitions.published(ds);
+      const tiles = kpiTiles(state, history, pub);
+      return {
+        header: Object.assign({}, header(state, scenario, step, links, actions), { scenario: scenario }),
+        kpis: { tiles: tiles },
+        trends: tiles.map(function (t) { return trendOf(t, history, pub, c.openTables); }),
+        compare: compare(state, naive),
+        definitions: definitionsModel(ds, history),
+        check: checkPanel(state),
+        vendor: vendorSubset(),
+        notice: notice,
+        footer: FOOTER_TEXT
+      };
+    } catch (e) {
+      return {
+        header: {
+          title: 'Value: What the Business Sees',
+          subtitle: 'Tamsworth Health: what the business sees and why it can be trusted, stages 6 and 7',
+          steps: { n: null, m: 0, text: '', label: 'Step unavailable' },
+          canBack: false, canNext: false, hqHref: null, pipelineHref: null, scenario: scenario
+        },
+        kpis: { tiles: [] },
+        trends: [],
+        compare: null,
+        definitions: { governed: true, message: '', changelog: [], metrics: [] },
+        check: emptyCheck(),
+        vendor: safeVendor(),
+        notice: notice || 'Engine self-test failed: ' + String(e && e.message),
+        footer: FOOTER_TEXT
+      };
+    }
+  }
+
+  vm.dayOfWeek = dayOfWeek;
+  vm.buildViewModel = buildViewModel;
 })();
