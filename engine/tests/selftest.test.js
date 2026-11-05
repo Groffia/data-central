@@ -46,9 +46,34 @@ test("selfTest is pure and quick", () => {
   assert.ok(Number(process.hrtime.bigint() - t0) / 1e6 < 1000);
 });
 
+// Returns the list of forbidden-form hits in a source string.
+function scan(src) {
+  const hits = [];
+  ["Math.random", "Date.now", "new Date(", "require(", "import(", "window.", "document.", "globalThis.window"].forEach((t) => {
+    if (src.includes(t)) hits.push(t);
+  });
+  if (src.split(/\r?\n/).some((l) => /^\s*import\s/.test(l))) hits.push("import statement");
+  return hits;
+}
+
 test("engine.js source has no forbidden tokens", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "engine.js"), "utf8");
-  ["Math.random", "Date.now", "new Date(", "require(", "import(", "window.", "document.", "globalThis.window"].forEach((t) =>
-    assert.ok(!src.includes(t), "forbidden token: " + t));
-  assert.ok(!src.split(/\r?\n/).some((l) => /^\s*import\s/.test(l)), "import statement");
+  assert.deepStrictEqual(scan(src), []);
+});
+
+test("the source scanner can fail", () => {
+  ["x = Math.random()", "Date.now()", "new Date(0)", "require('fs')", "import('x')", "window.foo", "document.body",
+    "globalThis.window", 'import x from "y"'].forEach((s) =>
+    assert.ok(scan(s).length > 0, "scanner missed: " + s));
+  ["const windowDays = 3", "globalThis.Engine = Engine", "the document describes it"].forEach((s) =>
+    assert.deepStrictEqual(scan(s), [], "false hit: " + s));
+});
+
+test("engine.js leaks nothing to global scope", () => {
+  const vm = require("node:vm");
+  const src = fs.readFileSync(path.join(__dirname, "..", "engine.js"), "utf8");
+  const ctx = {};
+  vm.runInNewContext(src, ctx);
+  assert.deepStrictEqual(Object.keys(ctx), ["Engine"]);
+  assert.strictEqual(ctx.Engine.selfTest().passed, true);
 });

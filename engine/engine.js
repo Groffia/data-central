@@ -1,3 +1,4 @@
+(function () {
 // engine.js: deterministic synthetic-data engine. Plain JS, no dependencies.
 // Sections are appended above the EXPORT line by later tasks.
 
@@ -364,13 +365,23 @@ function errorFailures(rows, priorKeys, refTime) {
 }
 
 function dlqEntryFor(batchId, n, row, pos, hits) {
-  const column = hits[0].column;
-  const observedValue = column === "*" ? Object.keys(row) : row[column] === undefined ? null : row[column];
+  const drift = hits.find((h) => h.test === "no_unexpected_columns");
+  const primary = drift || hits[0];
+  const column = primary.column;
+  let observedValue, reason;
+  if (drift) {
+    const extra = Object.keys(row).filter((k) => !FIELD_NAMES.includes(k));
+    const joined = extra.join(",");
+    observedValue = joined.length <= 80 ? joined : extra.length;
+    reason = "Unexpected columns (schema drift)";
+  } else {
+    observedValue = row[column] === undefined ? null : row[column];
+    reason = "Failed " + primary.test + " on " + column;
+  }
   return {
     dlqId: "dlq-" + n + "-" + pos, batchId,
     failedTests: [...new Set(hits.map((h) => h.test))],
-    column, observedValue,
-    reason: "Failed " + hits[0].test + " on " + (column === "*" ? "row" : column),
+    column, observedValue, reason,
     payload: row, repairable: repairRow(row) !== row, status: "open",
   };
 }
@@ -378,7 +389,8 @@ function dlqEntryFor(batchId, n, row, pos, hits) {
 function runBatchAction(s, opts) {
   if (s.gate === "OPEN") return reject(s, "gate is OPEN: resolve the DLQ and retry first");
   const n = s.batchesRun + 1, batchId = "batch-" + n;
-  const exp = generateExport(n, s.scenario, opts);
+  const o = opts && Array.isArray(opts.faultExports) ? opts : s.faultExports ? { ...(opts || {}), faultExports: s.faultExports } : opts;
+  const exp = generateExport(n, s.scenario, o);
   let next = { ...s, batchesRun: n, bronzeRows: s.bronzeRows + exp.rows.length, clock: { epoch: exp.runEpoch, iso: isoFromEpoch(exp.runEpoch) } };
   next = withEvent(next, "BATCH_RUN", batchId + " landed " + exp.rows.length + " rows in bronze");
   const failed = errorFailures(exp.rows, s.productionKeys, exp.runEpoch);
@@ -548,7 +560,10 @@ function facilityProfile(history) {
   const occupancy = computeKpis(history)[0].value;
   const patientsInHouse = Math.round(bedsStaffed * occupancy);
   const obsPerDay = patientsInHouse * 6 * 4; // 6 rounds x 4 vital types per patient
-  return { bedsStaffed, patientsInHouse, obsPerDay, obsPer15Min: obsPerDay / 96, obsPerMonth: obsPerDay * 30 };
+  const obsPerMonth = obsPerDay * 30;
+  const sample = generateExport(1, "healthy").rows; // all ASCII: string length equals bytes
+  const bytesPerRow = sample.reduce((a, r) => a + JSON.stringify(r).length, 0) / sample.length;
+  return { bedsStaffed, patientsInHouse, obsPerDay, obsPer15Min: obsPerDay / 96, obsPerMonth, bytesPerRow, bytesPerMonth: obsPerMonth * bytesPerRow };
 }
 
 // Prices are illustrative, not vendor quotes (Build File 2, B3).
@@ -763,3 +778,4 @@ const Engine = {
 
 // ===== EXPORT =====
 if (typeof module !== "undefined") module.exports = Engine; else globalThis.Engine = Engine;
+})();

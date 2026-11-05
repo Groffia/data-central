@@ -73,3 +73,40 @@ test("tiering cost", () => {
   assert.strictEqual(t.savedPct, ((t.allHotCost - t.monthlyCost) / t.allHotCost) * 100);
   assert.ok(Engine.tieringCost({ hotToWarmDays: 10 }).monthlyCost < t.monthlyCost);
 });
+
+test("facility bytesPerRow is measured from generated rows", () => {
+  const f = Engine.facilityProfile(Engine.getHistory());
+  assert.ok(f.bytesPerRow >= 100 && f.bytesPerRow <= 1000, String(f.bytesPerRow));
+  assert.strictEqual(f.bytesPerRow, 253.75);
+  assert.strictEqual(f.bytesPerMonth, f.obsPerMonth * f.bytesPerRow);
+  assert.strictEqual(f.bytesPerMonth, 226080 * 253.75);
+  assert.deepStrictEqual(Object.keys(f).slice(0, 5), ["bedsStaffed", "patientsInHouse", "obsPerDay", "obsPer15Min", "obsPerMonth"]);
+});
+
+// These numbers feed the demo script. If one changes, re-record it deliberately.
+test("demo headline numbers are pinned", () => {
+  const near = (a, b, tol) => assert.ok(Math.abs(a - b) < tol, a + " vs " + b);
+  const t = Engine.tieringCost();
+  near(t.monthlyCost, 228.3, 1e-4);
+  near(t.allHotCost, 3679.2, 1e-4);
+  near(t.savedPct, 93.7948, 1e-4);
+  const s = Engine.getState("healthy", []);
+  const want = [
+    ["Bed Occupancy", 0.785714, 0.791071, -0.677201],
+    ["Abnormal Vital Rate", 0.062216, 0.060102, 3.517926],
+    ["Avg Length of Stay", 4.680851, 4.538934, 3.126651],
+    ["30-Day Readmission Rate", 0.134043, 0.133197, 0.635025],
+  ];
+  want.forEach(([name, value, priorValue, deltaPct], i) => {
+    const k = s.kpis[i];
+    assert.strictEqual(k.name, name);
+    near(k.value, value, 5e-7);
+    near(k.priorValue, priorValue, 5e-7);
+    near(k.deltaPct, deltaPct, 5e-7);
+  });
+  const f = s.facility;
+  assert.strictEqual(f.patientsInHouse, 314);
+  assert.strictEqual(f.obsPerDay, 7536);
+  assert.strictEqual(f.obsPer15Min, 78.5);
+  assert.strictEqual(f.obsPerMonth, 226080);
+});

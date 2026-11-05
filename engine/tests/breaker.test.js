@@ -212,3 +212,37 @@ test("state is JSON-serializable", () => {
   const s = incidentOpen();
   assert.deepStrictEqual(JSON.parse(JSON.stringify(s)), s);
 });
+
+test("incident DLQ primary column and reason per entry", () => {
+  const s = incidentOpen();
+  const DRIFT = { column: "*", reason: "Unexpected columns (schema drift)" };
+  const want = {
+    "dlq-3-2": DRIFT, "dlq-3-6": DRIFT, "dlq-3-10": DRIFT, "dlq-3-15": DRIFT, "dlq-3-19": DRIFT,
+    "dlq-3-4": { column: "patient_id", reason: "Failed not_null on patient_id" },
+    "dlq-3-9": { column: "vital_value", reason: "Failed range on vital_value" },
+    "dlq-3-13": { column: "patient_id", reason: "Failed matches_pattern on patient_id" },
+    "dlq-3-17": { column: "unit", reason: "Failed accepted_values on unit" },
+  };
+  assert.deepStrictEqual(s.dlq.map((d) => d.dlqId).sort(), Object.keys(want).sort());
+  s.dlq.forEach((d) => {
+    assert.strictEqual(d.column, want[d.dlqId].column, d.dlqId);
+    assert.strictEqual(d.reason, want[d.dlqId].reason, d.dlqId);
+  });
+  const d2 = s.dlq.find((d) => d.dlqId === "dlq-3-2");
+  assert.ok(d2.failedTests.includes("not_null") && d2.failedTests.includes("no_unexpected_columns"));
+  // Drift rows are camelCased: 9 of 10 keys are unexpected, the joined names are long, so the count is recorded.
+  assert.strictEqual(d2.observedValue, 9);
+});
+
+test("incremental runBatch uses state.faultExports like replay", () => {
+  const s = Engine.replay("incident", Engine.PRELUDE.incident);
+  const after = Engine.reduce(s, RUN);
+  assert.strictEqual(after.gate, "OPEN");
+  assert.strictEqual(after.dlq.length, 9);
+  const h = Engine.replay("healthy", [], { faultExports: [1] });
+  const viaReplay = Engine.replay("healthy", [RUN], { faultExports: [1] });
+  const viaReduce = Engine.reduce(h, RUN);
+  assert.strictEqual(viaReplay.gate, "OPEN");
+  assert.strictEqual(viaReduce.gate, "OPEN");
+  assert.deepStrictEqual(viaReduce, viaReplay);
+});
