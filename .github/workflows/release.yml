@@ -1,9 +1,13 @@
 name: Release
 
+# Lesson: push release tags one at a time (git push origin <tag>), never several with --tags or one push, or GitHub may start no run.
+# Actions are pinned to versions below; do not switch them to floating refs.
+
 on:
   push:
     tags:
       - 'hq-v*'
+      - 'pipeline-v*'
 
 permissions:
   contents: write
@@ -34,4 +38,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" site/hq/hq-single.html --title "HQ $GITHUB_REF_NAME" --notes "Single-file HQ demo (open it from disk or attach it to an email), built from this tag. Source and notes: README.md in the hq folder."
+          PAGE="${GITHUB_REF_NAME%%-v*}"
+          gh release create "$GITHUB_REF_NAME" "site/$PAGE/$PAGE-single.html" --title "Data Central $GITHUB_REF_NAME" --notes "Single-file demo (open it from disk or attach it to an email), built from this tag. Source and notes: README.md in the page folder."

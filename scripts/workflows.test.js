@@ -74,14 +74,33 @@ test('pages.yml: deploy job', () => {
   assert.ok(!bj.includes('deploy-pages'));
 });
 
-test('release.yml: tag trigger, permissions, release command', () => {
+test('release.yml: tag triggers, permissions, release command', () => {
   const t = read('release.yml');
   assert.match(t, /^name: Release$/m);
-  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'$/m);
+  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'\n      - 'pipeline-v\*'$/m);
   assert.match(t, /^permissions:\n  contents: write$/m);
-  assert.match(t, /GH_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.ok(t.includes('gh release create "$GITHUB_REF_NAME" site/hq/hq-single.html --title "HQ $GITHUB_REF_NAME" --notes "Single-file HQ demo (open it from disk or attach it to an email), built from this tag. Source and notes: README.md in the hq folder."'));
+  assert.match(t, /GH_TOKEN: \$\{\{ github\.token }\}/);
+  assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
+  assert.ok(t.includes('gh release create "$GITHUB_REF_NAME" "site/$PAGE/$PAGE-single.html" --title '));
+  assert.ok(t.includes('--notes "Single-file demo (open it from disk or attach it to an email), built from this tag.'));
+  assert.ok(t.indexOf('PAGE=') < t.indexOf('gh release create'));
   assert.ok(t.indexOf(BUILD) < t.indexOf('gh release create'));
+  assert.ok(/^# .*one at a time/m.test(t), 'push release tags one at a time lesson kept as a comment');
+});
+
+test('release.yml: the asset path expression resolves for each tag', () => {
+  const t = read('release.yml');
+  assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
+  // Same expansion in JS: strip the longest suffix starting at "-v".
+  const page = (ref) => ref.replace(/-v.*$/s, '');
+  assert.strictEqual(page('hq-v1.1'), 'hq');
+  assert.strictEqual(page('pipeline-v1.0'), 'pipeline');
+  const pages = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pages.json'), 'utf8'));
+  for (const ref of ['hq-v1.1', 'pipeline-v1.0']) {
+    const e = pages.find((x) => x.dir === page(ref));
+    assert.ok(e, ref);
+    assert.strictEqual(e.singleFile, page(ref) + '-single.html', 'site/$PAGE/$PAGE-single.html matches pages.json');
+  }
 });
 
 // YAML regression guard (no parser available in the repo, so a cheap line check). A single-line `run:` value is a

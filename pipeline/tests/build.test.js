@@ -60,7 +60,16 @@ function runPage(htmlText) {
   };
   const ctx = vm.createContext({ document, location: { search: '', hash: '' }, window: {}, console });
   htmlText.replace(/<script>([\s\S]*?)<\/script>/g, function (m, code) { vm.runInContext(code, ctx); return m; });
-  return regions['region-header'].innerHTML;
+  const out = {};
+  Object.keys(regions).forEach(function (k) { out[k] = regions[k].innerHTML; });
+  return out;
+}
+const headerOf = function (htmlText) { return runPage(htmlText)['region-header']; };
+function inlinePages(dir) {
+  const idx = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+  return idx.replace(/<script\s+src="([^"]+)"><\/script>/g, function (m, src) {
+    return '<script>' + fs.readFileSync(path.join(dir, src), 'utf8') + '</script>';
+  });
 }
 
 test('single file has no hq-base meta; pages index.html has it', () => {
@@ -73,7 +82,7 @@ test('single file has no hq-base meta; pages index.html has it', () => {
 
 test('running the single file gives no HQ link; the pages form gives the relative link', () => {
   const single = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
-  const header = runPage(single);
+  const header = headerOf(single);
   assert.ok(header.indexOf('Pipeline: Under the Hood') >= 0);
   assert.ok(header.indexOf('Open this state in HQ') < 0);
   assert.ok(!/class="hq-link"/.test(header));
@@ -83,6 +92,75 @@ test('running the single file gives no HQ link; the pages form gives the relativ
   idx = idx.replace(/<script\s+src="([^"]+)"><\/script>/g, function (m, src) {
     return '<script>' + fs.readFileSync(path.join(pages, src), 'utf8') + '</script>';
   });
-  const pagesHeader = runPage(idx);
+  const pagesHeader = headerOf(idx);
   assert.ok(/<a class="hq-link" href="\.\.\/hq\/\?scenario=healthy&amp;step=1">Open this state in HQ<\/a>/.test(pagesHeader), pagesHeader);
+});
+
+test('single file and pages form render identical regions (stages, landing, matrix and the rest)', () => {
+  const a = runPage(fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8'));
+  const b = runPage(inlinePages(path.join(OUT, 'pages')));
+  ['region-batches', 'region-generation', 'region-landing', 'region-matrix', 'region-footer'].forEach(function (k) {
+    assert.ok(typeof a[k] === 'string' && a[k].length > 0, k + ' rendered');
+    assert.strictEqual(b[k], a[k], k);
+  });
+  assert.deepStrictEqual(Object.keys(b).sort(), Object.keys(a).sort());
+  // The only allowed difference is the HQ link, which the single file does not have.
+  const strip = function (h) { return h.replace(/<a class="hq-link"[^>]*>[^<]*<\/a>/, ''); };
+  assert.strictEqual(strip(b['region-header']), a['region-header']);
+  Object.keys(a).filter(function (k) { return k !== 'region-header'; }).forEach(function (k) { assert.strictEqual(b[k], a[k], k); });
+});
+
+test('real pipeline sources, shared files and engine contain no </script or </style in any case', () => {
+  const files = [ENGINE]
+    .concat(fs.readdirSync(SHARED).filter(function (n) { return /\.js$/.test(n); }).map(function (n) { return path.join(SHARED, n); }))
+    .concat(fs.readdirSync(path.join(ROOT, 'src')).map(function (n) { return path.join(ROOT, 'src', n); }));
+  files.forEach(function (f) {
+    const t = fs.readFileSync(f, 'utf8');
+    assert.ok(!/<\/script/i.test(t), f);
+    assert.ok(!/<\/style/i.test(t), f);
+  });
+});
+
+// Fixture: <d>/pipeline/{index.html,scripts/inline.js,src/*} and <d>/shared/*, so the real script runs against hostile sources.
+function fixture(parts) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'pipefix-'));
+  const pdir = path.join(d, 'pipeline');
+  fs.mkdirSync(path.join(pdir, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(pdir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'shared'), { recursive: true });
+  fs.copyFileSync(SCRIPT, path.join(pdir, 'scripts', 'inline.js'));
+  fs.writeFileSync(path.join(d, 'engine.js'), parts.engine || 'var e = 1;\n');
+  fs.writeFileSync(path.join(d, 'shared', 'escape.js'), parts.shared || 'var s = 1;\n');
+  fs.writeFileSync(path.join(pdir, 'src', 'main.js'), parts.main || 'var m = 1;\n');
+  fs.writeFileSync(path.join(pdir, 'src', 'styles.css'), parts.css || 'body { color: red; }\n');
+  fs.writeFileSync(path.join(pdir, 'index.html'), '<!doctype html><html><head><link rel="stylesheet" href="src/styles.css" data-inline></head><body>' +
+    '<script src="engine.js" data-inline></script><script src="shared/escape.js" data-inline></script><script src="src/main.js" data-inline></script></body></html>');
+  const res = cp.spawnSync(process.execPath, [path.join(pdir, 'scripts', 'inline.js'), '--out', path.join(d, 'out')], {
+    cwd: pdir, encoding: 'utf8', env: Object.assign({}, process.env, { ENGINE_PATH: path.join(d, 'engine.js') })
+  });
+  return { code: res.status, out: (res.stdout || '') + (res.stderr || '') };
+}
+
+test('fixture without hostile text builds (control)', () => {
+  const f = fixture({});
+  assert.strictEqual(f.code, 0, f.out);
+});
+
+test('</script in a shared file, a page source or the engine fails the build, naming the file', () => {
+  [['shared', 'escape.js'], ['main', 'main.js'], ['engine', 'engine.js']].forEach(function (c) {
+    const parts = {};
+    parts[c[0]] = 'var a = 1; // </SCRIPT>\n';
+    const f = fixture(parts);
+    assert.strictEqual(f.code, 1, c[1] + ' ' + f.out);
+    assert.ok(f.out.indexOf(c[1]) >= 0 && f.out.indexOf('</script') >= 0, f.out);
+  });
+});
+
+test('</style in the stylesheet fails the build; so does it in a shared file', () => {
+  const f = fixture({ css: 'a {} /* </STYLE> */\n' });
+  assert.strictEqual(f.code, 1, f.out);
+  assert.ok(f.out.indexOf('styles.css') >= 0 && f.out.indexOf('</style') >= 0, f.out);
+  const g = fixture({ shared: 'var a = "</Style>";\n' });
+  assert.strictEqual(g.code, 1, g.out);
+  assert.ok(g.out.indexOf('escape.js') >= 0 && g.out.indexOf('</style') >= 0, g.out);
 });
