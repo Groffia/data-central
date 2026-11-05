@@ -76,6 +76,67 @@
 
   function stepLabel(steps) { return typeof steps.label === 'string' ? steps.label : 'Step ' + steps.n + ' of ' + steps.m; }
 
+  // ----- Task 7: KPI tiles -----
+
+  // Field pairs for the fixed (current) definitions, as in Engine.computeKpis.
+  const FIXED = {
+    'Bed Occupancy': { num: 'beds_occupied', den: 'beds_staffed', source: 'fct_census_daily', kind: 'pct' },
+    'Abnormal Vital Rate': { num: 'abnormal_obs_standard', den: 'observations', source: 'fct_vital_observation', kind: 'pct' },
+    'Avg Length of Stay': { num: 'patient_days', den: 'discharges', source: 'fct_census_daily', kind: 'days' },
+    '30-Day Readmission Rate': { num: 'readmits_30d_all', den: 'discharges', source: 'fct_census_daily', kind: 'pct' }
+  };
+  const NO_PUBLISH_TEXT = 'No batch published yet';
+
+  function kebab(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+  // { def, version }: def is the non-current engine definition selected, else null (current, missing or unknown).
+  function selection(name, metricState) {
+    const meta = Engine.METRIC_DEFINITIONS[name];
+    if (!meta) return { def: null, version: 1 };
+    const pick = metricState && typeof metricState === 'object' ? metricState[name] : null;
+    const id = pick && typeof pick.definitionId === 'string' ? pick.definitionId : meta.current;
+    const def = meta.definitions.filter(function (d) { return d.id === id; })[0] || null;
+    if (!def) return { def: null, version: 1 };
+    const v = pick && Number.isInteger(pick.version) && pick.version > 0 ? pick.version : 1;
+    return { def: def.id === meta.current ? null : def, version: v };
+  }
+
+  function deltaOf(pct) {
+    const s = Math.abs(pct).toFixed(1);
+    const zero = Number(s) === 0;
+    return { text: (pct < 0 && !zero ? '-' : '+') + s + '% vs prior 7 days', dir: zero ? 'flat' : (pct < 0 ? 'down' : 'up') };
+  }
+
+  function kpiTiles(state, history, metricState) {
+    const kpis = (state && state.kpis) || [];
+    const rows = Array.isArray(history) ? history : [];
+    const f = Shared.format;
+    return kpis.map(function (k) {
+      const fx = FIXED[k.name];
+      const sel = selection(k.name, metricState);
+      let value = k.value, deltaPct = k.deltaPct, num = fx.num, den = fx.den;
+      if (sel.def) {
+        const m = Engine.computeMetric(rows, k.name, sel.def.id);
+        if (m) { value = m.value; deltaPct = m.deltaPct; num = sel.def.numerator; den = sel.def.denominator; }
+      }
+      const d = deltaOf(deltaPct);
+      return {
+        id: kebab(k.name),
+        name: k.name,
+        valueText: fx.kind === 'days' ? value.toFixed(1) + ' days' : (value * 100).toFixed(1) + '%',
+        deltaText: d.text,
+        deltaDirection: d.dir,
+        sparkline: { points: rows.slice(-30).map(function (r) { return r[num] / r[den]; }) },
+        source: fx.source,
+        definitionBadge: 'def v' + sel.version,
+        freshness: k.asOfBatchId ? 'as of ' + f.batchLabel(k.asOfBatchId) + ', ' + f.clockLabel(k.asOfIso) : NO_PUBLISH_TEXT,
+        held: !!k.held,
+        heldText: k.held ? 'KPIs held at ' + f.batchLabel(k.asOfBatchId) : ''
+      };
+    });
+  }
+
+  vm.kpiTiles = kpiTiles;
   vm.header = header;
   vm.stepLabel = stepLabel;
 })();
