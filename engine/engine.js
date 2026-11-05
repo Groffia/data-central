@@ -332,6 +332,153 @@ function runTests(rows, priorKeys, refTime) {
   return { results, rowFailures, hasErrors };
 }
 
+// ===== SECTION: gate, DLQ, alerts, reducer =====
+const ALERT_KEY = "dq-stargate-silver_vital_observation";
+
+function initialState(scenario) {
+  assertScenario(scenario);
+  return {
+    scenario,
+    clock: { epoch: BASE_EPOCH, iso: isoFromEpoch(BASE_EPOCH) },
+    batchesRun: 0, gate: "CLOSED", bronzeRows: 0, productionRows: 0, productionKeys: [],
+    staging: [], dlq: [], alerts: [], lastGoodBatchId: null, events: [],
+  };
+}
+
+const withEvent = (s, type, detail) => ({ ...s, events: [...s.events, { iso: s.clock.iso, type, detail }] });
+const reject = (s, detail) => withEvent(s, "ACTION_REJECTED", detail);
+const addEvents = (s, list) => list.reduce((acc, [type, detail]) => withEvent(acc, type, detail), s);
+const setEntry = (s, dlqId, patch) => ({ ...s, dlq: s.dlq.map((d) => (d.dlqId === dlqId ? { ...d, ...patch } : d)) });
+const stagingKeys = (s) => s.staging.map(keyOf).filter((k) => k !== null);
+
+// Error-severity failures only: warn tests (abnormal, stale) never quarantine a row.
+function errorFailures(rows, priorKeys, refTime) {
+  const res = runTests(rows, new Set(priorKeys), refTime);
+  const errors = res.results.filter((r) => r.severity === "error");
+  const byRow = new Map();
+  res.rowFailures.forEach(({ rowIndex }) => {
+    const hits = errors.filter((r) => r.failingRows.includes(rowIndex));
+    if (hits.length) byRow.set(rowIndex, hits);
+  });
+  return byRow;
+}
+
+function dlqEntryFor(batchId, n, row, pos, hits) {
+  const column = hits[0].column;
+  const observedValue = column === "*" ? Object.keys(row) : row[column] === undefined ? null : row[column];
+  return {
+    dlqId: "dlq-" + n + "-" + pos, batchId,
+    failedTests: [...new Set(hits.map((h) => h.test))],
+    column, observedValue,
+    reason: "Failed " + hits[0].test + " on " + (column === "*" ? "row" : column),
+    payload: row, repairable: repairRow(row) !== row, status: "open",
+  };
+}
+
+function runBatchAction(s, opts) {
+  if (s.gate === "OPEN") return reject(s, "gate is OPEN: resolve the DLQ and retry first");
+  const n = s.batchesRun + 1, batchId = "batch-" + n;
+  const exp = generateExport(n, s.scenario, opts);
+  let next = { ...s, batchesRun: n, bronzeRows: s.bronzeRows + exp.rows.length, clock: { epoch: exp.runEpoch, iso: isoFromEpoch(exp.runEpoch) } };
+  next = withEvent(next, "BATCH_RUN", batchId + " landed " + exp.rows.length + " rows in bronze");
+  const failed = errorFailures(exp.rows, s.productionKeys, exp.runEpoch);
+  return failed.size === 0 ? publishBatch(next, batchId, exp.rows) : failBatch(next, batchId, n, exp.rows, failed);
+}
+
+function publishBatch(s, batchId, rows) {
+  const published = [...rows, ...s.staging];
+  const wasTrial = s.gate === "HALF_OPEN";
+  let next = {
+    ...s, productionRows: s.productionRows + published.length,
+    productionKeys: [...s.productionKeys, ...published.map(keyOf).filter((k) => k !== null)],
+    staging: [], lastGoodBatchId: batchId, gate: "CLOSED",
+  };
+  next = withEvent(next, "BATCH_PUBLISHED", batchId + " published " + published.length + " rows to production");
+  return wasTrial ? withEvent(next, "GATE_CLOSED", "trial " + batchId + " passed") : next;
+}
+
+function failBatch(s, batchId, n, rows, failed) {
+  const entries = [...failed.entries()].map(([i, hits]) => dlqEntryFor(batchId, n, rows[i], i + 1, hits));
+  let next = { ...s, gate: "OPEN", dlq: [...s.dlq, ...entries], staging: [...s.staging, ...rows.filter((r, i) => !failed.has(i))] };
+  next = addEvents(next, [
+    ["GATE_OPENED", batchId + " failed " + entries.length + " error-severity rows"],
+    ["DLQ_ADDED", entries.length + " rows quarantined from " + batchId],
+  ]);
+  const live = next.alerts.findIndex((a) => a.dedupeKey === ALERT_KEY && a.status !== "resolved");
+  if (live >= 0) {
+    const count = next.alerts[live].count + 1;
+    next = { ...next, alerts: next.alerts.map((a, i) => (i === live ? { ...a, count } : a)) };
+    return withEvent(next, "ALERT_INCREMENTED", ALERT_KEY + " count " + count);
+  }
+  const alert = {
+    dedupeKey: ALERT_KEY, severity: "SEV-2",
+    title: "DQ gate opened: " + entries.length + " error-severity failures in batch " + batchId,
+    count: 1, status: "open",
+  };
+  return withEvent({ ...next, alerts: [...next.alerts, alert] }, "ALERT_FIRED", alert.title);
+}
+
+function repairRowAction(s, dlqId) {
+  const entry = s.dlq.find((d) => d.dlqId === dlqId);
+  if (!entry) return reject(s, "unknown DLQ id " + dlqId);
+  if (entry.status === "repaired") return s;
+  if (entry.status !== "open") return reject(s, dlqId + " is " + entry.status);
+  if (!entry.repairable) return reject(s, dlqId + " is not repairable");
+  const fixed = repairRow(entry.payload);
+  if (errorFailures([fixed], [...s.productionKeys, ...stagingKeys(s)], s.clock.epoch).size > 0) {
+    return reject(s, dlqId + " still fails after repair");
+  }
+  return withEvent({ ...setEntry(s, dlqId, { status: "repaired" }), staging: [...s.staging, fixed] },
+    "ROW_REPAIRED", dlqId + " repaired and moved to staging");
+}
+
+function discardRowAction(s, dlqId, reason) {
+  const entry = s.dlq.find((d) => d.dlqId === dlqId);
+  if (!entry) return reject(s, "unknown DLQ id " + dlqId);
+  if (entry.status === "discarded") return s;
+  if (entry.status !== "open") return reject(s, dlqId + " is " + entry.status);
+  if (typeof reason !== "string" || !reason.trim()) return reject(s, "discard needs a reason");
+  return withEvent(setEntry(s, dlqId, { status: "discarded" }), "ROW_DISCARDED", dlqId + " discarded: " + reason);
+}
+
+function resolveRetryAction(s) {
+  if (s.gate !== "OPEN") return reject(s, "gate is not OPEN");
+  const open = s.dlq.filter((d) => d.status === "open").length;
+  if (open > 0) return reject(s, open + " DLQ rows unresolved");
+  return withEvent({ ...s, gate: "HALF_OPEN" }, "GATE_HALF_OPEN", "retry allowed: next batch is a trial");
+}
+
+function ackAlertAction(s) {
+  const i = s.alerts.findIndex((a) => a.status === "open");
+  if (i >= 0) return withEvent({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "acknowledged" } : a)) }, "ALERT_ACKNOWLEDGED", ALERT_KEY + " acknowledged");
+  return s.alerts.length ? s : reject(s, "no alert to acknowledge");
+}
+
+function resolveAlertAction(s) {
+  if (!s.alerts.length) return reject(s, "no alert to resolve");
+  const i = s.alerts.length - 1;
+  if (s.alerts[i].status === "resolved") return s;
+  return withEvent({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "resolved" } : a)) }, "ALERT_RESOLVED", ALERT_KEY + " resolved");
+}
+
+function reduce(state, action, opts) {
+  const type = action && action.type;
+  switch (type) {
+    case "runBatch": return runBatchAction(state, opts);
+    case "repairRow": return repairRowAction(state, action.dlqId);
+    case "discardRow": return discardRowAction(state, action.dlqId, action.reason);
+    case "resolveRetry": return resolveRetryAction(state);
+    case "ackAlert": return ackAlertAction(state);
+    case "resolveAlert": return resolveAlertAction(state);
+    default: return reject(state, "unknown action " + String(type));
+  }
+}
+
+function replay(scenario, actions, opts) {
+  assertScenario(scenario);
+  return (actions || []).reduce((s, a) => reduce(s, a, opts), initialState(scenario));
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -342,6 +489,7 @@ const Engine = {
   buildPatientPool, exportRunEpoch, generateExport, assertScenario,
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
+  initialState, reduce, replay,
 };
 
 // ===== EXPORT =====
