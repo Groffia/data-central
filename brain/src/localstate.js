@@ -3,9 +3,9 @@
   const Brain = (globalThis.Brain = globalThis.Brain || {});
 
   // The page's local state (never in the URL): the selected lineage node, the selected subject, the erased subjects (in the
-  // order erased) and the legal-hold toggle. `message` is the result of the last action, for the live element.
+  // order erased), the legal-hold toggle and the "Show as list" toggle of the lineage graph. `message` is the result of the last action, for the live element.
   function initial() {
-    return { selectedNode: '', selectedSubject: '', erased: [], legalHold: false, message: '' };
+    return { selectedNode: '', selectedSubject: '', erased: [], legalHold: false, showList: false, message: '' };
   }
 
   // Any value to a valid state: fresh objects, unknown shapes repaired to the initial values, never throws.
@@ -18,6 +18,7 @@
       selectedSubject: typeof o.selectedSubject === 'string' ? o.selectedSubject : '',
       erased: erased,
       legalHold: o.legalHold === true,
+      showList: o.showList === true,
       message: typeof o.message === 'string' ? o.message : ''
     };
   }
@@ -53,6 +54,7 @@
       s.message = 'Erased ' + s.selectedSubject;
       return s;
     }
+    if (t === 'toggleList') { s.showList = !s.showList; s.message = ''; return s; }
     if (t === 'resetErasures') { s.erased = []; s.message = 'Erasures reset'; return s; }
     if (t === 'holdOn') { s.legalHold = true; s.message = 'Legal hold on'; return s; }
     if (t === 'holdOff') { s.legalHold = false; s.message = 'Legal hold off'; return s; }

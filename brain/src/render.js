@@ -109,6 +109,47 @@
       '<p class="note">' + esc(p.note) + '</p>';
   }
 
+  // ----- C: lineage and impact -----
+
+  // Edges are drawn in a scaled svg; the nodes are real buttons laid over it at percentage positions, so they stay operable
+  // and keep their names. Status is a class and, for sensitive fields, a text badge: never colour alone.
+  function lineage(vm) {
+    const l = obj(vm && vm.lineage);
+    const nodes = arr(l.nodes).filter(function (n) { return n && typeof n === 'object'; });
+    const head = '<span id="stage-lineage"></span>' + heading(l.stage, l.title || 'Lineage and impact');
+    if (!nodes.length) return head + empty(l.prompt);
+    const lay = Brain.graph.layout(nodes);
+    const paths = arr(l.edges).map(function (e) {
+      const d = e && Brain.graph.edgePath(lay.boxes[e.from], lay.boxes[e.to]);
+      return d ? '<path class="edge edge-' + esc(e.status || 'plain') + '"' + attr('data-from', e.from) + attr('data-to', e.to) + ' fill="none"' + attr('d', d) + '/>' : '';
+    }).join('');
+    const buttons = nodes.map(function (n) {
+      const b = lay.boxes[n.id];
+      if (!b) return '';
+      const p = Brain.graph.percent(b, lay.width, lay.height);
+      const name = String(n.label) + ', ' + String(n.layerName) + (n.sensitive ? ', sensitive' : '');
+      return '<button type="button" class="node node-' + esc(n.status || 'plain') + '" data-cmd="node"' + attr('data-id', n.id) +
+        attr('aria-pressed', n.pressed ? 'true' : 'false') + attr('aria-label', name) +
+        attr('style', 'left:' + p.left + ';top:' + p.top + ';width:' + p.width + ';height:' + p.height) + '>' +
+        '<span class="node-label">' + esc(n.label) + '</span>' + (n.sensitive ? ' <span class="badge sensitive-badge">sensitive</span>' : '') + '</button>';
+    }).join('');
+    const pn = l.panel && typeof l.panel === 'object' ? l.panel : null;
+    const panel = pn
+      ? '<div class="impact"><h3>' + esc(pn.id) + '</h3><p class="feeds">' + esc(pn.feedsText) + '</p><p class="fed-by">' + esc(pn.fedByText) + '</p>' +
+        '<p class="kpis">' + esc(pn.kpisText) + '</p>' + (pn.impactText ? '<p class="impact-text">' + esc(pn.impactText) + '</p>' : '') + '</div>'
+      : '<div class="impact">' + empty(l.prompt) + '</div>';
+    const rows = arr(l.edges).map(function (e) { return '<tr><th scope="row">' + esc(e && e.from) + '</th><td>' + esc(e && e.to) + '</td></tr>'; });
+    return head +
+      '<p class="caption graph-summary">' + esc(l.summary) + '</p>' +
+      '<div class="graph"' + attr('style', 'aspect-ratio: ' + lay.width + ' / ' + lay.height) + '>' +
+      '<svg class="graph-edges" role="img" aria-labelledby="graph-title graph-desc" viewBox="0 0 ' + lay.width + ' ' + lay.height + '">' +
+      '<title id="graph-title">Lineage graph</title><desc id="graph-desc">' + esc(l.summary) + '</desc>' + paths + '</svg>' +
+      buttons + '</div>' +
+      panel +
+      '<div class="list-controls">' + button(l.listToggleText || 'Show as list', 'list-toggle', { expanded: l.showList === true }) + '</div>' +
+      (l.showList === true ? table('edges-table', ['From', 'To'], rows) : '');
+  }
+
   // ----- D: access log -----
 
   function access(vm) {
@@ -196,5 +237,9 @@
     return '<p>' + esc(vm && vm.footer ? vm.footer : 'All data is synthetic and generated deterministically (seed 42). Company names are fictional.') + '</p>';
   }
 
-  Brain.render = { header: header, contract: contract, phi: phi, access: access, retention: retention, erasure: erasure, vendor: vendor, notice: notice, footer: footer, safeHref: safeHref };
+  const render = { header: header, contract: contract, phi: phi, lineage: lineage, access: access, retention: retention, erasure: erasure, vendor: vendor, notice: notice, footer: footer, safeHref: safeHref };
+  render.all = function all(vm) {
+    return ['header', 'notice', 'contract', 'phi', 'lineage', 'access', 'retention', 'erasure', 'vendor', 'footer'].map(function (k) { return render[k](vm); }).join('\n');
+  };
+  Brain.render = render;
 })();

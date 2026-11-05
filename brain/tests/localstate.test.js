@@ -8,19 +8,19 @@ const LS = L.Brain.localstate;
 const J = (x) => JSON.parse(JSON.stringify(x));
 
 test('initial: nothing selected, nothing erased, no hold, no message', () => {
-  assert.deepStrictEqual(J(LS.initial()), { selectedNode: '', selectedSubject: '', erased: [], legalHold: false, message: '' });
+  assert.deepStrictEqual(J(LS.initial()), { selectedNode: '', selectedSubject: '', erased: [], legalHold: false, showList: false, message: '' });
 });
 
 test('normalize keeps a valid state and repairs anything else to the initial state, never throwing', () => {
-  const good = { selectedNode: 'patient_id', selectedSubject: 'TMH-P-004821', erased: ['TMH-P-004821'], legalHold: true, message: 'm' };
+  const good = { selectedNode: 'patient_id', selectedSubject: 'TMH-P-004821', erased: ['TMH-P-004821'], legalHold: true, showList: true, message: 'm' };
   assert.deepStrictEqual(J(LS.normalize(good)), good);
   [undefined, null, 7, 'x', [], true].forEach((bad) => assert.deepStrictEqual(J(LS.normalize(bad)), J(LS.initial())));
-  assert.deepStrictEqual(J(LS.normalize({ erased: [1, 'a', 'a', null, 'b'], legalHold: 'yes', selectedNode: 5, message: {} })),
-    { selectedNode: '', selectedSubject: '', erased: ['a', 'b'], legalHold: false, message: '' });
+  assert.deepStrictEqual(J(LS.normalize({ erased: [1, 'a', 'a', null, 'b'], legalHold: 'yes', showList: 1, selectedNode: 5, message: {} })),
+    { selectedNode: '', selectedSubject: '', erased: ['a', 'b'], legalHold: false, showList: false, message: '' });
 });
 
 test('normalize returns fresh objects and does not mutate its input', () => {
-  const s = Object.freeze({ selectedNode: '', selectedSubject: '', erased: Object.freeze(['a']), legalHold: false, message: '' });
+  const s = Object.freeze({ selectedNode: '', selectedSubject: '', erased: Object.freeze(['a']), legalHold: false, showList: false, message: '' });
   const n = LS.normalize(s);
   assert.notStrictEqual(n, s);
   assert.notStrictEqual(n.erased, s.erased);
@@ -106,4 +106,13 @@ test('reduce never mutates or throws: frozen input, bad state, bad action', () =
     assert.doesNotThrow(() => LS.reduce(bad, { type: 'holdOn' }));
     assert.strictEqual(LS.reduce(bad, { type: 'holdOn' }).legalHold, true);
   });
+});
+
+test('toggleList flips the edge-list toggle and clears the message; reset and scenario change close it', () => {
+  let s = run(LS.initial(), { type: 'holdOn' }, { type: 'toggleList' });
+  assert.strictEqual(s.showList, true);
+  assert.strictEqual(s.message, '');
+  assert.strictEqual(run(s, { type: 'toggleList' }).showList, false);
+  assert.strictEqual(run(s, { type: 'reset' }).showList, false);
+  assert.strictEqual(run(s, { type: 'resetErasures' }).showList, true);
 });

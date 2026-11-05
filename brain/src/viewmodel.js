@@ -136,6 +136,67 @@
     };
   }
 
+  // ----- C: lineage and impact -----
+
+  const LAYER_NAMES = ['source field', 'Bronze table', 'Silver table', 'Gold model', 'KPI tile'];
+  const LINEAGE_PROMPT = 'Select a node to see what it feeds and what feeds it.';
+
+  function listText(label, ids) {
+    return label + ' (' + ids.length + '): ' + (ids.length ? ids.join(', ') : 'nothing');
+  }
+
+  // The graph model: every node and edge with a status for the selected node (selected, downstream, dimmed, or plain when
+  // nothing is selected), and the text panel for it. Reachability comes from Brain.lineage; nothing is computed here.
+  function lineagePanel(local) {
+    const lin = Brain.lineage;
+    const known = lin.nodes.some(function (n) { return n.id === local.selectedNode; });
+    const selected = known ? local.selectedNode : '';
+    const down = selected ? lin.downstream(selected) : [];
+    const lit = {};
+    down.forEach(function (id) { lit[id] = true; });
+    if (selected) lit[selected] = true;
+    const p = Shared.format.plural;
+    let panel = null;
+    if (selected) {
+      const node = lin.nodes.filter(function (n) { return n.id === selected; })[0];
+      const up = lin.upstream(selected);
+      const kpis = lin.kpisFor(selected);
+      let kpisText = 'No KPI tile depends on it.';
+      if (node.layer === 4) kpisText = 'This is a KPI tile.';
+      else if (kpis.length) kpisText = 'KPI tiles affected (' + kpis.length + '): ' + kpis.join(', ');
+      panel = {
+        id: selected,
+        sensitive: node.sensitive === true,
+        feeds: down,
+        fedBy: up,
+        feedsText: listText('Feeds', down),
+        fedByText: listText('Fed by', up),
+        kpisText: kpisText,
+        impactText: down.length
+          ? 'Dropping or retyping ' + selected + ' would break ' + down.length + ' downstream ' + p(down.length, 'object', 'objects') + (kpis.length ? ' including ' + kpis.join(', ') : '') + '.'
+          : ''
+      };
+    }
+    const status = function (id) { return !selected ? 'plain' : id === selected ? 'selected' : lit[id] ? 'downstream' : 'dimmed'; };
+    return {
+      stage: STAGE_GOVERNANCE,
+      title: 'Lineage and impact',
+      summary: 'Lineage graph: ' + lin.nodes.length + ' ' + p(lin.nodes.length, 'node', 'nodes') + ' and ' + lin.edges.length + ' ' + p(lin.edges.length, 'edge', 'edges') +
+        ' in five columns: source fields, Bronze, Silver, Gold models, KPI tiles. Select a node to highlight everything below it.',
+      prompt: LINEAGE_PROMPT,
+      selected: selected,
+      nodes: lin.nodes.map(function (n) {
+        return { id: n.id, label: n.label, layer: n.layer, layerName: LAYER_NAMES[n.layer], sensitive: n.sensitive === true, status: status(n.id), pressed: n.id === selected };
+      }),
+      edges: lin.edges.map(function (e) {
+        return { from: e[0], to: e[1], status: !selected ? 'plain' : (lit[e[0]] && down.indexOf(e[1]) >= 0 ? 'hot' : 'dim') };
+      }),
+      panel: panel,
+      showList: local.showList === true,
+      listToggleText: 'Show as list'
+    };
+  }
+
   // ----- D: access log -----
 
   const ACCESS_LABEL = 'A simulated access log: it records what the pipeline and the operator did in this run.';
@@ -295,7 +356,7 @@
         header: Object.assign({}, header(state, scenario, step, links, actions), { scenario: scenario }),
         contract: contractPanel(),
         phi: phiPanel(shown),
-        lineage: null,
+        lineage: lineagePanel(local),
         access: accessPanel(scenario, actions, local),
         retention: retentionPanel(local, pipelineHref === null ? null : pipelineHref + '#stage-storage'),
         erasure: erasurePanel(scenario, actions, state, local, applied),
