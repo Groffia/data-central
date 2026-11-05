@@ -136,6 +136,62 @@
     };
   }
 
+  // ----- D: access log -----
+
+  const ACCESS_LABEL = 'A simulated access log: it records what the pipeline and the operator did in this run.';
+  const ACCESS_EMPTY = 'No data has moved yet.';
+
+  // Newest first. Erased subjects (local state) go to the engine as a plain list; their ERASE entries come last in the log,
+  // so they lead here.
+  function accessPanel(scenario, actions, local) {
+    const f = Shared.format;
+    const log = Engine.accessLog(scenario, actions, local.erased) || [];
+    return {
+      stage: STAGE_GOVERNANCE,
+      title: 'Access log',
+      label: ACCESS_LABEL,
+      emptyText: ACCESS_EMPTY,
+      rows: log.slice().reverse().map(function (e) {
+        return {
+          seq: e.seq,
+          time: f.clockLabel(e.iso),
+          actor: e.actor,
+          action: e.action,
+          object: e.object,
+          rows: e.rows,
+          rowsText: e.rows + ' ' + f.plural(e.rows, 'row', 'rows'),
+          fieldsText: e.phiFields.length ? e.phiFields.join(', ') : 'none',
+          purpose: e.purpose
+        };
+      })
+    };
+  }
+
+  // ----- E: retention and retirement -----
+
+  const RETENTION_LABEL = 'Retention periods here are example policy settings for the demo, not legal advice.';
+  const HOLD_PAUSED = 'Deletion paused: legal hold is on.';
+
+  function retentionPanel(local, storageHref) {
+    const t = Engine.TIERING_DEFAULTS;
+    const f = Shared.format;
+    const hold = local.legalHold === true;
+    const days = function (n) { return 'After ' + f.thousands(n) + ' days'; };
+    return {
+      stage: 'Stage 8: Archiving/Retirement',
+      title: 'Retention and retirement',
+      label: RETENTION_LABEL,
+      timeline: [
+        { tier: 'Hot', days: 0, text: 'Day 0', paused: false, pausedText: '' },
+        { tier: 'Warm', days: t.hotToWarmDays, text: days(t.hotToWarmDays), paused: false, pausedText: '' },
+        { tier: 'Cold', days: t.warmToColdDays, text: days(t.warmToColdDays), paused: false, pausedText: '' },
+        { tier: 'Delete', days: t.retentionDays, text: days(t.retentionDays), paused: hold, pausedText: hold ? HOLD_PAUSED : '' }
+      ],
+      legalHold: { on: hold, label: 'Legal hold', badgeText: hold ? 'Locked' : '' },
+      storageHref: storageHref
+    };
+  }
+
   // ----- model assembly -----
 
   function selfTestBanner() {
@@ -168,13 +224,15 @@
       let step = Number.isInteger(c.step) ? c.step : null;
       if (c.step === undefined) { const n = Engine.stepForActions(scenario, actions); step = typeof n === 'number' ? n : null; }
       const state = Engine.getState(scenario, actions);
+      const local = Brain.localstate.normalize(c.local);
+      const pipelineHref = link(links.pipelineBase, scenario, actions);
       return {
         header: Object.assign({}, header(state, scenario, step, links, actions), { scenario: scenario }),
         contract: contractPanel(),
         phi: phiPanel(state),
         lineage: null,
-        access: null,
-        retention: null,
+        access: accessPanel(scenario, actions, local),
+        retention: retentionPanel(local, pipelineHref === null ? null : pipelineHref + '#stage-storage'),
         erasure: null,
         vendor: null,
         notice: notice,
