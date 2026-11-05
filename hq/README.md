@@ -20,7 +20,7 @@ Small release on top of hq-v1.0: the tenant is renamed to **Tamsworth Health** (
 - Act 5: business case. "Without this system" next to "With this system", every number computed from the run. Storage figures are labelled illustrative.
 - Also: a standalone "In production this is…" table (Databricks, Snowflake, Fabric). Watch (Short cut about 2:00, Full about 4:30) with captions, pause, skip and stop. Link parameters, for example `?scenario=incident&step=3`.
 
-**Requires** engine tag `engine-v1.7` (hq-v1.1; hq-v1.0.1 needed `engine-v1.6`, hq-v1.0 was built against `engine-v1.5`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`. Engine and page tests must both pass.
+**Requires** engine tag `engine-v1.8` (hq-v1.2; hq-v1.1 needed `engine-v1.7`; hq-v1.0.1 needed `engine-v1.6`, hq-v1.0 was built against `engine-v1.5`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`. Engine and page tests must both pass.
 
 **Two output forms, one source**
 - `dist\hq-single.html`: one file, engine and page inlined. Opens from `file://`, can be emailed or attached.

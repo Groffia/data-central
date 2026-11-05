@@ -11,7 +11,7 @@ A demo page that opens the first four lifecycle stages of the Data Central platf
 - Stage 4, Storage: the tiering model with local inputs (hot, warm, cold, daily volume) and an illustrative cost figure. (Production rows appear in the medallion block under Stage 3.)
 - A stepper and a batch picker (both stay), a scenario switch (Healthy, Incident), and a standalone "In production this is..." table.
 
-**Requires** engine tag `engine-v1.7` (adds the link encoding `a=` and `inspectBatch`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`; shared helpers are the sibling folder `..\shared`. Engine, shared and page tests must all pass.
+**Requires** engine tag `engine-v1.8` (pipeline-v1.0.1, a copy-only release: the engine moved to v1.8 for the Value page and nothing in this page changed; pipeline-v1.0 needed `engine-v1.7`, which adds the link encoding `a=` and `inspectBatch`). In this repo the engine is the sibling folder `..\engine`, file `engine.js`; shared helpers are the sibling folder `..\shared`. Engine, shared and page tests must all pass.
 
 **Two output forms, one source**
 - `dist\pipeline-single.html`: one file, engine, shared helpers and page inlined. Opens from `file://`, can be emailed or attached. It has no link to HQ.
