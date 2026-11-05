@@ -11,6 +11,7 @@ const T_SHARED = 'node --test shared/tests/';
 const T_HQ = 'cd hq && node --test tests/';
 const T_PIPELINE = 'cd pipeline && node --test tests/';
 const T_VALUE = 'cd value && node --test tests/';
+const T_BRAIN = 'cd brain && node --test tests/';
 const T_SCRIPTS = 'node --test scripts/';
 const BUILD = 'node scripts/build-site.js';
 
@@ -24,11 +25,11 @@ function job(text, name) {
 }
 
 function testsBeforeBuild(text) {
-  const i = [T_ENGINE, T_SHARED, T_HQ, T_PIPELINE, T_VALUE, T_SCRIPTS].map((c) => text.indexOf(c));
+  const i = [T_ENGINE, T_SHARED, T_HQ, T_PIPELINE, T_VALUE, T_BRAIN, T_SCRIPTS].map((c) => text.indexOf(c));
   const b = text.indexOf(BUILD);
   i.forEach((x) => assert.ok(x >= 0));
   assert.ok(b >= 0);
-  assert.ok(i[0] < i[1] && i[1] < i[2] && i[2] < i[3] && i[3] < i[4] && i[4] < i[5] && i[5] < b, 'tests run in order before the build');
+  assert.ok(i[0] < i[1] && i[1] < i[2] && i[2] < i[3] && i[3] < i[4] && i[4] < i[5] && i[5] < i[6] && i[6] < b, 'tests run in order before the build');
 }
 
 for (const f of ['pages.yml', 'release.yml']) {
@@ -78,7 +79,7 @@ test('pages.yml: deploy job', () => {
 test('release.yml: tag triggers, permissions, release command', () => {
   const t = read('release.yml');
   assert.match(t, /^name: Release$/m);
-  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'\n      - 'pipeline-v\*'\n      - 'value-v\*'$/m);
+  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'\n      - 'pipeline-v\*'\n      - 'value-v\*'\n      - 'brain-v\*'$/m);
   assert.match(t, /^permissions:\n  contents: write$/m);
   assert.match(t, /GH_TOKEN: \$\{\{ github\.token }\}/);
   assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
@@ -93,7 +94,7 @@ test('release.yml: PAGE expansion maps each tag to its page (evaluated by bash)'
   const t = read('release.yml');
   assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
   const { spawnSync } = require('node:child_process');
-  const cases = { 'pipeline-v1.0.1': 'pipeline', 'hq-v1.2': 'hq', 'value-v1.0': 'value' };
+  const cases = { 'pipeline-v1.0.1': 'pipeline', 'hq-v1.2': 'hq', 'value-v1.0': 'value', 'brain-v1.0': 'brain' };
   for (const ref of Object.keys(cases)) {
     const r = spawnSync('bash', ['-c', 'GITHUB_REF_NAME="$1"; PAGE="${GITHUB_REF_NAME%%-v*}"; printf %s "$PAGE"', 'x', ref], { encoding: 'utf8' });
     assert.strictEqual(r.status, 0, r.stderr);

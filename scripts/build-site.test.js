@@ -192,26 +192,28 @@ const EXT = /\b(?:src|href)\s*=\s*["']?\s*(?:https?:)?\/\//i;
 const NET_CALLS = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'importScripts', 'sendBeacon'];
 const pagesJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'pages.json'), 'utf8'));
 
-test('pages.json: hq, pipeline and value are all pinned to engine-v1.9', () => {
-  assert.deepStrictEqual(pagesJson.map((p) => p.dir).sort(), ['hq', 'pipeline', 'value']);
+test('pages.json: hq, pipeline, value and brain are all pinned to engine-v1.9', () => {
+  assert.deepStrictEqual(pagesJson.map((p) => p.dir).sort(), ['brain', 'hq', 'pipeline', 'value']);
   pagesJson.forEach((p) => assert.strictEqual(p.engineTag, 'engine-v1.9', p.dir));
   assert.strictEqual(pagesJson.find((p) => p.dir === 'value').singleFile, 'value-single.html');
+  assert.strictEqual(pagesJson.find((p) => p.dir === 'brain').singleFile, 'brain-single.html');
 });
 
 test('the local tag engine-v1.9 matches engine/engine.js for every page (checkEngineTag)', () => {
   pagesJson.forEach((p) => b.checkEngineTag(p, path.join(ROOT, 'engine', 'engine.js')));
 });
 
-test('integration: site/value/ and value-single.html are built, engine identical on all three pages, no network', () => {
+test('integration: site/value/ and value-single.html are built, engine identical on all four pages, no network', () => {
   const out = path.join(tmp(), 'site');
   const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
     { cwd: ROOT, encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   const engine = fs.readFileSync(path.join(ROOT, 'engine', 'engine.js'));
-  ['hq', 'pipeline', 'value'].forEach((d) => {
+  ['hq', 'pipeline', 'value', 'brain'].forEach((d) => {
     assert.ok(fs.readFileSync(path.join(out, d, 'engine.js')).equals(engine), d + '/engine.js equals engine/engine.js');
   });
   ['index.html', 'engine.js', 'value-single.html'].forEach((n) => assert.ok(fs.existsSync(path.join(out, 'value', n)), 'value/' + n));
+  ['index.html', 'engine.js', 'brain-single.html'].forEach((n) => assert.ok(fs.existsSync(path.join(out, 'brain', n)), 'brain/' + n));
   fs.readdirSync(path.join(ROOT, 'shared')).filter((n) => /\.js$/.test(n)).forEach((n) => {
     assert.ok(fs.readFileSync(path.join(out, 'value', 'shared', n)).equals(fs.readFileSync(path.join(ROOT, 'shared', n))), 'value/shared/' + n);
   });
