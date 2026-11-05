@@ -352,3 +352,34 @@ test('model renders through the render module for scripted and diverged states',
   const r = Pipeline.render.renderRegions(make('?scenario=incident&a=' + enc(diverged())).getModel());
   assert.ok(r.header.includes('Custom state from HQ (16 actions)'));
 });
+
+// ---- fix round: structural safety ----
+test('getModel falls back to the opening state when the engine throws', () => {
+  const bad = Object.assign({}, Engine, { inspectBatch: function (sc) { if (sc === 'incident' && arguments[2] >= 3) throw new Error('boom'); return Engine.inspectBatch.apply(Engine, arguments); } });
+  const c = Pipeline.controller.createController(bad, '?scenario=incident&step=16', '', {});
+  const m = c.getModel();
+  assert.equal(m.notice, 'Could not show that state; showing the opening state');
+  assert.equal(m.scenario, 'incident');
+  assert.equal(c.actions().length, Engine.actionsForStep('incident', 0).length);
+  assert.doesNotThrow(() => Pipeline.render.renderRegions(m));
+});
+
+test('getState throwing is also contained', () => {
+  let calls = 0;
+  const bad = Object.assign({}, Engine, { getState: function (sc, a) { calls++; if (calls === 4) throw new Error('x'); return Engine.getState(sc, a); } });
+  const c = Pipeline.controller.createController(bad, '?scenario=incident&step=16', '', {});
+  assert.doesNotThrow(() => c.getModel());
+});
+
+test('hostile values in commands are refused, not thrown', () => {
+  const c = make('', '');
+  const hostile = { toString() { throw new Error('no'); }, valueOf() { throw new Error('no'); } };
+  const nullProto = Object.create(null);
+  assert.doesNotThrow(() => {
+    assert.equal(c.dispatch({ type: 'setTiering', field: 'hotToWarmDays', value: hostile }).ok, false);
+    assert.equal(c.dispatch({ type: 'setTiering', field: 'hotToWarmDays', value: nullProto }).ok, false);
+    assert.equal(c.dispatch({ type: 'batch', n: hostile }).ok, false);
+    assert.equal(c.dispatch({ type: 'batch', n: nullProto }).ok, false);
+  });
+  assert.equal(c.getModel().storage.fields.hotToWarmDays, String(Engine.TIERING_DEFAULTS.hotToWarmDays));
+});

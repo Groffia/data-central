@@ -33,7 +33,7 @@ function boot(options) {
   const regionHtml = {};
   const store = {}; // 'region|id' -> {value, start, end}
   const handlers = {};
-  const log = { focused: [], scrolled: [], innerHTMLWrites: 0 };
+  const log = { focused: [], focusOpts: [], scrolled: [], innerHTMLWrites: 0 };
   const els = {};
   const document = { activeElement: null };
 
@@ -52,7 +52,7 @@ function boot(options) {
       getAttribute: function (k) { return attrOf(tagText, k); },
       hasAttribute: function (k) { return hasAttr(tagText, k); },
       disabled: hasAttr(tagText, 'disabled'),
-      focus: function () { log.focused.push(tagText); document.activeElement = e; },
+      focus: function (opts) { log.focused.push(tagText); log.focusOpts.push(opts); document.activeElement = e; },
       closest: function (s) { return matches(tagText, parseSelector(s)) ? e : null; },
       scrollIntoView: function (opts) { log.scrolled.push({ id: id, opts: opts }); }
     };
@@ -101,7 +101,7 @@ function boot(options) {
         get: function () { return regionHtml[id] || ''; },
         set: function (v) {
           log.innerHTMLWrites++;
-          regionHtml[id] = String(v);
+          regionHtml[id] = o.transform ? String(o.transform(id, String(v))) : String(v);
           Object.keys(store).forEach(function (k) { if (k.indexOf(id + '|') === 0) delete store[k]; });
         }
       });
@@ -110,7 +110,7 @@ function boot(options) {
   }
 
   document.getElementById = function (id) {
-    if (id.indexOf('region-') === 0 || id === 'caption') return region(id);
+    if (id.indexOf('region-') === 0 || id === 'caption' || id === 'step-live') return region(id);
     const hit = all('#' + id)[0];
     return hit || null;
   };
@@ -130,7 +130,9 @@ function boot(options) {
     clearTimeout: function () {}
   };
   const ctx = vm.createContext({ Engine, document, window, location: { search: o.search || '', hash: o.hash || '' }, console });
-  REGION_KEYS.concat(['caption']).forEach(function (k) { region(k === 'caption' ? k : 'region-' + k); });
+  REGION_KEYS.forEach(function (k) { region('region-' + k); });
+  region('caption');
+  region('step-live');
   FILES.forEach(function (f) { vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }); });
 
   function fire(type, target) {
@@ -150,6 +152,7 @@ function boot(options) {
     Engine: Engine, document: document, log: log, timers: timers, handlers: handlers, regionKeys: REGION_KEYS,
     html: function (k) { return regionHtml['region-' + k]; },
     caption: function () { return els.caption.textContent; },
+    stepLive: function () { return els['step-live']; },
     q: function (s) { return all(s)[0] || null; },
     qa: all,
     // Click the rendered control matching the selector (like a user would); returns the element.

@@ -60,6 +60,12 @@
     });
   }
 
+  // String(v) that never throws (hostile objects, null-prototype objects): null when it cannot be converted.
+  function safeString(v) {
+    if (typeof v === 'string') return v;
+    try { return String(v); } catch (e) { return null; }
+  }
+
   function defaultInputs(Engine) {
     const out = {};
     TIER_FIELDS.forEach(function (k) { out[k] = String(Engine.TIERING_DEFAULTS[k]); });
@@ -92,7 +98,7 @@
     function focusValid(id) {
       if (typeof id !== 'string' || id === '') return false;
       if (id === 'stage-storage') return true;
-      return state().dlq.some(function (d) { return d.dlqId === id; });
+      try { return state().dlq.some(function (d) { return d.dlqId === id; }); } catch (e) { return false; }
     }
     if (typeof hash === 'string') {
       const id = hash.charAt(0) === '#' ? hash.slice(1) : hash;
@@ -107,7 +113,7 @@
       return hqBase + '?scenario=' + scenario + (text === null ? '' : '&a=' + text);
     }
 
-    function getModel() {
+    function buildModel() {
       const st = state();
       const total = st.batchesRun || 0;
       const sel = selected !== null && selected <= total ? selected : null;
@@ -121,6 +127,25 @@
         hqLink: hqLink(), focus: focus === null ? '' : focus,
         notice: notice, error: error
       });
+    }
+
+    const FALLBACK_NOTICE = 'Could not show that state; showing the opening state';
+
+    // The engine should never throw for a state this controller built; if it does, show the scenario's opening state.
+    function getModel() {
+      try { return buildModel(); } catch (e) { /* fall through to the opening state */ }
+      selected = null;
+      focus = null;
+      try {
+        actions = openingActions(Engine, scenario);
+        notice = FALLBACK_NOTICE;
+        return buildModel();
+      } catch (e2) {
+        scenario = 'healthy';
+        actions = openingActions(Engine, scenario);
+        notice = FALLBACK_NOTICE;
+        return buildModel();
+      }
     }
 
     function finish(ok, n) { notice = n === null ? '' : n; return { ok: ok, notice: n }; }
@@ -174,7 +199,8 @@
         const raw = cmd.n;
         const n = typeof raw === 'number' ? raw : typeof raw === 'string' && /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
         if (!Number.isSafeInteger(n) || n < 1 || n > batchesRun()) {
-          return finish(false, 'Batch ' + String(raw).slice(0, 20) + ' has not run');
+          const shown = safeString(raw);
+          return finish(false, shown === null ? 'Unknown batch' : 'Batch ' + shown.slice(0, 20) + ' has not run');
         }
         selected = n;
         focus = null;
@@ -183,7 +209,9 @@
       if (t === 'setTiering') {
         if (TIER_FIELDS.indexOf(cmd.field) < 0) return finish(false, 'Unknown field');
         const next = Object.assign({}, tierInputs);
-        next[cmd.field] = typeof cmd.value === 'string' ? cmd.value : String(cmd.value);
+        const text = safeString(cmd.value);
+        if (text === null) return finish(false, 'Unknown value');
+        next[cmd.field] = text;
         tierInputs = next;
         const r = Pipeline.viewmodel.tiering(tierInputs, tierPrev);
         if (r.valid) tierPrev = r;

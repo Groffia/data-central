@@ -84,12 +84,12 @@ test('pressed buttons and the skip link use the indigo pair', () => {
 
 test('severity chips, pass/fail marks and statuses use text tokens that pass on their background', () => {
   const checks = [
-    ['tr[data-severity="error"] td:nth-child(3)', 'red', ['panel']],
-    ['tr[data-severity="warn"] td:nth-child(3)', 'amber', ['panel']],
-    ['tr[data-pass="true"] td:nth-child(3)', 'green', ['panel']],
-    ['tr[data-pass="false"] td:nth-child(3)', 'red', ['panel']],
-    ['tr[data-status="repaired"] td:nth-child(7)', 'green', ['panel', 'panel-2']],
-    ['tr[data-status="discarded"] td:nth-child(7)', 'text-2', ['panel', 'panel-2']],
+    ['tr[data-severity="error"] td.sev', 'red', ['panel']],
+    ['tr[data-severity="warn"] td.sev', 'amber', ['panel']],
+    ['tr[data-pass="true"] td.mark', 'green', ['panel']],
+    ['tr[data-pass="false"] td.mark', 'red', ['panel']],
+    ['tr[data-status="repaired"] td.status', 'green', ['panel', 'panel-2']],
+    ['tr[data-status="discarded"] td.status', 'text-2', ['panel', 'panel-2']],
     ['td[data-drift="true"]', 'amber', ['panel-2']],
     ['.drift-note', 'amber', ['panel']],
     ['.note', 'text-2', ['panel']],
@@ -160,4 +160,14 @@ test('no horizontal scroll by construction: border-box, capped content column, s
   assert.ok(/header,\s*main,\s*footer\s*\{[^}]*max-width:\s*1200px/.test(bare));
   assert.ok(/body\s*\{[^}]*overflow-x:\s*hidden/.test(bare));
   assert.ok(/\.region\s*\{[^}]*min-width:\s*0/.test(bare));
+});
+
+test('no styling by column position', () => {
+  assert.ok(!/nth-child|:first-child|:last-child/.test(bare));
+});
+
+test('visually-hidden clips instead of display:none', () => {
+  const body = rule('.visually-hidden');
+  assert.ok(/clip/.test(body) && /position:\s*absolute/.test(body));
+  assert.ok(!/display:\s*none|visibility:\s*hidden/.test(body));
 });

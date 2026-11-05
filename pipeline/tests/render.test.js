@@ -278,3 +278,16 @@ test('hostile vm inputs still render twelve strings', () => {
     KEYS.forEach((k) => assert.strictEqual(typeof r[k], 'string'));
   });
 });
+
+// ---- fix round: class hooks, live regions ----
+test('cells carry class hooks instead of positions; no live-region roles in replaced markup', () => {
+  const c = Pipeline.controller.createController(Engine, '?scenario=incident&step=16', '#dlq-3-2', { hqBase: '../hq/' });
+  const regions = Pipeline.render.renderRegions(c.getModel());
+  assert.ok(/<td class="name">[^<]*<\/td><td>[^<]*<\/td><td class="sev">(error|warn)<\/td><td class="count">\d+<\/td>/.test(regions.matrix));
+  assert.ok(/<td class="mark">(Pass|Fail)<\/td>/.test(regions.rows));
+  assert.ok(/<td class="status">[a-z]+<\/td>/.test(regions.dlq));
+  const withNotice = Pipeline.render.renderRegions(Object.assign({}, c.getModel(), { notice: 'Hello', error: 'Bad' }));
+  assert.ok(/<p class="notice">Hello<\/p>/.test(withNotice.notice));
+  assert.ok(/role="alert"/.test(withNotice.notice));
+  assert.ok(!/aria-live|role="status"/.test(Object.values(withNotice).join('')));
+});

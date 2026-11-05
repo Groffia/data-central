@@ -67,3 +67,15 @@ test('no http(s) in any src or href', () => {
   let m;
   while ((m = re.exec(html))) assert.ok(!/https?:\/\//i.test(m[1]), m[1]);
 });
+
+test('step-live: one persistent polite live element outside every region', () => {
+  assert.strictEqual(count(html, 'id="step-live"'), 1);
+  const tag = /<p\b[^>]*id="step-live"[^>]*>/.exec(html)[0];
+  assert.ok(/aria-live="polite"/.test(tag));
+  assert.ok(/class="visually-hidden"/.test(tag));
+  const at = html.indexOf('id="step-live"');
+  const regions = [];
+  html.replace(/<(header|section|footer)\b[^>]*id="region-[^"]+"[^>]*>[\s\S]*?<\/\1>/g, function (m, t, off) { regions.push([off, off + m.length]); return m; });
+  assert.ok(regions.length > 0);
+  regions.forEach((r) => assert.ok(at < r[0] || at > r[1]));
+});

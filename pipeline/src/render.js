@@ -64,7 +64,7 @@
       '</div>' +
       (link ? '<a class="hq-link"' + attr('href', link) + '>Open this state in HQ</a>' : '') +
       '</div>' +
-      '<p class="step-text" aria-live="polite">' + esc(s.text) + '</p>';
+      '<p class="step-text">' + esc(s.text) + '</p>';
   }
 
   function batches(vm) {
@@ -129,8 +129,8 @@
       table('matrix-table', ['Test', 'Column', 'Severity', 'Failing rows', 'Which rows'].map(th), m.rows.map(function (r) {
         const which = r.failing === 0 ? '' : '<details><summary>Show rows</summary>' +
           esc(r.rowIndexes.map(function (i) { return 'Row ' + (i + 1); }).join(', ')) + '</details>';
-        return '<tr' + attr('data-severity', r.severity) + (r.failing ? ' data-failing="true"' : '') + '><td>' + esc(r.test) + '</td><td>' +
-          esc(r.column) + '</td><td>' + esc(r.severity) + '</td><td>' + esc(r.failing) + '</td><td>' + which + '</td></tr>';
+        return '<tr' + attr('data-severity', r.severity) + (r.failing ? ' data-failing="true"' : '') + '><td class="name">' + esc(r.test) + '</td><td>' +
+          esc(r.column) + '</td><td class="sev">' + esc(r.severity) + '</td><td class="count">' + esc(r.failing) + '</td><td>' + which + '</td></tr>';
       })) +
       m.notes.map(function (n) { return '<p class="note">' + esc(n) + '</p>'; }).join('') +
       (vm.gate ? '<p class="gate-decision"' + attr('data-level', vm.gate.level) + '>' + esc(vm.gate.text) + '</p>' : '');
@@ -142,7 +142,7 @@
     return '<h3>Row view</h3>' +
       table('row-table', ['Row', 'Patient', 'Result', 'Failed tests'].map(th), rv.map(function (r) {
         return '<tr' + attr('data-pass', r.pass ? 'true' : 'false') + '><td>' + esc(r.index + 1) + '</td><td>' + esc(r.identifier) +
-          '</td><td>' + (r.pass ? 'Pass' : 'Fail') + '</td><td>' + esc(r.failedTests.join(', ')) +
+          '</td><td class="mark">' + (r.pass ? 'Pass' : 'Fail') + '</td><td>' + esc(r.failedTests.join(', ')) +
           (r.warnTests && r.warnTests.length ? (r.failedTests.length ? ' ' : '') + '<span class="muted">warn: ' + esc(r.warnTests.join(', ')) + '</span>' : '') + '</td></tr>';
       }));
   }
@@ -157,7 +157,7 @@
         return '<tr' + attr('id', d.anchor) + (vm.focus && vm.focus === d.anchor ? ' data-focus="true"' : '') + attr('data-status', d.status) + '>' +
           '<td>' + esc(d.id) + '</td><td>' + esc(d.failedTests.join(', ')) + '</td><td>' + esc(d.column) + '</td>' +
           '<td><code>' + esc(d.observedValueText) + '</code></td><td>' + esc(d.reason) + '</td>' +
-          '<td>' + (d.repairable ? 'Yes' : 'No') + '</td><td>' + esc(d.status) + '</td><td>' + link + '</td></tr>';
+          '<td>' + (d.repairable ? 'Yes' : 'No') + '</td><td class="status">' + esc(d.status) + '</td><td>' + link + '</td></tr>';
       }));
   }
 
@@ -210,7 +210,7 @@
   }
 
   function notice(vm) {
-    return (vm.notice ? '<p class="notice" role="status">' + esc(vm.notice) + '</p>' : '') +
+    return (vm.notice ? '<p class="notice">' + esc(vm.notice) + '</p>' : '') +
       (vm.error ? '<p class="error" role="alert">' + esc(vm.error) + '</p>' : '');
   }
 

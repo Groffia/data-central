@@ -35,6 +35,7 @@ footer { padding: 16px; color: var(--text-2); font-size: .85rem; }
 .region { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin: 12px 0; min-width: 0; overflow-wrap: anywhere; }
 .region:empty { display: none; }
 .skip-link { position: absolute; left: -999px; top: 0; background: var(--indigo); color: var(--on-indigo); padding: 6px 10px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 .skip-link:focus { left: 8px; z-index: 10; }
 
 .caption-bar {
@@ -85,11 +86,11 @@ tr[data-drift="true"] td { background: var(--panel-2); }
 td[data-drift="true"] { color: var(--amber); font-weight: 600; }
 
 /* test matrix: severity chips (the Severity cell) and failing counts */
-tr[data-severity] td:nth-child(3) { font-weight: 700; text-transform: uppercase; font-size: .8rem; letter-spacing: .04em; }
-tr[data-severity="error"] td:nth-child(3) { color: var(--red); }
-tr[data-severity="warn"] td:nth-child(3) { color: var(--amber); }
-tr[data-failing="true"] td:nth-child(4) { font-weight: 700; }
-tr[data-failing="true"] td:first-child { color: var(--text); font-weight: 600; }
+td.sev { font-weight: 700; text-transform: uppercase; font-size: .8rem; letter-spacing: .04em; }
+tr[data-severity="error"] td.sev { color: var(--red); }
+tr[data-severity="warn"] td.sev { color: var(--amber); }
+tr[data-failing="true"] td.count { font-weight: 700; }
+tr[data-failing="true"] td.name { color: var(--text); font-weight: 600; }
 
 /* gate decision */
 .gate-decision { font-weight: 700; padding: 8px 12px; border-radius: 6px; margin-top: 8px; }
@@ -98,10 +99,10 @@ tr[data-failing="true"] td:first-child { color: var(--text); font-weight: 600; }
 .gate-decision[data-level="amber"] { background: var(--amber); color: var(--on-amber); }
 
 /* row view marks and DLQ statuses */
-tr[data-pass="true"] td:nth-child(3) { color: var(--green); font-weight: 600; }
-tr[data-pass="false"] td:nth-child(3) { color: var(--red); font-weight: 600; }
-tr[data-status="repaired"] td:nth-child(7) { color: var(--green); }
-tr[data-status="discarded"] td:nth-child(7) { color: var(--text-2); }
+tr[data-pass="true"] td.mark { color: var(--green); font-weight: 600; }
+tr[data-pass="false"] td.mark { color: var(--red); font-weight: 600; }
+tr[data-status="repaired"] td.status { color: var(--green); }
+tr[data-status="discarded"] td.status { color: var(--text-2); }
 
 /* deep-link focus target */
 tr[data-focus="true"] td { background: var(--panel-2); }

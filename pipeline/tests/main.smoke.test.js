@@ -265,3 +265,89 @@ test('only main.js touches document, window, location, timers', () => {
     assert.ok(!/\b(?:document|window|location|setTimeout|setInterval|localStorage)\b/.test(t.replace(/\/\/.*$/gm, '')), n);
   });
 });
+
+// ---- fix round: live regions, focus scroll, value restore, raw data-n ----
+test('step text goes to one persistent live node, only when it changes', () => {
+  const p = boot();
+  const node = p.stepLive();
+  const first = node.textContent;
+  assert.ok(first.length > 0);
+  assert.equal(first, /class="step-text">([^<]*)/.exec(p.html('header'))[1].replace(/&amp;/g, '&'));
+  p.clickRendered('button[data-cmd="next"]');
+  assert.strictEqual(p.stepLive(), node, 'same node');
+  assert.notEqual(node.textContent, first);
+  const after = node.textContent;
+  let writes = 0;
+  let value = after;
+  Object.defineProperty(node, 'textContent', { get: function () { return value; }, set: function (v) { writes++; value = v; } });
+  const input = p.q(FIELD);
+  p.typeInto(input, '10');
+  p.change(input);
+  p.clickRendered('button[data-cmd="resetTiering"]');
+  assert.equal(writes, 0, 'not rewritten on tiering renders');
+  assert.equal(node.textContent, after);
+});
+
+test('no aria-live anywhere in the replaced regions and no role=status on notices', () => {
+  const p = boot();
+  for (let i = 0; i < 20 && !p.q('button[data-cmd="next"]').disabled; i++) p.clickRendered('button[data-cmd="next"]');
+  p.click({ 'data-cmd': 'next' });
+  assert.ok(p.html('notice').indexOf('class="notice"') >= 0);
+  assert.ok(!/role="status"|aria-live/.test(all(p)));
+});
+
+test('focus restore never scrolls: preventScroll is passed and stepping or batch picking does not scroll', () => {
+  const p = boot({ search: '?scenario=incident&step=16' });
+  p.q('button[data-cmd="back"]').focus();
+  p.log.focusOpts.length = 0;
+  p.clickRendered('button[data-cmd="back"]');
+  assert.ok(p.log.focusOpts.length >= 1);
+  p.q('button[data-cmd="batch"][data-n="2"]').focus();
+  p.log.focusOpts.length = 0;
+  p.clickRendered('button[data-cmd="batch"][data-n="2"]');
+  assert.ok(p.log.focusOpts.length >= 1);
+  p.log.focusOpts.forEach((o) => assert.deepEqual(J(o), { preventScroll: true }));
+  assert.equal(p.log.scrolled.length, 0);
+});
+
+test('fallback focus also passes preventScroll', () => {
+  const p = boot();
+  for (let i = 0; i < 20 && !p.q('button[data-cmd="next"]').disabled; i++) p.clickRendered('button[data-cmd="next"]');
+  p.clickRendered('button[data-cmd="back"]');
+  p.q('button[data-cmd="next"]').focus();
+  p.log.focusOpts.length = 0;
+  p.clickRendered('button[data-cmd="next"]');
+  assert.ok(p.log.focusOpts.length >= 1);
+  p.log.focusOpts.forEach((o) => assert.deepEqual(J(o), { preventScroll: true }));
+});
+
+test('a value the renderer normalises wins after a committed change', () => {
+  const p = boot({ transform: function (id, html) { return id === 'region-storage' ? html.replace('value="10"', 'value="11"') : html; } });
+  const input = p.q(FIELD);
+  p.typeInto(input, '10');
+  p.change(input);
+  assert.equal(p.q(FIELD).value, '11');
+});
+
+test('an uncommitted edit and its caret survive an unrelated render', () => {
+  const p = boot();
+  const input = p.q(FIELD);
+  p.typeInto(input, '55', 1, 1);
+  p.clickRendered('button[data-cmd="next"]');
+  assert.equal(p.q(FIELD).value, '55');
+  assert.equal(p.q(FIELD).selectionStart, 1);
+});
+
+test('data-n that is not a positive integer reaches the controller raw and is shown escaped', () => {
+  const p = boot({ search: '?scenario=incident&step=16' });
+  const before = p.html('batches');
+  ['abc', '-1', '0', '<b>x</b>'].forEach((v) => {
+    p.click({ 'data-cmd': 'batch', 'data-n': v });
+    assert.equal(p.html('batches'), before);
+    assert.equal(p.caption(), 'Batch ' + v + ' has not run');
+    assert.ok(p.html('notice').indexOf('Batch ' + v.replace(/</g, '&lt;').replace(/>/g, '&gt;') + ' has not run') >= 0, v);
+    assert.ok(p.html('notice').indexOf('<b>') < 0);
+  });
+  p.click({ 'data-cmd': 'batch', 'data-n': '2' });
+  assert.ok(/data-n="2" aria-pressed="true"/.test(p.html('batches')));
+});

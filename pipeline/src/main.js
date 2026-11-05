@@ -18,6 +18,8 @@
 
   const controller = Pipeline.controller.createController(Engine, location.search, location.hash, { hqBase: hqBase() });
   let scrolledToTarget = false;
+  let lastStepText = null;
+  const NO_SCROLL = { preventScroll: true };
 
   function ok(v) { return typeof v === 'string' && v.indexOf('"') < 0; }
   function enabled(e) { return !!e && !e.disabled; }
@@ -36,6 +38,7 @@
       const d = { sel: 'input[data-field="' + field + '"]', field: field, region: region };
       if (typeof el.value === 'string') {
         d.value = el.value;
+        d.dirty = el.value !== el.getAttribute('value');
         d.start = el.selectionStart;
         d.end = el.selectionEnd;
       }
@@ -73,16 +76,18 @@
         .concat(Array.prototype.slice.call(document.querySelectorAll('input[data-field]')));
       target = inRegion(pool, d.region).filter(enabled)[0] || null;
     }
-    if (target && typeof target.focus === 'function') target.focus();
+    if (target && typeof target.focus === 'function') target.focus(NO_SCROLL);
   }
 
-  function restoreFocus(d, active) {
+  // committed: the render follows a committed change, so the renderer's value for that input wins.
+  function restoreFocus(d, active, committed) {
     if (!d) return;
     const again = document.querySelector(d.sel);
     if (!enabled(again)) { if (d.cmd) fallbackFocus(d); return; }
-    if (d.field && typeof d.value === 'string' && again.value !== d.value) again.value = d.value;
-    if (again !== active && typeof again.focus === 'function') again.focus();
-    if (d.field && typeof d.start === 'number' && typeof again.setSelectionRange === 'function') {
+    const keep = !!d.field && !committed && d.dirty === true && typeof d.value === 'string';
+    if (keep && again.value !== d.value) again.value = d.value;
+    if (again !== active && typeof again.focus === 'function') again.focus(NO_SCROLL);
+    if (keep && typeof d.start === 'number' && typeof again.setSelectionRange === 'function') {
       try { again.setSelectionRange(d.start, d.end); } catch (e) { /* not a text input: nothing to restore */ }
     }
   }
@@ -96,7 +101,7 @@
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
   }
 
-  function render() {
+  function render(committed) {
     const active = document.activeElement;
     const d = describe(active);
     const model = controller.getModel();
@@ -107,21 +112,27 @@
     });
     const caption = document.getElementById('caption');
     if (caption) caption.textContent = model.notice || '';
-    restoreFocus(d, active);
+    const live = document.getElementById('step-live');
+    const stepText = model.header && model.header.steps ? String(model.header.steps.text) : '';
+    if (live && stepText !== lastStepText) { live.textContent = stepText; lastStepText = stepText; }
+    restoreFocus(d, active, committed === true);
     scrollToTarget(model);
   }
 
-  function dispatch(cmd) {
+  function dispatch(cmd, committed) {
     const result = controller.dispatch(cmd);
-    render();
+    render(committed);
     return result;
   }
+
+  // A positive integer string becomes a number; anything else goes to the controller raw, which refuses it.
+  function positive(raw) { return typeof raw === 'string' && /^[1-9][0-9]{0,8}$/.test(raw) ? Number(raw) : raw; }
 
   function handle(btn) {
     const cmd = btn.getAttribute('data-cmd');
     if (cmd === 'back' || cmd === 'next' || cmd === 'resetTiering') dispatch({ type: cmd });
     else if (cmd === 'scenario') dispatch({ type: 'scenario', scenario: btn.getAttribute('data-scenario') });
-    else if (cmd === 'batch') dispatch({ type: 'batch', n: Number(btn.getAttribute('data-n')) });
+    else if (cmd === 'batch') dispatch({ type: 'batch', n: positive(btn.getAttribute('data-n')) });
   }
 
   document.addEventListener('click', function (ev) {
@@ -136,7 +147,7 @@
     const t = ev && ev.target;
     const field = t && typeof t.getAttribute === 'function' ? t.getAttribute('data-field') : null;
     if (!field) return;
-    dispatch({ type: 'setTiering', field: field, value: String(t.value) });
+    dispatch({ type: 'setTiering', field: field, value: String(t.value) }, true);
   });
 
   render();
