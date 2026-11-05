@@ -71,6 +71,7 @@
     let segStart = 0;     // now() when the current running segment began
     let nextStep = 0;     // index of the first unapplied step in the current scene
     let timers = [];
+    let gen = 0; // bumped on every scene entry and stop; detects re-entrant changes from callbacks
 
     function clearAll() {
       timers.forEach(function (h) { clearTimer(h); });
@@ -108,8 +109,11 @@
       idx = i;
       sceneElapsed = 0;
       nextStep = 0;
-      onScene(plan[idx], idx);
-      onCaption(plan[idx].caption);
+      const g = ++gen;
+      onScene(plan[i], i);
+      if (g !== gen) return;
+      onCaption(plan[i].caption);
+      if (g !== gen) return;
       applyDue(0);
       if (state === 'playing') { segStart = now(); schedule(); }
     }
@@ -157,7 +161,8 @@
       },
       stop: function () {
         clearAll();
-        if (state === 'playing' || state === 'paused') { state = 'idle'; idx = 0; sceneElapsed = 0; nextStep = 0; }
+        gen++;
+        if (state !== 'idle') { state = 'idle'; idx = 0; sceneElapsed = 0; nextStep = 0; }
       },
       status: function () {
         return { state: state, sceneIndex: idx, elapsedMs: elapsedMs() };

@@ -226,3 +226,53 @@ test('full plan plays to 270000 and ends closed', () => {
   assert.equal(r.controller.getModel().status.gate, 'CLOSED');
   assert.equal(r.controller.getModel().status.productionRows, 76);
 });
+
+function hookRig(onSceneHook) {
+  const c = clock();
+  const controller = make('?scenario=incident&step=3');
+  let dispatches = 0;
+  const real = controller.dispatch;
+  controller.dispatch = (cmd) => { dispatches++; return real(cmd); };
+  const captions = [];
+  let player;
+  player = HQ.autoplay.createPlayer({
+    controller, plan: HQ.autoplay.scenePlan(Engine, 'short'),
+    setTimer: c.setTimer, clearTimer: c.clearTimer, now: c.now,
+    onScene: (s) => onSceneHook(s, () => player), onCaption: (x) => captions.push(x), onEnd: () => {}
+  });
+  return { c, controller, player, captions, dispatches: () => dispatches };
+}
+
+test('stop() inside onScene dispatches nothing afterwards and leaves no timers', () => {
+  const r = hookRig((s, p) => { p().stop(); });
+  const before = JSON.stringify(r.controller.actions());
+  r.player.start();
+  assert.equal(r.dispatches(), 0);
+  assert.equal(r.c.pending(), 0);
+  assert.equal(r.player.status().state, 'idle');
+  assert.equal(JSON.stringify(r.controller.actions()), before);
+  assert.equal(r.captions.length, 0);
+});
+
+test('skipScene() inside onScene gives captions in order with no stale caption', () => {
+  let done = false;
+  const r = hookRig((s, p) => { if (!done) { done = true; p().skipScene(); } });
+  r.player.start();
+  const plan = HQ.autoplay.scenePlan(Engine, 'short');
+  deq(r.captions, [plan[1].caption]);
+  assert.equal(r.player.status().sceneIndex, 1);
+});
+
+test('stop() after the end, then start(), plays again', () => {
+  const r = rig('short', '');
+  r.player.start();
+  r.c.advance(120000);
+  assert.equal(r.player.status().state, 'ended');
+  r.player.stop();
+  assert.equal(r.player.status().state, 'idle');
+  r.player.start();
+  assert.equal(r.player.status().state, 'playing');
+  r.c.advance(120000);
+  assert.equal(r.ended(), 2);
+  assert.equal(r.controller.getModel().status.productionRows, 76);
+});
