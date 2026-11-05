@@ -400,6 +400,13 @@ function initialState(scenario) {
   };
 }
 
+// Each ACCEPTED operator action moves the simulation clock forward by this many seconds before it logs its event.
+// Rejected actions and no-op repeats never advance it. runBatch sets the clock to max(clock, export run epoch).
+const OPERATOR_ACTION_SECONDS = 60;
+const tick = (s) => {
+  const epoch = s.clock.epoch + OPERATOR_ACTION_SECONDS;
+  return { ...s, clock: { epoch, iso: isoFromEpoch(epoch) } };
+};
 const withEvent = (s, type, detail) => ({ ...s, events: [...s.events, { iso: s.clock.iso, type, detail }] });
 const reject = (s, detail) => withEvent(s, "ACTION_REJECTED", detail);
 const addEvents = (s, list) => list.reduce((acc, [type, detail]) => withEvent(acc, type, detail), s);
@@ -445,7 +452,7 @@ function runBatchAction(s, opts) {
   const n = s.batchesRun + 1, batchId = "batch-" + n;
   const o = opts && Array.isArray(opts.faultExports) ? opts : s.faultExports ? { ...(opts || {}), faultExports: s.faultExports } : opts;
   const exp = generateExport(n, s.scenario, o);
-  let next = { ...s, batchesRun: n, bronzeRows: s.bronzeRows + exp.rows.length, clock: { epoch: exp.runEpoch, iso: isoFromEpoch(exp.runEpoch) } };
+  let next = { ...s, batchesRun: n, bronzeRows: s.bronzeRows + exp.rows.length, clock: s.clock.epoch >= exp.runEpoch ? s.clock : { epoch: exp.runEpoch, iso: isoFromEpoch(exp.runEpoch) } };
   next = withEvent(next, "BATCH_RUN", batchId + " landed " + exp.rows.length + " rows in bronze");
   const failed = errorFailures(exp.rows, s.productionKeys, exp.runEpoch);
   return failed.size === 0 ? publishBatch(next, batchId, exp.rows) : failBatch(next, batchId, n, exp.rows, failed);
@@ -513,7 +520,7 @@ function repairRowAction(s, dlqId) {
   if (errorFailures([fixed], [...s.productionKeys, ...stagingKeys(s)], s.clock.epoch).size > 0) {
     return reject(s, dlqId + " still fails after repair");
   }
-  return withEvent({ ...setEntry(s, dlqId, { status: "repaired" }), staging: [...s.staging, fixed] },
+  return withEvent(tick({ ...setEntry(s, dlqId, { status: "repaired" }), staging: [...s.staging, fixed] }),
     "ROW_REPAIRED", dlqId + " repaired and moved to staging");
 }
 
@@ -523,19 +530,19 @@ function discardRowAction(s, dlqId, reason) {
   if (entry.status === "discarded") return s;
   if (entry.status !== "open") return reject(s, dlqId + " is " + entry.status);
   if (typeof reason !== "string" || !reason.trim()) return reject(s, "discard needs a reason");
-  return withEvent(setEntry(s, dlqId, { status: "discarded" }), "ROW_DISCARDED", dlqId + " discarded: " + reason);
+  return withEvent(tick(setEntry(s, dlqId, { status: "discarded" })), "ROW_DISCARDED", dlqId + " discarded: " + reason);
 }
 
 function resolveRetryAction(s) {
   if (s.gate !== "OPEN") return reject(s, "gate is not OPEN");
   const open = s.dlq.filter((d) => d.status === "open").length;
   if (open > 0) return reject(s, open + " DLQ rows unresolved");
-  return withEvent({ ...s, gate: "HALF_OPEN" }, "GATE_HALF_OPEN", "retry allowed: next batch is a trial");
+  return withEvent(tick({ ...s, gate: "HALF_OPEN" }), "GATE_HALF_OPEN", "retry allowed: next batch is a trial");
 }
 
 function ackAlertAction(s) {
   const i = s.alerts.findIndex((a) => a.status === "open");
-  if (i >= 0) return withEvent({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "acknowledged" } : a)) }, "ALERT_ACKNOWLEDGED", ALERT_KEY + " acknowledged");
+  if (i >= 0) return withEvent(tick({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "acknowledged" } : a)) }), "ALERT_ACKNOWLEDGED", ALERT_KEY + " acknowledged");
   return s.alerts.length ? s : reject(s, "no alert to acknowledge");
 }
 
@@ -543,7 +550,7 @@ function resolveAlertAction(s) {
   if (!s.alerts.length) return reject(s, "no alert to resolve");
   const i = s.alerts.length - 1;
   if (s.alerts[i].status === "resolved") return s;
-  return withEvent({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "resolved" } : a)) }, "ALERT_RESOLVED", ALERT_KEY + " resolved");
+  return withEvent(tick({ ...s, alerts: s.alerts.map((a, j) => (j === i ? { ...a, status: "resolved" } : a)) }), "ALERT_RESOLVED", ALERT_KEY + " resolved");
 }
 
 function reduce(state, action, opts) {
