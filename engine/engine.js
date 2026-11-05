@@ -1265,27 +1265,107 @@ function accessLog(scenario, actions, erasures) {
   return out;
 }
 
-// Rows per layer for one subject: Bronze (every landed row of every batch run, held or published, counted from the same
-// exports inspectBatch returns), staging, Silver, the dead-letter queue and dim_patient. Rows with a null, missing or
-// non-cohort id match nobody, so an id outside the cohort has no footprint. Pure; null for a non-string id or bad actions.
-function subjectFootprint(scenario, actions, patientId) {
-  assertScenario(scenario);
-  if (typeof patientId !== "string" || !Array.isArray(actions)) return null;
-  const inCohort = cohortIds().has(patientId);
-  const zero = { patientId, inCohort, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 };
-  if (!inCohort) return zero;
-  let bronze = 0;
+// Bronze rows (every landed row of every batch run, held or published, counted from the same exports inspectBatch
+// returns) per patient id, for the ids in `wanted`. One replay pass.
+function bronzeCounts(scenario, actions, wanted) {
+  const counts = new Map([...wanted].map((id) => [id, 0]));
   let before = replay(scenario, [], undefined);
   for (const action of actions) {
     const after = reduce(before, action, undefined);
     if (after.batchesRun === before.batchesRun + 1) {
       const gen = before.faultExports ? { faultExports: before.faultExports } : undefined;
-      bronze += generateExport(after.batchesRun, scenario, gen).rows.filter((r) => rowSubject(r) === patientId).length;
+      for (const row of generateExport(after.batchesRun, scenario, gen).rows) {
+        const id = rowSubject(row);
+        if (id !== null && counts.has(id)) counts.set(id, counts.get(id) + 1);
+      }
     }
     before = after;
   }
-  const r = subjectRowsInState(before, patientId);
-  return { patientId, inCohort, bronze, staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
+  return { counts, final: before };
+}
+
+// Rows per layer for one subject: Bronze, staging, Silver, the dead-letter queue and dim_patient. Rows with a null,
+// missing or non-cohort id match nobody, so an id outside the cohort has no footprint. Pure; null for a non-string id
+// or bad actions.
+function subjectFootprint(scenario, actions, patientId) {
+  assertScenario(scenario);
+  if (typeof patientId !== "string" || !Array.isArray(actions)) return null;
+  const inCohort = cohortIds().has(patientId);
+  if (!inCohort) return { patientId, inCohort, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 };
+  const { counts, final } = bronzeCounts(scenario, actions, [patientId]);
+  const r = subjectRowsInState(final, patientId);
+  return { patientId, inCohort, bronze: counts.get(patientId), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
+}
+
+const ERASURE_BLOCKED = "Erasure blocked: legal hold is on.";
+const ERASURE_CHECKS = Object.freeze([
+  ["subject-rows-gone", "No row of the subject remains in staging, Silver, the dead-letter queue or dim_patient"],
+  ["published-count", "The published row count fell by exactly the subject's Silver rows"],
+  ["others-unchanged", "Every other subject's rows are unchanged"],
+  ["keys-unique", "Production keys are still unique"],
+  ["kpis-unchanged", "The seven-day KPI values are unchanged"],
+]);
+
+// Apply an erasure list to the state getState(scenario, actions) returns. The list carries no step or time: it applies to
+// whatever step is shown, so a later export that holds the subject again is suppressed too. Erasing removes the subject's
+// rows from staging, Silver (production), the dead-letter queue and dim_patient, recomputes the counters and the live
+// sample, and leaves Bronze in place but unreadable (state.unreadableRawRows counts those rows, simulated key
+// destruction). The KPI history is untouched. opts.legalHold === true returns the state unchanged, blocked. Only when at
+// least one subject is erased does the returned state gain erasedSubjects and unreadableRawRows. Pure; null for a bad
+// action list or ids; an unknown scenario throws.
+function eraseSubjects(scenario, actions, patientIds, opts) {
+  assertScenario(scenario);
+  if (!Array.isArray(actions) || !Array.isArray(patientIds) || patientIds.some((x) => typeof x !== "string")) return null;
+  const base = getState(scenario, actions);
+  if (opts && opts.legalHold === true) {
+    return { state: base, erased: [], ignored: [], blocked: true, reason: ERASURE_BLOCKED, footprints: [], checks: [] };
+  }
+  const cohort = cohortIds();
+  const erased = [], ignored = [];
+  for (const id of patientIds) {
+    if (!cohort.has(id)) ignored.push({ id, reason: "Not in the monitored cohort" });
+    else if (erased.includes(id)) ignored.push({ id, reason: "Already erased" });
+    else erased.push(id);
+  }
+  if (!erased.length) return { state: base, erased, ignored, blocked: false, reason: null, footprints: [], checks: [] };
+  const gone = new Set(erased);
+  const theirs = (p) => gone.has(rowSubject(p));
+  const { counts } = bronzeCounts(scenario, actions, gone);
+  const footprints = erased.map((id) => {
+    const r = subjectRowsInState(base, id);
+    return { patientId: id, inCohort: true, bronze: counts.get(id), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
+  });
+  const productionData = base.productionData.filter((r) => !theirs(r));
+  const staging = base.staging.filter((r) => !theirs(r));
+  const dlq = base.dlq.filter((d) => !theirs(d.payload));
+  const sum = summarizePublished(productionData);
+  const reduced = {
+    ...base, productionData, staging, dlq,
+    productionRows: productionData.length,
+    productionKeys: productionData.map(keyOf).filter((k) => k !== null),
+    publishedObservations: sum.observations, publishedAbnormal: sum.abnormalCount, publishedNotEvaluable: sum.notEvaluable,
+  };
+  const state = {
+    ...reduced,
+    todaySoFar: { ...base.todaySoFar, observations: sum.observations, abnormalCount: sum.abnormalCount, notEvaluable: sum.notEvaluable, abnormalVitalRate: sum.abnormalVitalRate },
+    businessCase: computeBusinessCase(reduced),
+    erasedSubjects: erased.slice(),
+    unreadableRawRows: footprints.reduce((n, f) => n + f.bronze, 0),
+  };
+  const silverGone = footprints.reduce((n, f) => n + f.silver, 0);
+  const keyList = state.productionKeys;
+  const results = [
+    erased.every((id) => { const r = subjectRowsInState(state, id); return r.staging + r.silver + r.deadLetter + r.dimPatient === 0; }),
+    base.productionRows - state.productionRows === silverGone,
+    [...cohort].filter((id) => !gone.has(id)).every((id) => {
+      const a = subjectRowsInState(base, id), b = subjectRowsInState(state, id);
+      return a.staging === b.staging && a.silver === b.silver && a.deadLetter === b.deadLetter && a.dimPatient === b.dimPatient;
+    }),
+    new Set(keyList.map((k) => JSON.stringify(k))).size === keyList.length,
+    JSON.stringify(state.kpis) === JSON.stringify(base.kpis) && JSON.stringify(computeKpis(getHistory()).map((k) => k.value)) === JSON.stringify(state.kpis.map((k) => k.value)),
+  ];
+  const checks = ERASURE_CHECKS.map(([id, label], i) => ({ id, label, pass: results[i] }));
+  return { state, erased, ignored, blocked: false, reason: null, footprints, checks };
 }
 
 // ===== END SECTIONS: add new sections above this line =====
@@ -1300,7 +1380,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, metricSeries, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  phiFields, accessLog, subjectFootprint, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  phiFields, accessLog, subjectFootprint, eraseSubjects, getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
