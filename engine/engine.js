@@ -880,6 +880,30 @@ function inspectBatch(scenario, actions, n, opts) {
   return null;
 }
 
+// ----- naiveSample (v1.8) -----
+// What a pipeline with no gate would have shown for every batch run so far (held or published). Built on
+// inspectBatch rows, naiveAbnormalStats and naiveDropReason. Dropped rows are mapped to dead-letter ids through the
+// reducer's dlq entries (as computeBusinessCase does). Pure; returns null for bad actions.
+function naiveSample(scenario, actions, opts) {
+  assertScenario(scenario);
+  if (!Array.isArray(actions)) return null;
+  const state = getState(scenario, actions, opts);
+  let counted = 0, dropped = 0, abnormal = 0, evaluable = 0;
+  for (let n = 1; n <= state.batchesRun; n++) {
+    const b = inspectBatch(scenario, actions, n, opts);
+    if (!b) continue;
+    const s = naiveAbnormalStats(b.rows);
+    counted += s.counted; dropped += s.dropped; abnormal += s.abnormal; evaluable += s.evaluable;
+  }
+  return {
+    counted, dropped,
+    droppedReasons: state.businessCase.silentlyDroppedRows.map((d) => ({ dlqId: d.dlqId, reason: d.reason })),
+    invalidReadings: state.businessCase.invalidRowsReachingDashboard,
+    abnormal, ratePct: evaluable ? (abnormal / evaluable) * 100 : 0,
+    published: state.todaySoFar.observations,
+  };
+}
+
 // ----- action link encoding (v1.7) -----
 // Grammar: actions joined by ".". runBatch r, ackAlert k, resolveRetry y, resolveAlert z, repairRow p:<dlqId>,
 // discardRow d:<dlqId>:<index into DISCARD_REASONS>. The empty list is the single character "-" (the empty string is
@@ -1132,7 +1156,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, METRIC_DEFINITIONS, computeMetric, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
-  naiveAbnormalRate, naiveAbnormalStats, liveSampleCheck,
+  naiveAbnormalRate, naiveAbnormalStats, naiveSample, liveSampleCheck,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };

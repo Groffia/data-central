@@ -1,10 +1,12 @@
 # Changelog
 
-## engine-v1.8 (unreleased)
+## engine-v1.8 (2026-11-05)
 
 New exports for the Value page. `Engine.METRIC_DEFINITIONS` (deep-frozen): for "Abnormal Vital Rate" (current `standard_thresholds`; also `strict_thresholds`) and "30-Day Readmission Rate" (current `all_cause`; also `unplanned_only`), each definition has `id`, `label`, `numerator` and `denominator` history fields. `Engine.computeMetric(history, metricName, definitionId, windowDays = 7)` returns `{ value, priorValue, deltaPct }` using the same arithmetic as `computeKpis`, or `null` for an unknown metric or definition or a window whose current and prior periods do not fit in the history. For the current definitions it deep-equals the matching `computeKpis` entry. Later tasks add `naiveSample` to this entry.
 
 `Engine.liveSampleCheck(state) -> { published, abnormal, handPicked, handPickedAbnormal, readings, abnormalReadings, ratePct, baselineRate, upperLimitPct, verdict } | null`: the expected-range check for the live sample, a pure function of a `getState` state (`null` for anything without a numeric `publishedObservations`). The five hand-picked rows are found by matching `CONTRACT.goldenRows` in `state.productionData` (so `handPicked` is 5 once batch 1 has published, else 0) and are excluded from `readings` and `abnormalReadings`. `baselineRate` is the 120-day standard abnormal rate (about 0.0602). `upperLimitPct` is `100 * k / readings` (unrounded), where `k` is the smallest integer with `P(X > k) <= 0.025` for `X ~ Binomial(readings, baselineRate)`; it is `null` with no readings. `verdict`: `Not enough data yet (fewer than 30 readings)` below 30 readings, else `Above the expected range` when `abnormalReadings > k`, else `Within the expected range`.
+
+`Engine.naiveSample(scenario, actions) -> { counted, dropped, droppedReasons: [{ dlqId, reason }], invalidReadings, abnormal, ratePct, published } | null`: what a pipeline with no gate would have shown for every batch run so far (held or published), built on `inspectBatch`, `naiveAbnormalStats` and `naiveDropReason`; dropped rows carry the reducer's dead-letter ids, `invalidReadings` equals `businessCase.invalidRowsReachingDashboard`, `published` is `todaySoFar.observations`. Pure; `null` for bad actions; invalid scenario throws as `getState` does.
 
 What moved: nothing pinned (`computeKpis` unchanged, `DETERMINISM_HASH` and `GENERATOR_HASH` unchanged, no engine state changed, no reducer field added).
 
