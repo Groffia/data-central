@@ -1,0 +1,43 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const cp = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const ENGINE = path.join(ROOT, '..', 'engine', 'engine.js');
+const SCRIPT = path.join(ROOT, 'scripts', 'inline.js');
+const SHARED = path.join(ROOT, '..', 'shared');
+const engineText = fs.readFileSync(ENGINE, 'utf8');
+const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'pipebuild-'));
+const r = cp.spawnSync(process.execPath, [SCRIPT, '--out', OUT], { cwd: ROOT, encoding: 'utf8' });
+
+test('build succeeds', () => {
+  assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+});
+
+test('pipeline-single.html has the engine and shared files exactly once, no external refs', () => {
+  const html = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
+  assert.strictEqual(html.split(engineText).length - 1, 1);
+  ['escape.js', 'format.js', 'vendor.js'].forEach(function (n) {
+    const t = fs.readFileSync(path.join(SHARED, n), 'utf8');
+    assert.strictEqual(html.split(t).length - 1, 1, n);
+  });
+  assert.ok(!/<script\s+src/i.test(html));
+  assert.ok(!/<link/i.test(html));
+  assert.ok(!/data-inline/.test(html));
+  assert.ok(/<style>[\s\S]*<\/style>/.test(html));
+});
+
+test('pages form has engine and shared files byte-for-byte and relative refs', () => {
+  const pages = path.join(OUT, 'pages');
+  assert.ok(fs.readFileSync(path.join(pages, 'engine.js')).equals(fs.readFileSync(ENGINE)));
+  fs.readdirSync(SHARED).filter(function (n) { return /\.js$/.test(n); }).forEach(function (n) {
+    assert.ok(fs.readFileSync(path.join(pages, 'shared', n)).equals(fs.readFileSync(path.join(SHARED, n))), n);
+  });
+  const idx = fs.readFileSync(path.join(pages, 'index.html'), 'utf8');
+  assert.ok(idx.indexOf('src="src/main.js"') >= 0);
+  assert.ok(!/data-inline/.test(idx));
+});

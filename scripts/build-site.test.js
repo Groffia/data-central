@@ -155,6 +155,11 @@ test('integration: real build into a temp folder', () => {
   assert.ok(fs.existsSync(path.join(out, 'hq', 'engine.js')));
   assert.ok(fs.existsSync(path.join(out, 'hq', 'hq-single.html')));
   assert.ok(fs.readFileSync(path.join(out, 'hq', 'engine.js')).equals(fs.readFileSync(path.join(ROOT, 'engine', 'engine.js'))));
+  ['index.html', 'engine.js', 'pipeline-single.html'].forEach((n) => assert.ok(fs.existsSync(path.join(out, 'pipeline', n)), 'pipeline/' + n));
+  assert.ok(fs.readFileSync(path.join(out, 'pipeline', 'engine.js')).equals(fs.readFileSync(path.join(ROOT, 'engine', 'engine.js'))));
+  fs.readdirSync(path.join(ROOT, 'shared')).filter((n) => /\.js$/.test(n)).forEach((n) => {
+    assert.ok(fs.readFileSync(path.join(out, 'pipeline', 'shared', n)).equals(fs.readFileSync(path.join(ROOT, 'shared', n))), 'pipeline/shared/' + n);
+  });
   const remote = /\b(?:src|href)\s*=\s*["']?\s*https?:\/\//i;
   walk(out).forEach((f) => {
     if (!/\.(html|js|css)$/i.test(f)) return;

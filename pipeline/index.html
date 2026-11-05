@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline: Under the Hood</title>
+<link rel="stylesheet" href="src/styles.css" data-inline>
+</head>
+<body>
+<a class="skip-link" href="#region-batches">Skip to batches</a>
+<header id="region-header"></header>
+<p id="caption" class="caption-bar" aria-live="polite"></p>
+<main>
+<section id="region-notice" class="region" aria-label="Notices"></section>
+<section id="region-batches" class="region" aria-label="Batches"></section>
+<section id="region-generation" class="region" aria-label="Generation"></section>
+<section id="region-landing" class="region" aria-label="Landing"></section>
+<section id="region-matrix" class="region" aria-label="Test matrix"></section>
+<section id="region-rows" class="region" aria-label="Rows"></section>
+<section id="region-dlq" class="region" aria-label="Dead-letter queue"></section>
+<section id="region-medallion" class="region" aria-label="Medallion layers"></section>
+<section id="region-storage" class="region" aria-label="Storage"></section>
+<section id="region-vendor" class="region" aria-label="In production this is"></section>
+</main>
+<footer id="region-footer"></footer>
+<script src="engine.js" data-inline></script>
+<script src="shared/escape.js" data-inline></script>
+<script src="shared/format.js" data-inline></script>
+<script src="shared/vendor.js" data-inline></script>
+<script src="src/viewmodel.js" data-inline></script>
+<script src="src/render.js" data-inline></script>
+<script src="src/controller.js" data-inline></script>
+<script src="src/main.js" data-inline></script>
+</body>
+</html>

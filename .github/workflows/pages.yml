@@ -28,6 +28,8 @@ jobs:
         run: node --test shared/tests/
       - name: HQ tests
         run: cd hq && node --test tests/
+      - name: Pipeline tests
+        run: cd pipeline && node --test tests/
       - name: Script tests
         run: node --test scripts/
       - name: Build site
