@@ -185,3 +185,57 @@ test('checkEngineTag tolerates CRLF vs LF line endings only', () => {
   b.checkEngineTag(page, path.join(d, 'e'), () => Buffer.from('a\nb\n'));
   assert.throws(() => b.checkEngineTag(page, path.join(d, 'e'), () => Buffer.from('a\nc\n')), /differs/);
 });
+
+// ---- Task 15: Value page in the site build ----
+
+const EXT = /\b(?:src|href)\s*=\s*["']?\s*(?:https?:)?\/\//i;
+const NET_CALLS = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'importScripts', 'sendBeacon'];
+const pagesJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'pages.json'), 'utf8'));
+
+test('pages.json: hq, pipeline and value are all pinned to engine-v1.8', () => {
+  assert.deepStrictEqual(pagesJson.map((p) => p.dir).sort(), ['hq', 'pipeline', 'value']);
+  pagesJson.forEach((p) => assert.strictEqual(p.engineTag, 'engine-v1.8', p.dir));
+  assert.strictEqual(pagesJson.find((p) => p.dir === 'value').singleFile, 'value-single.html');
+});
+
+test('the local tag engine-v1.8 matches engine/engine.js for every page (checkEngineTag)', () => {
+  pagesJson.forEach((p) => b.checkEngineTag(p, path.join(ROOT, 'engine', 'engine.js')));
+});
+
+test('integration: site/value/ and value-single.html are built, engine identical on all three pages, no network', () => {
+  const out = path.join(tmp(), 'site');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
+    { cwd: ROOT, encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  const engine = fs.readFileSync(path.join(ROOT, 'engine', 'engine.js'));
+  ['hq', 'pipeline', 'value'].forEach((d) => {
+    assert.ok(fs.readFileSync(path.join(out, d, 'engine.js')).equals(engine), d + '/engine.js equals engine/engine.js');
+  });
+  ['index.html', 'engine.js', 'value-single.html'].forEach((n) => assert.ok(fs.existsSync(path.join(out, 'value', n)), 'value/' + n));
+  fs.readdirSync(path.join(ROOT, 'shared')).filter((n) => /\.js$/.test(n)).forEach((n) => {
+    assert.ok(fs.readFileSync(path.join(out, 'value', 'shared', n)).equals(fs.readFileSync(path.join(ROOT, 'shared', n))), 'value/shared/' + n);
+  });
+
+  // The pages form keeps the sibling-page link metas. The single file has neither (so it renders no links),
+  // no external href/src, and every script inline.
+  const pagesIdx = fs.readFileSync(path.join(out, 'value', 'index.html'), 'utf8');
+  assert.match(pagesIdx, /<meta name="hq-base" content="\.\.\/hq\/">/);
+  assert.match(pagesIdx, /<meta name="pipeline-base" content="\.\.\/pipeline\/">/);
+  const single = fs.readFileSync(path.join(out, 'value', 'value-single.html'), 'utf8');
+  assert.doesNotMatch(single, /<meta[^>]*hq-base/i);
+  assert.doesNotMatch(single, /<meta[^>]*pipeline-base/i);
+  assert.doesNotMatch(single, EXT);
+  assert.doesNotMatch(single, /<script[^>]*\ssrc\s*=/i);
+  assert.doesNotMatch(single, /<link\b/i);
+  assert.ok(/<script>/.test(single));
+
+  // No-network scan over every built file of the value page.
+  walk(path.join(out, 'value')).forEach((f) => {
+    if (!/\.(html|js|css)$/i.test(f)) return;
+    const t = fs.readFileSync(f, 'utf8');
+    assert.doesNotMatch(t, EXT, 'external src/href in ' + f);
+    if (/value[\/](src|shared)[\/]/.test(f)) {
+      NET_CALLS.forEach((c) => assert.ok(!t.includes(c), c + ' in ' + f));
+    }
+  });
+});

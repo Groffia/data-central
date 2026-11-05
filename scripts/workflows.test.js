@@ -77,7 +77,7 @@ test('pages.yml: deploy job', () => {
 test('release.yml: tag triggers, permissions, release command', () => {
   const t = read('release.yml');
   assert.match(t, /^name: Release$/m);
-  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'\n      - 'pipeline-v\*'$/m);
+  assert.match(t, /^on:\n  push:\n    tags:\n      - 'hq-v\*'\n      - 'pipeline-v\*'\n      - 'value-v\*'$/m);
   assert.match(t, /^permissions:\n  contents: write$/m);
   assert.match(t, /GH_TOKEN: \$\{\{ github\.token }\}/);
   assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
@@ -86,6 +86,20 @@ test('release.yml: tag triggers, permissions, release command', () => {
   assert.ok(t.indexOf('PAGE=') < t.indexOf('gh release create'));
   assert.ok(t.indexOf(BUILD) < t.indexOf('gh release create'));
   assert.ok(/^# .*one at a time/m.test(t), 'push release tags one at a time lesson kept as a comment');
+});
+
+test('release.yml: PAGE expansion maps each tag to its page (evaluated by bash)', () => {
+  const t = read('release.yml');
+  assert.ok(t.includes('PAGE="${GITHUB_REF_NAME%%-v*}"'));
+  const { spawnSync } = require('node:child_process');
+  const cases = { 'pipeline-v1.0.1': 'pipeline', 'hq-v1.2': 'hq', 'value-v1.0': 'value' };
+  for (const ref of Object.keys(cases)) {
+    const r = spawnSync('bash', ['-c', 'GITHUB_REF_NAME="$1"; PAGE="${GITHUB_REF_NAME%%-v*}"; printf %s "$PAGE"', 'x', ref], { encoding: 'utf8' });
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.strictEqual(r.stdout, cases[ref], ref);
+  }
+  const pages = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pages.json'), 'utf8'));
+  Object.keys(cases).forEach((ref) => assert.ok(pages.some((e) => e.dir === cases[ref] && e.singleFile === cases[ref] + '-single.html'), ref));
 });
 
 test('release.yml: the asset path expression resolves for each tag', () => {

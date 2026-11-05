@@ -8,6 +8,7 @@ on:
     tags:
       - 'hq-v*'
       - 'pipeline-v*'
+      - 'value-v*'
 
 permissions:
   contents: write
