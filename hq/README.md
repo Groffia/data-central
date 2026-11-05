@@ -35,3 +35,14 @@ node --test tests/                # page tests (no dependencies; Node 20)
 `src\` (format, escape, viewmodel, render, controller, autoplay, main, styles), `index.html`, `scripts\` (inline, serve), `tests\`. Pure modules are tested under `node --test`; only `main.js` touches the DOM.
 
 All data is synthetic and generated deterministically (seed 42). Company names are fictional.
+
+## Vendor names: sources checked 2026-11-05
+
+The "In production this is…" table uses product names taken from the vendors' own documentation. Names change often, so each was re-checked on this date:
+
+- **Databricks:** [Lakeflow pipelines, formerly Delta Live Tables](https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt) (the docs also use the longer "Lakeflow Spark Declarative Pipelines" in release notes); [pipeline expectations](https://docs.databricks.com/aws/en/ldp/expectations); [Lakeflow Jobs](https://docs.databricks.com/aws/en/jobs/); [Databricks SQL alerts](https://docs.databricks.com/aws/en/sql/user/alerts/); [Unity Catalog metric views](https://docs.databricks.com/aws/en/uc-semantics/metric-views/) (some metric-view features are marked beta); ingestion with [Auto Loader and Lakeflow Connect](https://docs.databricks.com/aws/en/ingestion/overview).
+- **Snowflake:** [Snowpipe](https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro); [Tasks](https://docs.snowflake.com/en/user-guide/tasks-intro); [Iceberg tables](https://docs.snowflake.com/en/user-guide/tables-iceberg) (also names Snowflake Horizon Catalog); [data metric functions](https://docs.snowflake.com/en/user-guide/data-quality-working); [alerts](https://docs.snowflake.com/en/user-guide/alerts-ui); [dynamic tables](https://docs.snowflake.com/en/user-guide/dynamic-tables-monitor-event-table-alerts); partners [Fivetran](https://www.fivetran.com/partners/technology/snowflake) and [Atlan](https://docs.atlan.com/apps/connectors/data-warehouses/snowflake).
+- **Fabric:** [Fabric Activator](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction) (also names the Power BI semantic model, "formerly known as a dataset"); [Data Factory in Fabric: pipelines, Dataflow Gen2, dbt job, Apache Airflow jobs](https://learn.microsoft.com/en-us/fabric/data-factory/data-factory-overview); [Fabric overview and OneLake](https://learn.microsoft.com/en-us/fabric/fundamentals/microsoft-fabric-overview); [Microsoft Purview lineage from Fabric](https://learn.microsoft.com/en-us/purview/data-map-lineage-fabric).
+- **dbt:** [dbt Semantic Layer](https://docs.getdbt.com/docs/use-dbt-semantic-layer/dbt-sl).
+
+Two labels are shorter than the vendor's formal name and may be updated in a later release: "Horizon" (formally Snowflake Horizon Catalog) and "Purview" (formally Microsoft Purview). The Delta table, Snowflake table and OneLake lakehouse entries describe storage types and were not looked up page by page.

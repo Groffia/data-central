@@ -6,7 +6,7 @@ Run by Claude in the built-in browser pane at 1024 px wide, driving the real but
 ## What was and was not tested
 
 - **Both forms served over http.** The pane refuses `file://` URLs, so `dist\hq-single.html` and `dist\pages\index.html` were both served with `node scripts/serve.js dist 8080` and opened at `http://localhost:8080/...`.
-- **`file://` was NOT tested by me.** Stephen will open `dist\hq-single.html` himself. The single file and the Pages form passed the same scripted checks in the Node build tests (identical rendered regions).
+- **`file://` was NOT tested by me.** The maintainer opened `dist\hq-single.html` from `file://` separately and it passed. The single file and the Pages form passed the same scripted checks in the Node build tests (identical rendered regions).
 - **Network check:** the pane exposes a request list. It showed only the page and its local files: `hq-single.html` alone for the single file; `index.html`, `src/styles.css`, `engine.js` and the seven `src/*.js` files for the Pages form. No other request. The no-network scan (`tests/nonetwork.test.js`) also passes.
 - **Console:** no errors or warnings were logged on load.
 - A focus ring, screen reader behaviour and the contrast of the live render were not checked by eye. Contrast is covered by `tests/theme.test.js` (token pairs).
@@ -37,7 +37,7 @@ HQ suite (`node --test tests/` in `hq\`): 189 tests, 189 pass, 0 fail. Engine su
 
 ## Known gaps
 
-- `file://` not exercised by the tester (see above); Stephen to open `dist\hq-single.html`.
+- `file://` not exercised by the tester (see above); checked separately by the maintainer (passed).
 - Not tested: a phone-width viewport (out of scope; spec is 1024 px), a screen reader, high-contrast mode.
 - Screenshots: one screenshot timed out and one showed a stale frame while the page was rendering; the numbers above come from reading the page.
 
@@ -52,9 +52,9 @@ The whole-branch review found three things a viewer would hit, and they were fix
 
 Not re-run after the fixes: the full 4:30 Full version, and the broken-engine banner (the render change that disables every control on a failed self-test is covered by a unit test, not by a browser run).
 
-## Re-run after Stephen's decisions of 2026-11-05 (hq commit 4ab842f, engine-v1.4)
+## Re-run after the maintainer's decisions of 2026-11-05 (hq commit 4ab842f, engine-v1.4)
 
-Run in the built-in browser pane at 1024 px, `dist` served with `node scripts/serve.js` over http (`file://` still not openable by the tool; Stephen opens `dist\hq-single.html` himself). Network list: only the page and its local files, as before.
+Run in the built-in browser pane at 1024 px, `dist` served with `node scripts/serve.js` over http (`file://` still not openable by the tool; the maintainer opens `dist\hq-single.html` separately). Network list: only the page and its local files, as before.
 
 | Item | Result | Observed |
 |---|---|---|
@@ -69,7 +69,7 @@ Known limit: "0 invalid readings in production" is a fixed 0 in the view model. 
 
 ## Re-run after the second round of decisions (hq commit 9bcc1f2, engine-v1.5)
 
-Same method as before: 1024 px, `dist` served over http (`file://` is for Stephen to open). Short cut run in real time on the single-file build.
+Same method as before: 1024 px, `dist` served over http (`file://` was checked separately by the maintainer). Short cut run in real time on the single-file build.
 
 | Item | Result | Observed |
 |---|---|---|
