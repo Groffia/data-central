@@ -3,6 +3,8 @@
   const HQ = (globalThis.HQ = globalThis.HQ || {});
   const esc = function (v) { return HQ.escape.esc(v); };
 
+  let forceDisabled = false;
+
   function attr(name, value) { return ' ' + name + '="' + esc(value) + '"'; }
 
   function button(label, cmd, opts) {
@@ -11,7 +13,7 @@
       (o.dlqId !== undefined ? attr('data-dlq-id', o.dlqId) : '') +
       (o.scenario !== undefined ? attr('data-scenario', o.scenario) : '') +
       (o.pressed !== undefined ? attr('aria-pressed', o.pressed ? 'true' : 'false') : '') +
-      (o.disabled ? ' disabled' : '') + '>' + esc(label) + '</button>';
+      (o.disabled || forceDisabled ? ' disabled' : '') + '>' + esc(label) + '</button>';
   }
 
   function scenarioButton(label, name, current) {
@@ -164,7 +166,7 @@
 
   function vendor(vm) {
     const v = vm.vendor;
-    return '<h2>In production this is</h2><div class="table-wrap"><table class="vendor-table"><thead><tr>' +
+    return '<h2>In production this is…</h2><div class="table-wrap"><table class="vendor-table"><thead><tr>' +
       v.columns.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') +
       '</tr></thead><tbody>' + v.rows.map(function (r) {
         return '<tr>' + r.map(function (cell, i) {
@@ -184,11 +186,12 @@
 
   HQ.render = {
     renderRegions: function renderRegions(vm) {
-      return {
+      forceDisabled = !!vm.error;
+      try { return {
         header: header(vm), stages: stages(vm), status: status(vm), tiles: tiles(vm), today: today(vm),
         controls: controls(vm), incident: incident(vm), timeline: timeline(vm), business: business(vm),
         vendor: vendor(vm), notice: notice(vm), footer: footer()
-      };
+      }; } finally { forceDisabled = false; }
     }
   };
 })();

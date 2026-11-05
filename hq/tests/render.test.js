@@ -177,3 +177,16 @@ test('controls: playback buttons pause, resume, skip, stop are present', () => {
   });
   assert.ok(c.indexOf('class="playback-controls"') >= 0);
 });
+
+test('every data-cmd button is disabled when vm.error is set', () => {
+  const r = regions('incident', 3, { error: 'Engine self-test failed: x' });
+  const btns = all(r).match(/<button\b[^>]*data-cmd="[^"]*"[^>]*>/g) || [];
+  assert.ok(btns.length >= 10);
+  btns.forEach(function (b) { assert.ok(/ disabled/.test(b), b); });
+  const ok = all(regions('healthy', 1)).match(/<button\b[^>]*data-cmd="run"[^>]*>/)[0];
+  assert.ok(!/ disabled/.test(ok));
+});
+
+test('vendor heading reads exactly "In production this is\u2026"', () => {
+  assert.ok(regions('healthy', 1).vendor.indexOf('<h2>In production this is\u2026</h2>') === 0);
+});

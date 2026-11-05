@@ -76,7 +76,7 @@ function bootEx(search, EngineOverride) {
   const regionHtml = {};
   const store = {};
   const timers = [];
-  const log = { focused: [] };
+  const log = { focused: [], scrolled: [] };
   let clickHandler = null;
   const els = {};
   function tagsFor(sel) {
@@ -120,7 +120,7 @@ function bootEx(search, EngineOverride) {
     activeElement: null,
     getElementById: function (id) {
       if (!els[id]) {
-        els[id] = { id: id, textContent: '' };
+        els[id] = { id: id, textContent: '', scrollIntoView: function (o) { log.scrolled.push({ id: id, opts: o }); } };
         Object.defineProperty(els[id], 'innerHTML', {
           get: function () { return regionHtml[id] || ''; },
           set: function (v) { regionHtml[id] = v; Object.keys(store).forEach(function (k) { delete store[k]; }); }
@@ -165,12 +165,74 @@ test('focus returns to the same control after a re-render', () => {
   assert.ok(p.log.focused[0].indexOf('data-cmd="run"') >= 0);
 });
 
-test('focus is left alone when the element no longer exists', () => {
+test('focus falls back to Run when the previous control no longer exists', () => {
   const p = bootEx('');
   p.document.activeElement = { getAttribute: function (k) { return k === 'data-cmd' ? 'nonexistent' : null; } };
   p.log.focused.length = 0;
   p.click({ 'data-cmd': 'run' });
+  assert.strictEqual(p.log.focused.length, 1);
+  assert.ok(p.log.focused[0].indexOf('data-cmd="run"') >= 0);
+});
+
+test('focus is left alone when nothing was focused', () => {
+  const p = bootEx('');
+  p.log.focused.length = 0;
+  p.click({ 'data-cmd': 'run' });
   assert.strictEqual(p.log.focused.length, 0);
+});
+
+test('after Repair disables the button, focus moves to the next enabled control in the row', () => {
+  const p = bootEx('?scenario=incident&step=3');
+  const rep = p.document.querySelectorAll('button[data-cmd="repair"]').filter(function (b) { return !b.disabled; })[0];
+  assert.ok(rep);
+  const id = rep.getAttribute('data-dlq-id');
+  rep.focus();
+  p.log.focused.length = 0;
+  p.click({ 'data-cmd': 'repair', 'data-dlq-id': id });
+  assert.strictEqual(p.log.focused.length, 1);
+  const f = p.log.focused[0];
+  assert.ok(f.indexOf('data-dlq-id="') >= 0, f); // a row control, not <body>
+  assert.ok(!(f.indexOf('data-cmd="repair"') >= 0 && f.indexOf('data-dlq-id="' + id + '"') >= 0), f);
+  assert.ok(!/ disabled/.test(f), f);
+});
+
+test('after the last row control goes away, focus falls to Resolve and retry or Run', () => {
+  const p = bootEx('?scenario=incident&step=3');
+  const rows = p.document.querySelectorAll('button[data-cmd="discard"]').filter(function (b) { return !b.disabled; });
+  const d = rows[rows.length - 1];
+  const id = d.getAttribute('data-dlq-id');
+  d.focus();
+  p.log.focused.length = 0;
+  p.click({ 'data-cmd': 'discard', 'data-dlq-id': id });
+  assert.strictEqual(p.log.focused.length, 1);
+  assert.ok(!/ disabled/.test(p.log.focused[0]));
+});
+
+test('notice-live shows the engine rejection next to the controls', () => {
+  const p = bootEx('?scenario=incident&step=3');
+  p.click({ 'data-cmd': 'run' });
+  assert.ok(p.els['notice-live'].innerHTML.indexOf('gate is OPEN') >= 0);
+  assert.ok(p.html('notice').indexOf('gate is OPEN') >= 0);
+});
+
+test('auto-play scrolls the scene region into view, instantly', () => {
+  const p = bootEx('');
+  p.click({ 'data-cmd': 'watch' });
+  assert.strictEqual(p.log.scrolled[0].id, 'region-stages');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(p.log.scrolled[0].opts)), { block: 'start' });
+  p.click({ 'data-cmd': 'skip' }); // enter act3: incident region still empty, falls back to status
+  assert.strictEqual(p.log.scrolled[p.log.scrolled.length - 1].id, 'region-status');
+  p.click({ 'data-cmd': 'skip' }); // act3 steps render the incident, scene moves to recovery
+  assert.ok(p.log.scrolled.some(function (x) { return x.id === 'region-incident'; }));
+  assert.strictEqual(p.log.scrolled[p.log.scrolled.length - 1].id, 'region-incident');
+  p.click({ 'data-cmd': 'skip' }); // act5
+  assert.strictEqual(p.log.scrolled[p.log.scrolled.length - 1].id, 'region-business');
+});
+
+test('auto-play without scrollIntoView does not throw', () => {
+  const p = bootEx('');
+  p.document.getElementById('region-stages').scrollIntoView = undefined;
+  p.click({ 'data-cmd': 'watch' });
 });
 
 test('a chosen discard reason survives a re-render', () => {

@@ -23,9 +23,67 @@
     return null;
   }
 
+  function rowControls(rowId) {
+    return Array.prototype.filter.call(document.querySelectorAll('[data-dlq-id="' + rowId + '"]'), function (e) {
+      return e.getAttribute('data-cmd') || e.getAttribute('data-role');
+    });
+  }
+
+  function enabled(e) { return e && !e.disabled; }
+
+  // Previous control is gone or disabled: next enabled control in its row, else in a later open row,
+  // else Resolve and retry, else Run.
+  function fallbackFocus(rowId, prevIdx) {
+    let target = null;
+    if (rowId && ok(rowId)) {
+      const own = rowControls(rowId);
+      target = own.filter(function (e, i) { return i >= prevIdx && enabled(e); })[0] || null;
+      if (!target) {
+        const all = Array.prototype.filter.call(document.querySelectorAll('[data-dlq-id]'), function (e) {
+          return (e.getAttribute('data-cmd') || e.getAttribute('data-role')) && enabled(e);
+        });
+        const order = [];
+        document.querySelectorAll('[data-dlq-id]').forEach(function (e) {
+          const d = e.getAttribute('data-dlq-id');
+          if (order.indexOf(d) < 0) order.push(d);
+        });
+        const at = order.indexOf(rowId);
+        const others = all.filter(function (e) { return e.getAttribute('data-dlq-id') !== rowId; });
+        target = others.filter(function (e) { return order.indexOf(e.getAttribute('data-dlq-id')) > at; })[0] || others[0] || null;
+      }
+    }
+    if (!target) {
+      const rr = document.querySelector('button[data-cmd="resolveRetry"]');
+      target = enabled(rr) ? rr : document.querySelector('button[data-cmd="run"]');
+    }
+    if (enabled(target) && typeof target.focus === 'function') target.focus();
+  }
+
+  function ok(v) { return typeof v === 'string' && v.indexOf('"') < 0; }
+
+  const SCENE_REGION = { act1: 'region-stages', act2: 'region-status', act3: 'region-incident', recovery: 'region-incident', act4: 'region-incident', act5: 'region-business' };
+  let sceneId = null;
+
+  function scrollToScene() {
+    if (!sceneId) return;
+    let id = SCENE_REGION[sceneId];
+    if (!id) return;
+    if (id === 'region-incident') {
+      const inc = document.getElementById('region-incident');
+      if (!inc || !inc.innerHTML) id = 'region-status';
+    }
+    const el = document.getElementById(id);
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
+  }
+
   function render() {
     const active = document.activeElement;
     const sel = focusSelector(active);
+    let rowId = null, prevIdx = 0;
+    if (sel && active && typeof active.getAttribute === 'function') {
+      rowId = active.getAttribute('data-dlq-id');
+      if (rowId && ok(rowId)) prevIdx = Math.max(0, rowControls(rowId).indexOf(active));
+    }
     const chosen = {};
     document.querySelectorAll('select[data-role="discard-reason"]').forEach(function (s) {
       chosen[s.getAttribute('data-dlq-id')] = s.value;
@@ -35,6 +93,8 @@
       const el = document.getElementById('region-' + k);
       if (el) el.innerHTML = regions[k];
     });
+    const live = document.getElementById('notice-live');
+    if (live) live.innerHTML = regions.notice;
     document.querySelectorAll('select[data-role="discard-reason"]').forEach(function (s) {
       const id = s.getAttribute('data-dlq-id');
       if (!Object.prototype.hasOwnProperty.call(chosen, id)) return;
@@ -43,8 +103,10 @@
     });
     if (sel) {
       const again = document.querySelector(sel);
-      if (again && again !== active) again.focus();
+      if (enabled(again)) { if (again !== active) again.focus(); }
+      else fallbackFocus(rowId, prevIdx);
     }
+    if (player) scrollToScene();
   }
 
   function setCaption(text) {
@@ -75,12 +137,14 @@
       clearTimer: function (h) { window.clearTimeout(h); },
       now: function () { return performance.now(); },
       onCaption: setCaption,
+      onScene: function (scene) { sceneId = scene && scene.id; scrollToScene(); },
       onEnd: function () {
         setCaption('Demo finished. You now have control: press Run next batch, or switch scenario.');
-        if (player === mine) player = null;
+        if (player === mine) { player = null; sceneId = null; }
       }
     });
     player = mine;
+    sceneId = null;
     mine.start();
   }
 

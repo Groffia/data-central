@@ -53,3 +53,11 @@ test('no http(s) in any src or href', () => {
   let m;
   while ((m = re.exec(html))) assert.ok(!/https?:\/\//i.test(m[1]), m[1]);
 });
+
+test('persistent notice-live container sits after controls, before incident, aria-live polite', () => {
+  const tag = /<[a-z]+[^>]*id="notice-live"[^>]*>/.exec(html);
+  assert.ok(tag && /aria-live="polite"/.test(tag[0]));
+  assert.strictEqual(count(html, 'id="notice-live"'), 1);
+  assert.ok(html.indexOf('id="region-controls"') < html.indexOf('id="notice-live"'));
+  assert.ok(html.indexOf('id="notice-live"') < html.indexOf('id="region-incident"'));
+});

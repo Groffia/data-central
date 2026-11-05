@@ -19,6 +19,8 @@
     if (!/[?&]scenario=(healthy|incident)(&|$)/.test(s)) return { scenario: 'healthy', actions: startFor(Engine, 'healthy') };
     try {
       const p = Engine.parseLinkParams(s);
+      const sm = /[?&]step=([^&]*)/.exec(s);
+      if (p.scenario === 'healthy' && !(sm && sm[1] !== '')) return { scenario: 'healthy', actions: startFor(Engine, 'healthy') };
       const scenario = SCENARIOS.indexOf(p.scenario) >= 0 ? p.scenario : 'healthy';
       return { scenario: scenario, actions: Engine.actionsForStep(scenario, p.step).slice() };
     } catch (e) {

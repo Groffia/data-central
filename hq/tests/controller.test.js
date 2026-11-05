@@ -139,3 +139,11 @@ test('getModel does not mutate earlier models', () => {
   c.getModel();
   assert.deepEqual(JSON.parse(JSON.stringify(m1)), snap);
 });
+
+test('?scenario=healthy without a step opens the normal opening state; explicit step=0 is empty', () => {
+  assert.equal(make('?scenario=healthy').actions().length, 1);
+  assert.equal(make('?scenario=healthy&step=').actions().length, 1);
+  assert.equal(make('?step=&scenario=healthy').actions().length, 1);
+  assert.equal(make('?scenario=healthy&step=0').actions().length, 0);
+  assert.equal(make('?scenario=incident').actions().length, 2);
+});
