@@ -44,7 +44,7 @@ if (require.main === module) {
     process.exit(1);
   }
   const port = process.argv[3] ? Number(process.argv[3]) : 8080;
-  createServer(dir).listen(port, function () {
+  createServer(dir).listen(port, '127.0.0.1', function () {
     process.stdout.write('serving ' + path.resolve(dir) + ' at http://localhost:' + port + '/\n');
   });
 }
