@@ -343,6 +343,7 @@ function initialState(scenario) {
     clock: { epoch: BASE_EPOCH, iso: isoFromEpoch(BASE_EPOCH) },
     batchesRun: 0, gate: "CLOSED", bronzeRows: 0, productionRows: 0, productionKeys: [],
     staging: [], dlq: [], alerts: [], lastGoodBatchId: null, events: [],
+    publishedObservations: 0, publishedAbnormal: 0,
   };
 }
 
@@ -402,6 +403,8 @@ function publishBatch(s, batchId, rows) {
   const wasTrial = s.gate === "HALF_OPEN";
   let next = {
     ...s, productionRows: s.productionRows + published.length,
+    publishedObservations: s.publishedObservations + published.length,
+    publishedAbnormal: s.publishedAbnormal + published.filter((r) => isAbnormal(r)).length,
     productionKeys: [...s.productionKeys, ...published.map(keyOf).filter((k) => k !== null)],
     staging: [], lastGoodBatchId: batchId, gate: "CLOSED",
   };
@@ -659,10 +662,18 @@ function computeBusinessCase(state) {
 function getState(scenario, actions, opts) {
   const state = replay(scenario, actions, opts);
   const history = getHistory();
+  const held = state.gate === "OPEN";
+  const asOfBatchId = state.lastGoodBatchId;
+  const asOfIso = isoFromEpoch(asOfBatchId === null ? BASE_EPOCH : exportRunEpoch(Number(asOfBatchId.slice(6))));
+  const obs = state.publishedObservations, abnormal = state.publishedAbnormal;
   return {
     ...state,
-    kpis: computeKpis(history),
-    held: state.gate === "OPEN",
+    kpis: computeKpis(history).map((k) => ({ ...k, asOfBatchId, asOfIso, held })),
+    held,
+    todaySoFar: {
+      label: "Live sample: published exports today.",
+      observations: obs, abnormalCount: abnormal, abnormalVitalRate: obs ? (abnormal / obs) * 100 : 0,
+    },
     facility: facilityProfile(history),
     businessCase: computeBusinessCase(state),
   };
