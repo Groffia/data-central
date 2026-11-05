@@ -683,13 +683,29 @@ const PHI_FIELDS = ["patient_id", "patient_name", "patient_zip5", "birth_date", 
 const PATIENT_ID_RE = /^SGH-P-\d{6}$/;
 const runBatchAct = () => ({ type: "runBatch" });
 
+// Discard reasons: the single source for the engine and every page. suggestedReason(entry) picks one from a
+// dead-letter entry's failed tests and column; anything it does not recognise (including repairable drift rows) is "Other".
+const DISCARD_REASONS = Object.freeze(["Missing patient ID", "Physiologically impossible value", "Malformed or suspicious input", "Wrong unit, source must resend", "Other, see note"]);
+function suggestedReason(entry) {
+  const tests = (entry && entry.failedTests) || [];
+  const has = (n) => tests.indexOf(n) >= 0;
+  const column = entry && entry.column;
+  if (column === "patient_id" && has("not_null")) return DISCARD_REASONS[0];
+  if (column === "vital_value" && has("range")) return DISCARD_REASONS[1];
+  if (has("matches_pattern")) return DISCARD_REASONS[2];
+  if (column === "unit" && (has("unit_matches_code") || has("accepted_values"))) return DISCARD_REASONS[3];
+  return DISCARD_REASONS[4];
+}
+// The four hard-failure rows of the scripted incident and the reason suggestedReason gives each (a test keeps them in step).
+const SCRIPTED_DISCARDS = [["dlq-3-4", DISCARD_REASONS[0]], ["dlq-3-9", DISCARD_REASONS[1]], ["dlq-3-13", DISCARD_REASONS[2]], ["dlq-3-17", DISCARD_REASONS[3]]];
+
 const PRELUDE = { healthy: [], incident: [runBatchAct(), runBatchAct()] };
 const AUTOPLAY = {
   healthy: [runBatchAct(), runBatchAct(), runBatchAct(), runBatchAct()],
   incident: [
     runBatchAct(), runBatchAct(), runBatchAct(),
     ...["dlq-3-2", "dlq-3-6", "dlq-3-10", "dlq-3-15", "dlq-3-19"].map((dlqId) => ({ type: "repairRow", dlqId })),
-    ...["dlq-3-4", "dlq-3-9", "dlq-3-13", "dlq-3-17"].map((dlqId) => ({ type: "discardRow", dlqId, reason: "unrepairable" })),
+    ...SCRIPTED_DISCARDS.map(([dlqId, reason]) => ({ type: "discardRow", dlqId, reason })),
     { type: "ackAlert" }, { type: "resolveRetry" }, runBatchAct(), { type: "resolveAlert" },
   ],
 };
@@ -867,7 +883,7 @@ function selfTest() {
       if (iOpen < 0 || iHalf < iOpen || trail[trail.length - 1] !== "CLOSED") return "autoplay path " + trail.join(",");
       const acts = [runBatchAct(), runBatchAct(), runBatchAct()];
       const open = replay("incident", acts);
-      const fix = open.dlq.map((d) => (d.repairable ? { type: "repairRow", dlqId: d.dlqId } : { type: "discardRow", dlqId: d.dlqId, reason: "unrepairable" }));
+      const fix = open.dlq.map((d) => (d.repairable ? { type: "repairRow", dlqId: d.dlqId } : { type: "discardRow", dlqId: d.dlqId, reason: suggestedReason(d) }));
       const t = gateTrail([...acts, ...fix, { type: "resolveRetry" }, runBatchAct()], { faultExports: [3, 4] });
       const n = t.length;
       return t[n - 2] === "HALF_OPEN" && t[n - 1] === "OPEN" ? null : "failing trial path " + t.slice(-2).join(",");
@@ -914,6 +930,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep,naiveAbnormalRate, naiveAbnormalStats,
+  DISCARD_REASONS, suggestedReason,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4 (2026-11-05)
+
+Added `Engine.DISCARD_REASONS` (frozen: Missing patient ID, Physiologically impossible value, Malformed or suspicious input, Wrong unit, source must resend, Other, see note) and `Engine.suggestedReason(dlqEntry)`, the single source for the engine and every page. `Engine.AUTOPLAY.incident` discards now carry the suggested reason of their own row instead of "unrepairable". The engine still accepts any reason string on `discardRow`; pages validate against `DISCARD_REASONS`.
+
+What moved (verified against engine-v1.3 on the full scripted incident): only the four `ROW_DISCARDED` event details (`dlq-3-4`, `3-9`, `3-13`, `3-17`). State, KPIs, business case, clock, the healthy script and both hashes are unchanged. 178 tests.
+
 ## v1.3 (2026-11-05)
 
 Added `Engine.TIERING_DEFAULTS` (frozen `{hotToWarmDays:30, warmToColdDays:180, retentionDays:2555, dailyGB:18, halfLifeDays:45}`), the base `tieringCost` merges its overrides onto. No behavior change. 173 tests.
