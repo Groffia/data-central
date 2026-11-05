@@ -71,7 +71,7 @@
       (hq ? '<a class="hq-link"' + attr('href', hq) + '>Open this state in HQ</a>' : '') +
       (pl ? '<a class="pipeline-link"' + attr('href', pl) + '>Open this state in Pipeline</a>' : '') +
       '</div>' +
-      '<p class="step-text" aria-live="polite">' + esc(s.text) + '</p>';
+      '<p class="step-text">' + esc(s.text) + '</p>';
   }
 
   // ----- KPI tiles -----

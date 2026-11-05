@@ -40,6 +40,8 @@ test('header: title, scenario buttons, stepper, links with the exact texts', () 
   has(h, 'data-cmd="back">Back</button>');
   has(h, 'data-cmd="next">Next</button>');
   has(h, 'Step 3 of ');
+  has(h, '<p class="step-text">');
+  assert.ok(h.indexOf('aria-live') < 0);
   has(h, '<a class="hq-link" href="../hq/?scenario=incident&amp;step=3">Open this state in HQ</a>');
   has(h, '<a class="pipeline-link" href="../pipeline/?scenario=incident&amp;step=3">Open this state in Pipeline</a>');
   assert.match(R.header(model('healthy', 1)), /data-cmd="scenario" data-value="healthy" aria-pressed="true"/);
