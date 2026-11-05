@@ -134,7 +134,9 @@ test("erasures: rows on an ERASE entry are the subject's rows in staging, Silver
     const st = Engine.getState("incident", acts);
     const own = (rows) => rows.filter((r) => r && (r.patient_id === id || r.patientId === id)).length;
     const silver = own(st.productionData);
-    const expected = own(st.staging) + silver + st.dlq.filter((d) => d.payload && (d.payload.patient_id === id || d.payload.patientId === id)).length + (silver > 0 ? 1 : 0);
+    const f = Engine.subjectFootprint("incident", acts, id);
+    const expected = own(st.staging) + silver + f.deadLetter + f.deadLetterByFields + (silver > 0 ? 1 : 0);
+    assert.strictEqual(f.deadLetter, st.dlq.filter((d) => d.payload && (d.payload.patient_id === id || d.payload.patientId === id)).length);
     const e = Engine.accessLog("incident", acts, [id]).pop();
     assert.strictEqual(e.rows, expected, id);
     if (expected) nonzero++;

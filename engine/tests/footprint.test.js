@@ -22,7 +22,9 @@ test("incident step 3: every layer adds up once rows with no cohort id are count
   const outside = (rows) => rows.filter((r) => !ids.has(subjectOf(r))).length;
   assert.strictEqual(sum("incident", 3, "silver") + outside(st.productionData), st.productionRows);
   assert.strictEqual(sum("incident", 3, "staging") + outside(st.staging), st.staging.length);
-  assert.strictEqual(sum("incident", 3, "deadLetter") + outside(st.dlq.map((d) => d.payload)), st.dlq.length);
+  // Every dead-letter row belongs to a cohort patient: by id, or (null or malformed id) by name, ZIP and birth date.
+  assert.strictEqual(sum("incident", 3, "deadLetter") + sum("incident", 3, "deadLetterByFields"), st.dlq.length);
+  assert.strictEqual(sum("incident", 3, "deadLetterByFields"), 2);
   let landed = 0, unmatched = 0;
   for (let n = 1; n <= st.batchesRun; n++) {
     const b = Engine.inspectBatch("incident", acts, n);
@@ -36,11 +38,25 @@ test("incident step 3: every layer adds up once rows with no cohort id are count
   assert.strictEqual(st.staging.length, 11);
 });
 
-test("the injection-string id and a null-id row match nobody", () => {
+test("the injection-string id and an empty id are not cohort ids, so they have no footprint", () => {
   const acts = Engine.actionsForStep("incident", 3);
   const inj = "'; DROP TABLE silver_vital_observation;--";
-  assert.deepStrictEqual(Engine.subjectFootprint("incident", acts, inj), { patientId: inj, inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 });
-  assert.deepStrictEqual(Engine.subjectFootprint("incident", acts, ""), { patientId: "", inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 });
+  assert.deepStrictEqual(Engine.subjectFootprint("incident", acts, inj), { patientId: inj, inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, deadLetterByFields: 0, dimPatient: 0 });
+  assert.deepStrictEqual(Engine.subjectFootprint("incident", acts, ""), { patientId: "", inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, deadLetterByFields: 0, dimPatient: 0 });
+});
+
+test("the null-id row and the injection-string row are matched to their patients by name, ZIP and birth date", () => {
+  const acts = Engine.actionsForStep("incident", 3);
+  const st = Engine.getState("incident", acts);
+  const nullRow = st.dlq.find((d) => d.dlqId === "dlq-3-4");
+  const injRow = st.dlq.find((d) => d.dlqId === "dlq-3-13");
+  [[nullRow, "TMH-P-012004"], [injRow, "TMH-P-536398"]].forEach(([d, id]) => {
+    const p = d.payload;
+    const owner = Engine.buildPatientPool().find((x) => x.patient_name === p.patient_name && x.patient_zip5 === p.patient_zip5 && x.birth_date === p.birth_date);
+    assert.strictEqual(owner.patient_id, id, d.dlqId);
+    const f = Engine.subjectFootprint("incident", acts, id);
+    assert.strictEqual(f.deadLetterByFields, 1, d.dlqId);
+  });
 });
 
 test("a renamed-column row (patientId) is matched to its subject", () => {
@@ -65,7 +81,7 @@ test("dimPatient is 1 exactly when the subject has a published row", () => {
 
 test("an id outside the cohort has no footprint; the cohort has 40 subjects", () => {
   assert.strictEqual(pool().length, 40);
-  assert.deepStrictEqual(fp("healthy", 4, "TMH-P-999999"), { patientId: "TMH-P-999999", inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 });
+  assert.deepStrictEqual(fp("healthy", 4, "TMH-P-999999"), { patientId: "TMH-P-999999", inCohort: false, bronze: 0, staging: 0, silver: 0, deadLetter: 0, deadLetterByFields: 0, dimPatient: 0 });
   assert.strictEqual(fp("healthy", 4, pool()[0]).inCohort, true);
 });
 

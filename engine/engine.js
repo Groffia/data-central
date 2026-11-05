@@ -1201,16 +1201,48 @@ const unionPhi = (payloads) => {
 };
 const cohortIds = () => new Set(buildPatientPool().map((p) => p.patient_id));
 
-// One subject's rows in a state's mutable layers: staging, Silver (production), the dead-letter queue, and dim_patient
-// (1 once the subject has a published row). `phi` lists the sensitive fields those rows hold.
+// Cohort patients by exact name + ZIP + birth date (all three), for dead-letter rows whose patient id is null or not a valid
+// id: the fault injector blanks the id but the row still holds the patient's other sensitive fields. A key shared by two
+// patients matches nobody.
+let patientByFields = null;
+function cohortByFields() {
+  if (patientByFields) return patientByFields;
+  const m = new Map();
+  for (const p of buildPatientPool()) {
+    const k = JSON.stringify([p.patient_name, p.patient_zip5, p.birth_date]);
+    m.set(k, m.has(k) ? null : p.patient_id);
+  }
+  patientByFields = m;
+  return m;
+}
+
+// Who a dead-letter payload belongs to: { id, byFields }. A valid-form id is the subject (byFields false). With a null,
+// missing or malformed id, the subject is the cohort patient whose name, ZIP and birth date all match exactly (byFields
+// true); id null when no such patient exists.
+function dlqSubject(payload) {
+  const id = rowSubject(payload);
+  if (id !== null && PATIENT_ID_RE.test(id)) return { id: id, byFields: false };
+  if (!isObj(payload)) return { id: null, byFields: false };
+  const pick = (a, b) => (typeof payload[a] === "string" ? payload[a] : typeof payload[b] === "string" ? payload[b] : null);
+  const name = pick("patient_name", "patientName"), zip = pick("patient_zip5", "patientZip5"), born = pick("birth_date", "birthDate");
+  if (name === null || zip === null || born === null) return { id: null, byFields: false };
+  const hit = cohortByFields().get(JSON.stringify([name, zip, born]));
+  return { id: hit || null, byFields: !!hit };
+}
+
+// One subject's rows in a state's mutable layers: staging, Silver (production), the dead-letter queue (rows matched by id,
+// and rows matched by name, ZIP and birth date), and dim_patient (1 once the subject has a published row). `phi` lists the
+// sensitive fields those rows hold.
 function subjectRowsInState(state, patientId) {
   const mine = (p) => rowSubject(p) === patientId;
   const staging = (state.staging || []).filter(mine);
   const silver = (state.productionData || []).filter(mine);
-  const dead = (state.dlq || []).filter((d) => mine(d.payload));
+  const dead = (state.dlq || []).map((d) => ({ d, s: dlqSubject(d.payload) })).filter((x) => x.s.id === patientId);
   return {
-    staging: staging.length, silver: silver.length, deadLetter: dead.length, dimPatient: silver.length > 0 ? 1 : 0,
-    phi: unionPhi([...staging, ...silver, ...dead.map((d) => d.payload)]),
+    staging: staging.length, silver: silver.length,
+    deadLetter: dead.filter((x) => !x.s.byFields).length, deadLetterByFields: dead.filter((x) => x.s.byFields).length,
+    dimPatient: silver.length > 0 ? 1 : 0,
+    phi: unionPhi([...staging, ...silver, ...dead.map((x) => x.d.payload)]),
   };
 }
 
@@ -1260,7 +1292,7 @@ function accessLog(scenario, actions, erasures) {
     if (!cohort.has(id) || seen.has(id)) continue;
     seen.add(id);
     const r = subjectRowsInState(before, id);
-    add(before.clock.iso, "privacy-office", "ERASE", "subject " + id, r.staging + r.silver + r.deadLetter + r.dimPatient, r.phi, "Carry out a deletion");
+    add(before.clock.iso, "privacy-office", "ERASE", "subject " + id, r.staging + r.silver + r.deadLetter + r.deadLetterByFields + r.dimPatient, r.phi, "Carry out a deletion");
   }
   return out;
 }
@@ -1291,10 +1323,10 @@ function subjectFootprint(scenario, actions, patientId) {
   assertScenario(scenario);
   if (typeof patientId !== "string" || !Array.isArray(actions)) return null;
   const inCohort = cohortIds().has(patientId);
-  if (!inCohort) return { patientId, inCohort, bronze: 0, staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 };
+  if (!inCohort) return { patientId, inCohort, bronze: 0, staging: 0, silver: 0, deadLetter: 0, deadLetterByFields: 0, dimPatient: 0 };
   const { counts, final } = bronzeCounts(scenario, actions, [patientId]);
   const r = subjectRowsInState(final, patientId);
-  return { patientId, inCohort, bronze: counts.get(patientId), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient };
+  return { patientId, inCohort, bronze: counts.get(patientId), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, deadLetterByFields: r.deadLetterByFields, dimPatient: r.dimPatient };
 }
 
 const ERASURE_BLOCKED = "Erasure blocked: legal hold is on.";
@@ -1333,7 +1365,7 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
   const { counts } = bronzeCounts(scenario, actions, gone);
   const productionData = base.productionData.filter((r) => !theirs(r));
   const staging = base.staging.filter((r) => !theirs(r));
-  const dlq = base.dlq.filter((d) => !theirs(d.payload));
+  const dlq = base.dlq.filter((d) => !gone.has(dlqSubject(d.payload).id));
   const sum = summarizePublished(productionData);
   const reduced = {
     ...base, productionData, staging, dlq,
@@ -1352,19 +1384,19 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
   const footprints = erased.map((id) => {
     const r = subjectRowsInState(base, id), a = subjectRowsInState(state, id);
     return {
-      patientId: id, inCohort: true, bronze: counts.get(id), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, dimPatient: r.dimPatient,
-      after: { staging: a.staging, silver: a.silver, deadLetter: a.deadLetter, dimPatient: a.dimPatient },
+      patientId: id, inCohort: true, bronze: counts.get(id), staging: r.staging, silver: r.silver, deadLetter: r.deadLetter, deadLetterByFields: r.deadLetterByFields, dimPatient: r.dimPatient,
+      after: { staging: a.staging, silver: a.silver, deadLetter: a.deadLetter, deadLetterByFields: a.deadLetterByFields, dimPatient: a.dimPatient },
     };
   });
   const silverGone = footprints.reduce((n, f) => n + f.silver, 0);
   // Recounted from the remaining rows, not read back from the counters.
   const keyList = state.productionData.map(keyOf).filter((k) => k !== null);
   const results = [
-    erased.every((id) => { const r = subjectRowsInState(state, id); return r.staging + r.silver + r.deadLetter + r.dimPatient === 0; }),
+    erased.every((id) => { const r = subjectRowsInState(state, id); return r.staging + r.silver + r.deadLetter + r.deadLetterByFields + r.dimPatient === 0; }),
     base.productionRows - state.productionRows === silverGone,
     [...cohort].filter((id) => !gone.has(id)).every((id) => {
       const a = subjectRowsInState(base, id), b = subjectRowsInState(state, id);
-      return a.staging === b.staging && a.silver === b.silver && a.deadLetter === b.deadLetter && a.dimPatient === b.dimPatient;
+      return a.staging === b.staging && a.silver === b.silver && a.deadLetter === b.deadLetter && a.deadLetterByFields === b.deadLetterByFields && a.dimPatient === b.dimPatient;
     }),
     new Set(keyList.map((k) => JSON.stringify(k))).size === keyList.length && JSON.stringify(keyList) === JSON.stringify(state.productionKeys),
     JSON.stringify(state.kpis) === JSON.stringify(base.kpis) && JSON.stringify(computeKpis(getHistory()).map((k) => k.value)) === JSON.stringify(state.kpis.map((k) => k.value)),

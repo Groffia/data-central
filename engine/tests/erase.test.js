@@ -14,7 +14,7 @@ const CHECK_LABELS = [
 const pool = () => Engine.buildPatientPool().map((p) => p.patient_id);
 const acts = (sc, step) => Engine.actionsForStep(sc, step);
 const fp = (sc, a, id) => Engine.subjectFootprint(sc, a, id);
-const sum = (f) => f.staging + f.silver + f.deadLetter + f.dimPatient;
+const sum = (f) => f.staging + f.silver + f.deadLetter + f.deadLetterByFields + f.dimPatient;
 const deepFreeze = (o) => { if (o && typeof o === "object" && !Object.isFrozen(o)) { Object.freeze(o); Object.values(o).forEach(deepFreeze); } return o; };
 const subjectOf = (p) => (p && typeof p === "object" ? (typeof p.patient_id === "string" ? p.patient_id : typeof p.patientId === "string" ? p.patientId : null) : null);
 const count = (rows, id) => rows.filter((r) => subjectOf(r) === id).length;
@@ -24,6 +24,36 @@ function busySubject() {
   const a = acts("incident", 3);
   return pool().find((id) => { const f = fp("incident", a, id); return f.silver > 0 && f.deadLetter > 0 && f.bronze > 0; });
 }
+
+test("erasing the patients behind dlq-3-4 (null id) and dlq-3-13 (injection id) removes those rows too, and the check holds", () => {
+  const a = acts("incident", 3);
+  for (const [id, dlqId] of [["TMH-P-012004", "dlq-3-4"], ["TMH-P-536398", "dlq-3-13"]]) {
+    const before = Engine.getState("incident", a);
+    assert.ok(before.dlq.some((d) => d.dlqId === dlqId));
+    const r = Engine.eraseSubjects("incident", a, [id]);
+    assert.ok(!r.state.dlq.some((d) => d.dlqId === dlqId), dlqId + " is gone");
+    assert.strictEqual(r.footprints[0].deadLetterByFields, 1);
+    assert.strictEqual(r.footprints[0].after.deadLetterByFields, 0);
+    assert.strictEqual(r.state.dlq.length, before.dlq.length - r.footprints[0].deadLetter - 1);
+    assert.strictEqual(r.state.businessCase.rowsStopped, r.state.dlq.length);
+    assert.ok(r.state.businessCase.phiRowsQuarantined <= before.businessCase.phiRowsQuarantined);
+    r.checks.forEach((c) => assert.strictEqual(c.pass, true, c.id));
+    const entry = Engine.accessLog("incident", a, [id]).pop();
+    assert.strictEqual(entry.rows, sum(r.footprints[0]));
+    assert.ok(entry.phiFields.includes("patient_name"));
+  }
+});
+
+test("no other dead-letter row is touched when a field-matched row is removed", () => {
+  const a = acts("incident", 3);
+  const before = Engine.getState("incident", a);
+  const r = Engine.eraseSubjects("incident", a, ["TMH-P-012004"]);
+  const kept = before.dlq.filter((d) => d.dlqId !== "dlq-3-4").map((d) => d.dlqId);
+  const f = Engine.subjectFootprint("incident", a, "TMH-P-012004");
+  const gone = before.dlq.map((d) => d.dlqId).filter((x) => !r.state.dlq.some((d) => d.dlqId === x));
+  assert.strictEqual(gone.length, f.deadLetter + f.deadLetterByFields);
+  assert.ok(gone.includes("dlq-3-4") && kept.length === before.dlq.length - 1 - f.deadLetter);
+});
 
 test("a busy subject exists at incident step 3 (the tests below rely on it)", () => {
   assert.ok(busySubject());
@@ -39,7 +69,7 @@ test("erasing one subject at incident step 3 removes their rows from staging, Si
   assert.strictEqual(r.reason, null);
   assert.deepStrictEqual(r.erased, [id]);
   assert.deepStrictEqual(r.ignored, []);
-  assert.deepStrictEqual(r.footprints, [{ ...f, after: { staging: 0, silver: 0, deadLetter: 0, dimPatient: 0 } }]);
+  assert.deepStrictEqual(r.footprints, [{ ...f, after: { staging: 0, silver: 0, deadLetter: 0, deadLetterByFields: 0, dimPatient: 0 } }]);
   const s = r.state;
   assert.deepStrictEqual(s.erasedSubjects, [id]);
   assert.strictEqual(count(s.staging, id), 0);
@@ -47,7 +77,7 @@ test("erasing one subject at incident step 3 removes their rows from staging, Si
   assert.strictEqual(count(s.dlq.map((d) => d.payload), id), 0);
   assert.strictEqual(s.productionData.length, before.productionData.length - f.silver);
   assert.strictEqual(s.staging.length, before.staging.length - f.staging);
-  assert.strictEqual(s.dlq.length, before.dlq.length - f.deadLetter);
+  assert.strictEqual(s.dlq.length, before.dlq.length - f.deadLetter - f.deadLetterByFields);
   assert.deepStrictEqual(fp("incident", a, id), f, "the engine's replay of the same actions is untouched");
 });
 
