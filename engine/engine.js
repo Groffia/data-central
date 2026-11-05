@@ -820,6 +820,35 @@ function getState(scenario, actions, opts) {
 
 const getTimeline = (scenario, actions, opts) => getState(scenario, actions, opts).events;
 
+// ----- inspectBatch (v1.7) -----
+// The export and contract-test results of batch n, computed against the reducer state that existed when it ran.
+// The state before batch n is found by replaying the actions one at a time and watching batchesRun, so a rejected
+// runBatch never counts as a run. Rows come from generateExport with the same fault list runBatchAction used; tests
+// run with that state's production keys and the export's run time (the same call the gate makes). decision and
+// dlqIds are read off the reducer's own before/after states, never re-derived.
+function inspectBatch(scenario, actions, n, opts) {
+  assertScenario(scenario);
+  if (!Number.isInteger(n) || n < 1 || !Array.isArray(actions)) return null;
+  let before = replay(scenario, [], opts);
+  for (const action of actions) {
+    const after = reduce(before, action, opts);
+    if (after.batchesRun === n && before.batchesRun === n - 1) {
+      const gen = opts && Array.isArray(opts.faultExports) ? opts : before.faultExports ? { faultExports: before.faultExports } : undefined;
+      const exp = generateExport(n, scenario, gen);
+      const t = runTests(exp.rows, new Set(before.productionKeys), exp.runEpoch);
+      const batchId = "batch-" + n;
+      return {
+        n, batchId, runEpoch: exp.runEpoch, rows: exp.rows,
+        results: t.results, rowFailures: t.rowFailures,
+        decision: after.lastGoodBatchId === batchId ? "PUBLISHED" : "HELD",
+        dlqIds: after.dlq.slice(before.dlq.length).map((d) => d.dlqId),
+      };
+    }
+    before = after;
+  }
+  return null;
+}
+
 // ----- action link encoding (v1.7) -----
 // Grammar: actions joined by ".". runBatch r, ackAlert k, resolveRetry y, resolveAlert z, repairRow p:<dlqId>,
 // discardRow d:<dlqId>:<index into DISCARD_REASONS>. The empty list is the single character "-" (the empty string is
@@ -1012,7 +1041,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
-  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
+  getState, getTimeline, inspectBatch, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep, encodeActions, decodeActions, stepForActions,
   naiveAbnormalRate, naiveAbnormalStats,
   DISCARD_REASONS, suggestedReason, invalidRowsInProduction, computeBusinessCase,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
