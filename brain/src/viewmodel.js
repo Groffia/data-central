@@ -274,6 +274,7 @@
           { layer: 'Staging', before: f.staging, after: a.staging, afterText: String(a.staging) },
           { layer: 'Silver (production)', before: f.silver, after: a.silver, afterText: String(a.silver) },
           { layer: 'Dead-letter queue', before: f.deadLetter, after: a.deadLetter, afterText: String(a.deadLetter) },
+          { layer: 'Dead-letter queue, matched by name, ZIP and birth date', before: f.deadLetterByFields, after: a.deadLetterByFields, afterText: String(a.deadLetterByFields) },
           { layer: 'dim_patient', before: f.dimPatient, after: a.dimPatient, afterText: String(a.dimPatient) }
         ]
       };
@@ -287,10 +288,13 @@
         text: 'Published readings: ' + b.published + ' before, ' + a.published + ' after. Abnormal readings: ' + b.abnormal + ' before, ' + a.abnormal + ' after.'
       };
     }
+    // The visible status under the buttons. After a successful Erase it reads "Erased <id>" (as the live line does); "Already
+    // erased" only follows a repeat attempt on an erased subject.
+    const done = selected !== '' && erased.indexOf(selected) >= 0;
     let eraseReason = '';
     if (local.legalHold) eraseReason = Engine.eraseSubjects(scenario, [], [], { legalHold: true }).reason;
     else if (selected === '') eraseReason = 'Choose a subject first';
-    else if (erased.indexOf(selected) >= 0) eraseReason = 'Already erased';
+    else if (done) eraseReason = local.message === selected + ' is already erased' ? 'Already erased' : 'Erased ' + selected;
     return {
       stage: 'Stage 8: Archiving/Retirement',
       title: 'Erasure',
@@ -307,7 +311,7 @@
       }) : [],
       checksEmptyText: 'Checks appear after an erasure.',
       erased: erased.slice(),
-      canErase: eraseReason === '',
+      canErase: !local.legalHold && selected !== '' && !done,
       eraseReason: eraseReason,
       canReset: erased.length > 0
     };

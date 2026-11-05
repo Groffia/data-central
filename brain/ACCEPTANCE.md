@@ -7,18 +7,22 @@ Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/brain-v1`,
 | 1 | Console, network, layout | Pass | No console messages across the whole session; no external requests; `scrollWidth` equals `clientWidth` (1009) at 1024 px; no duplicate element ids. |
 | 2 | `?scenario=incident&step=3` panels | Pass | Contract table 10 rows with 5 "Yes (PHI)"; "5 of 10 contract fields are marked sensitive"; quarantine table 9 rows, field names only; access log 10 entries; retention timeline "Day 0, After 30 days, After 180 days, After 2,555 days"; subject picker 41 options (the prompt and 40 ids); vendor table 2 rows (Lineage and catalog, Access and audit log). |
 | 3 | Lineage | Pass | 20 node buttons and 21 edge paths in five columns. Selecting `vital_value`: 1 pressed, 4 downstream, 15 dimmed, 4 hot edges, "Dropping or retyping vital_value would break 4 downstream objects including Abnormal Vital Rate." Selecting `Bed Occupancy` lists what feeds it. "Show as list" shows 21 edge rows. |
-| 4 | Erasure | Pass | Picked `TMH-P-009317`: footprint Bronze 2 (unreadable after), staging 0, Silver 1, dead-letter 1, dim_patient 1. Erase: live line "Erased TMH-P-009317", five checks Pass, "Published readings: 40 before, 39 after. Abnormal readings: 5 before, 4 after.", the access log leads with `privacy-office ERASE subject TMH-P-009317`, 3 rows. Reset erasures removes the entry and announces "Erasures reset". |
+| 4 | Erasure | Pass | Picked `TMH-P-009317`: footprint Bronze 2 (unreadable after), staging 0, Silver 1, dead-letter 1, dead-letter matched by name, ZIP and birth date 0, dim_patient 1 (run before the matched-by-fields row existed; that row is covered by tests: erasing `TMH-P-012004` or `TMH-P-536398` removes `dlq-3-4` or `dlq-3-13`). Erase: live line "Erased TMH-P-009317", five checks Pass, "Published readings: 40 before, 39 after. Abnormal readings: 5 before, 4 after.", the access log leads with `privacy-office ERASE subject TMH-P-009317`, 3 rows. Reset erasures removes the entry and announces "Erasures reset". |
 | 5 | Legal hold | Pass | Hold on: Erase disabled, "Erasure blocked: legal hold is on." shown, the delete step reads "Deletion paused: legal hold is on." with a Locked badge; hold off re-enables Erase. |
 | 6 | Keyboard path | Pass | Focus on the subject select, ArrowDown twice picks `TMH-P-009317`, Tab then Enter erases it; in this run focus moved to Reset erasures when Erase disabled itself; the review found that risky (a second Enter would undo the erasure), so focus now goes to the subject select, covered by a smoke test and not re-run in the browser. |
 | 7 | Deep link from HQ v1.3 | Pass | HQ at incident step 3: chip 5 links `../brain/?scenario=incident&step=3#stage-phi`, chip 8 links `...#stage-retention`, labels "opens in Brain", chip texts unchanged. A real click on chip 5 opened Brain with `#stage-phi` highlighted and scrolled to; Brain's "Open this state in HQ" and "Open this state in Pipeline" links carry the same state. |
 | 8 | Build outputs | Pass | `brain-single.html`: no external `src` or `href`, no `<script src>`, no `<link>`, no `fetch(`, no `-base` metas. Pages form keeps the `hq-base` and `pipeline-base` metas. |
-| 9 | Tests | Pass | engine 278, shared 16, hq 231, pipeline 238, value 225, brain 183, scripts 41 (all passing after the review fixes; items 1 to 8 were run before them and the keyboard and focus rows were re-covered by tests). |
+| 9 | Tests | Pass | engine 281, shared 16, hq 231, pipeline 238, value 225, brain 184, scripts 41 (all passing after the review fixes and the second round; items 1 to 8 were run before them and the keyboard and focus rows were re-covered by tests). |
 
 ## Not tested by me
 
 - `brain-single.html` from `file://` (the browser pane cannot open local files): Stephen opens it.
 - A screen reader; the live Pages URL (not deployed); a diverged `a=` link from HQ into Brain in the browser (covered by controller, link and smoke tests).
 - Widths below 1024 px: the graph is scaled with its container, node labels may be cut with an ellipsis, and the list alternative carries the same edges.
+
+## Patient ids on the page
+
+Patient ids may appear in the subject picker, the erasure table, the access log's ERASE rows and the live status messages ("Erased <id>"). Names, ZIPs and birth dates appear nowhere (tests scan every region).
 
 ## Known gaps
 

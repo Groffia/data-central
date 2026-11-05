@@ -45,9 +45,9 @@ De-identification, pseudonymize and anonymize actions, real encryption keys, mas
 
 ## Vendor names checked
 
-The "Lineage and catalog" and "Access and audit log" rows use product names from the vendors' own documentation:
+The "Lineage and catalog" and "Access and audit log" rows use product names from the vendors' own documentation (each name was read on its page: Unity Catalog, Snowflake Horizon Catalog and Microsoft Purview as the pages title them; the `ACCESS_HISTORY` view; the audit log reached through Microsoft Purview):
 
-- **Databricks:** [Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/); [audit log system table](https://docs.databricks.com/aws/en/admin/system-tables/audit-logs).
+- **Databricks:** [Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/); [audit log system table](https://docs.databricks.com/aws/en/admin/system-tables/audit-logs) (Public Preview).
 - **Snowflake:** [Snowflake Horizon Catalog](https://docs.snowflake.com/en/user-guide/snowflake-horizon); [ACCESS_HISTORY view](https://docs.snowflake.com/en/sql-reference/account-usage/access_history).
 - **Fabric:** [Microsoft Purview](https://learn.microsoft.com/en-us/purview/purview); [audit log](https://learn.microsoft.com/en-us/fabric/admin/track-user-activities).
 

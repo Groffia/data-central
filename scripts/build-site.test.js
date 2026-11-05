@@ -8,7 +8,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const b = require('./build-site.js');
 
 const ROOT = path.join(__dirname, '..');
-const page = { dir: 'hq', engineTag: 'engine-v1.5.1', singleFile: 'hq-single.html' };
+const page = { dir: 'hq', engineTag: 'engine-v1.5.1' };
 
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'bs-')); }
 
@@ -20,7 +20,7 @@ test('readPages reads and validates pages.json', () => {
   fs.writeFileSync(f, '{}');
   assert.throws(() => b.readPages(f), /pages\.json/);
   fs.writeFileSync(f, JSON.stringify([{ dir: 'hq' }]));
-  assert.throws(() => b.readPages(f), /engineTag|singleFile/);
+  assert.throws(() => b.readPages(f), /engineTag/);
 });
 
 test('checkSharedCopies passes on identical copies and ignores non-js files', () => {
@@ -54,7 +54,7 @@ test('real build puts the repo shared files into the site folder byte-identical'
   const out = tmp();
   // Tag HEAD so this test does not depend on the engine release tag (the tag check has its own tests).
   const pj = path.join(tmp(), 'pages.json');
-  fs.writeFileSync(pj, JSON.stringify([{ dir: 'hq', engineTag: 'HEAD', singleFile: 'hq-single.html' }]));
+  fs.writeFileSync(pj, JSON.stringify([{ dir: 'hq', engineTag: 'HEAD' }]));
   const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
     { cwd: ROOT, encoding: 'utf8', env: Object.assign({}, process.env, { PAGES_JSON: pj }) });
   assert.strictEqual(r.status, 0, r.stderr);
@@ -195,8 +195,7 @@ const pagesJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'pages.json'), 'utf
 test('pages.json: hq, pipeline, value and brain are all pinned to engine-v1.9', () => {
   assert.deepStrictEqual(pagesJson.map((p) => p.dir).sort(), ['brain', 'hq', 'pipeline', 'value']);
   pagesJson.forEach((p) => assert.strictEqual(p.engineTag, 'engine-v1.9', p.dir));
-  assert.strictEqual(pagesJson.find((p) => p.dir === 'value').singleFile, 'value-single.html');
-  assert.strictEqual(pagesJson.find((p) => p.dir === 'brain').singleFile, 'brain-single.html');
+  pagesJson.forEach((p) => assert.deepStrictEqual(Object.keys(p).sort(), ['dir', 'engineTag'], p.dir));
 });
 
 test('the local tag engine-v1.9 matches engine/engine.js for every page (checkEngineTag)', () => {

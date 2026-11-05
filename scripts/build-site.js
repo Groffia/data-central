@@ -20,7 +20,7 @@ function readPages(file) {
   }
   if (!Array.isArray(data) || data.length === 0) throw new BuildError('pages.json must be a non-empty array: ' + file);
   data.forEach(function (p, i) {
-    ['dir', 'engineTag', 'singleFile'].forEach(function (k) {
+    ['dir', 'engineTag'].forEach(function (k) {
       if (!p || typeof p[k] !== 'string' || !p[k]) throw new BuildError('pages.json entry ' + i + ' is missing "' + k + '"');
     });
   });
@@ -119,10 +119,12 @@ function buildPage(page, out) {
   const dist = path.join(ROOT, page.dir, 'dist');
   const dest = path.join(out, page.dir);
   fs.cpSync(path.join(dist, 'pages'), dest, { recursive: true });
-  fs.copyFileSync(path.join(dist, page.singleFile), path.join(dest, page.singleFile));
+  // The single file is named after the page folder (<dir>-single.html), as the shared inliner and release.yml expect.
+  const single = page.dir + '-single.html';
+  fs.copyFileSync(path.join(dist, single), path.join(dest, single));
   checkEngineCopy(page, path.join(dest, 'engine.js'), ENGINE);
   checkSharedCopies(page, dest, SHARED);
-  checkSingleFile(page, path.join(dest, page.singleFile), ENGINE);
+  checkSingleFile(page, path.join(dest, single), ENGINE);
   checkEngineTag(page, ENGINE);
 }
 

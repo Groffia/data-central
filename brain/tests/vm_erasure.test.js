@@ -46,9 +46,9 @@ test('a selected subject: the footprint is the engine footprint before erasure, 
   const e = build('incident', 3, { selectedSubject: id }).erasure;
   const f = J(E.subjectFootprint('incident', E.actionsForStep('incident', 3), id));
   assert.strictEqual(e.footprint.subject, id);
-  assert.deepStrictEqual(e.footprint.layers.map((l) => l.layer), ['Bronze (raw files)', 'Staging', 'Silver (production)', 'Dead-letter queue', 'dim_patient']);
-  assert.deepStrictEqual(e.footprint.layers.map((l) => l.before), [f.bronze, f.staging, f.silver, f.deadLetter, f.dimPatient]);
-  assert.deepStrictEqual(e.footprint.layers.map((l) => l.after), [f.bronze, 0, 0, 0, 0]);
+  assert.deepStrictEqual(e.footprint.layers.map((l) => l.layer), ['Bronze (raw files)', 'Staging', 'Silver (production)', 'Dead-letter queue', 'Dead-letter queue, matched by name, ZIP and birth date', 'dim_patient']);
+  assert.deepStrictEqual(e.footprint.layers.map((l) => l.before), [f.bronze, f.staging, f.silver, f.deadLetter, f.deadLetterByFields, f.dimPatient]);
+  assert.deepStrictEqual(e.footprint.layers.map((l) => l.after), [f.bronze, 0, 0, 0, 0, 0]);
   assert.strictEqual(e.footprint.layers[0].afterText, f.bronze + ' (unreadable)');
   e.footprint.layers.slice(1).forEach((l) => assert.strictEqual(l.afterText, '0'));
   assert.ok(f.bronze > 0 && f.silver > 0);
@@ -74,8 +74,22 @@ test('after an erasure: effects equal the engine live sample before and after; c
   e.checks.forEach((c) => { assert.strictEqual(c.pass, true); assert.strictEqual(c.passText, 'Pass'); assert.strictEqual(c.mark, '✓'); });
   assert.deepStrictEqual(e.erased, [id]);
   assert.strictEqual(e.canErase, false);
-  assert.strictEqual(e.eraseReason, 'Already erased');
+  assert.strictEqual(e.eraseReason, 'Erased ' + id, 'after a successful Erase the status matches the live line');
   assert.strictEqual(e.canReset, true);
+  const again = build('incident', 3, { selectedSubject: id, erased: [id], message: id + ' is already erased' }).erasure;
+  assert.strictEqual(again.eraseReason, 'Already erased', 'only a repeat attempt says Already erased');
+  assert.strictEqual(again.canErase, false);
+});
+
+test('a subject whose dead-letter row has a null or injected id shows that row in the matched-by-fields line, and it goes after erasure', () => {
+  const acts = E.actionsForStep('incident', 3);
+  const e = build('incident', 3, { selectedSubject: 'TMH-P-012004' }).erasure;
+  const row = e.footprint.layers.find((l) => /matched by name, ZIP and birth date/.test(l.layer));
+  assert.deepStrictEqual([row.before, row.after, row.afterText], [1, 0, '0']);
+  assert.strictEqual(J(E.subjectFootprint('incident', acts, 'TMH-P-012004')).deadLetterByFields, 1);
+  const done = build('incident', 3, { selectedSubject: 'TMH-P-012004', erased: ['TMH-P-012004'] });
+  assert.ok(!done.phi.rows.some((r) => r.id === 'dlq-3-4'), 'dlq-3-4 leaves the quarantine panel');
+  assert.ok(!JSON.stringify(done).includes('Already erased'));
 });
 
 test('before any erasure there are no effects numbers and no checks, with empty-state strings', () => {

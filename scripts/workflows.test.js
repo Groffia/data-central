@@ -101,7 +101,7 @@ test('release.yml: PAGE expansion maps each tag to its page (evaluated by bash)'
     assert.strictEqual(r.stdout, cases[ref], ref);
   }
   const pages = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pages.json'), 'utf8'));
-  Object.keys(cases).forEach((ref) => assert.ok(pages.some((e) => e.dir === cases[ref] && e.singleFile === cases[ref] + '-single.html'), ref));
+  Object.keys(cases).forEach((ref) => assert.ok(pages.some((e) => e.dir === cases[ref]), ref));
 });
 
 test('release.yml: the asset path expression resolves for each tag', () => {
@@ -115,7 +115,6 @@ test('release.yml: the asset path expression resolves for each tag', () => {
   for (const ref of ['hq-v1.1', 'pipeline-v1.0']) {
     const e = pages.find((x) => x.dir === page(ref));
     assert.ok(e, ref);
-    assert.strictEqual(e.singleFile, page(ref) + '-single.html', 'site/$PAGE/$PAGE-single.html matches pages.json');
   }
 });
 

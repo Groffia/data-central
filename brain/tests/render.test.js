@@ -122,7 +122,7 @@ test('erasure: a selected, then an erased subject shows the footprint, raw-layer
   assert.strictEqual(count(done, ': Pass</li>'), 5);
   assert.strictEqual(count(done, ': Fail</li>'), 0);
   assert.ok(/<button[^>]*data-cmd="erase"[^>]* disabled>/.test(done));
-  assert.ok(done.indexOf('<p class="erase-reason">Already erased</p>') >= 0);
+  assert.ok(done.indexOf('<p class="erase-reason">Erased ' + id + '</p>') >= 0);
   assert.ok(/<button type="button" data-cmd="reset-erasures">Reset erasures<\/button>/.test(done));
 });
 

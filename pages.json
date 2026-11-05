@@ -1,6 +1,6 @@
 [
-  { "dir": "hq", "engineTag": "engine-v1.9", "singleFile": "hq-single.html" },
-  { "dir": "pipeline", "engineTag": "engine-v1.9", "singleFile": "pipeline-single.html" },
-  { "dir": "value", "engineTag": "engine-v1.9", "singleFile": "value-single.html" },
-  { "dir": "brain", "engineTag": "engine-v1.9", "singleFile": "brain-single.html" }
+  { "dir": "hq", "engineTag": "engine-v1.9" },
+  { "dir": "pipeline", "engineTag": "engine-v1.9" },
+  { "dir": "value", "engineTag": "engine-v1.9" },
+  { "dir": "brain", "engineTag": "engine-v1.9" }
 ]
