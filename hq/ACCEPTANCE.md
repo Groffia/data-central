@@ -78,3 +78,23 @@ Same method as before: 1024 px, `dist` served over http (`file://` was checked s
 | Act 5 column | Pass | Business case in view at 90 s. "With this system": 9 rows stopped at the batch; 0 invalid readings in production (now `businessCase.invalidRowsInProduction` from the engine); caught at the batch (at most 15 simulated minutes); 5 repaired, 4 discarded with logged reasons. |
 
 Not shown in the browser: the red state of the invalid-readings line, because the real engine always gives 0. It is covered by unit tests (1 and 2 give "1 invalid reading in production" and "2 invalid readings in production" with the red marker) and the engine test that injects a bad row into production and gets 1.
+
+## Live acceptance (GitHub Pages, hq-v1.0.1 on commit 9e2d9ec, 2026-11-05)
+
+Run in the built-in browser pane at 1024 px against the live site, `https://groffia.github.io/data-central/hq/` (Pages form) and `https://groffia.github.io/data-central/hq/hq-single.html` (single file).
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42063551813: engine, hq and script tests passed, site built, deployed in 36 s. |
+| Live files | Pass | `/`, `/hq/`, `/hq/hq-single.html`, `/hq/engine.js`, `src/*` all HTTP 200. The live `engine.js` equals the `engine-v1.6` blob byte for byte (CR removed). The root page redirects to `hq/`. |
+| Console and network | Pass | No console messages. The request list showed only the page and its files on `groffia.github.io`. |
+| Opening state, names, subtitle, vendor labels | Pass | Production 20 at start; chips 1 Generation to 8 Archiving/Retirement with the full names; subtitle "Tamsworth Health, synthetic hospital data platform"; Lineage row "Snowflake Horizon Catalog / Atlan" and "Microsoft Purview". Three runs reach 80 rows. |
+| `?scenario=incident&step=3` | Pass | Gate OPEN; banner amber "Incident in progress: gate open at Batch 3, production held at Batch 2."; production 40, held 11, 9 dead-letter rows with 9 reason drop-downs; four Held tiles "as of Batch 2, 14:45:00 UTC"; Today so far 40; the injection row shows as plain text. |
+| Recovery by hand (same URL) | Pass | Five repairs, four discards (reasons Missing patient ID, Physiologically impossible value, Malformed or suspicious input, Wrong unit, source must resend), acknowledge, resolve and retry (banner "gate half-open ... trial batch pending"), run, resolve: CLOSED, production 76, tiles "as of Batch 4, 15:15:00 UTC", Held cleared, banner green "Last incident: caught at the gate on Batch 3. No bad rows reached production.", Today so far 76. |
+| Business case | Pass | 7 rows vanish silently, 2 impossible readings; With this system: 9 stopped, 0 invalid readings in production, 5 repaired, 4 discarded. |
+| Layout | Pass | `scrollWidth` equals `clientWidth` (1009) at 1024 px. |
+| Short cut on the single-file page | Pass | Captions at 0, 15, 65, 85 s; "Demo finished" at 120 s; gate CLOSED, production 76, green banner. |
+| Release asset | Pass | GitHub Release hq-v1.0.1 holds `hq-single.html` (99,882 bytes), the file the Deploy site workflow built. |
+
+Notes: the Full version (4:30), the broken-engine banner and the deliberately failing cases were not repeated on the live site (the engine file there cannot be altered); they were run on the local build and are recorded above. The first push failed twice for known reasons (tags absent when `main` was pushed, so the engine tag check could not read `engine-v1.6`; and a YAML error in `release.yml`), both fixed before this run. When ten tags are pushed at once GitHub starts no tag-triggered workflows (it skips tag events beyond three), so the hq-v1.0.1 Release was created by hand from the deployed build. Push release tags one at a time so `release.yml` runs.
+

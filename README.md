@@ -2,7 +2,7 @@
 
 **An end-to-end data platform demo that shows what happens when bad data arrives, and why running data this way protects the business.**
 
-**Live demo:** https://groffia.github.io/data-central/hq/ (live after the first deploy; the address follows GitHub's project-site pattern and is not yet confirmed)
+**Live demo:** https://groffia.github.io/data-central/hq/
 **Offline copy:** `hq-single.html` on the [Releases](../../releases) page. One file, opens from disk, no network.
 
 ## Try it in 20 seconds
