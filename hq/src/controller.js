@@ -2,7 +2,6 @@
   'use strict';
   const HQ = (globalThis.HQ = globalThis.HQ || {});
   const ctl = (HQ.controller = HQ.controller || {});
-  ctl.DISCARD_REASONS = HQ.viewmodel.DISCARD_REASONS;
 
   const ENGINE_TYPE = {
     run: 'runBatch', repair: 'repairRow', discard: 'discardRow',
@@ -80,7 +79,7 @@
           const row = getModel().incident.rows.filter(function (r) { return r.dlqId === cmd.dlqId; })[0];
           reason = row ? row.suggestedReason : undefined;
         }
-        if (ctl.DISCARD_REASONS.indexOf(reason) < 0) return finish(false, 'Unknown discard reason');
+        if (Engine.DISCARD_REASONS.indexOf(reason) < 0) return finish(false, 'Unknown discard reason');
         action.reason = reason;
       }
 

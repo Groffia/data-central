@@ -11,9 +11,10 @@ const INJ = "'; DROP TABLE silver_vital_observation;--";
 const REASONS = ['Missing patient ID', 'Physiologically impossible value', 'Malformed or suspicious input',
   'Wrong unit, source must resend', 'Other, see note'];
 
-test('DISCARD_REASONS is exact and frozen', () => {
-  assert.deepStrictEqual([...vm.DISCARD_REASONS], REASONS);
-  assert.ok(Object.isFrozen(vm.DISCARD_REASONS));
+test('engine DISCARD_REASONS is exact and frozen; the page keeps no copy', () => {
+  assert.deepStrictEqual([...Engine.DISCARD_REASONS], REASONS);
+  assert.ok(Object.isFrozen(Engine.DISCARD_REASONS));
+  assert.strictEqual(vm.DISCARD_REASONS, undefined);
 });
 test('healthy k=1 panel is hidden and empty', () => {
   const p = vm.incidentPanel(st('healthy', 1));
@@ -32,7 +33,7 @@ test('incident k=3 alert and gate', () => {
   assert.strictEqual(p.canResolveRetry, false);
   assert.strictEqual(p.resolveRetryBlockedReason, '9 DLQ rows unresolved');
   assert.deepStrictEqual([...p.discardReasons], REASONS);
-  assert.notStrictEqual(p.discardReasons, vm.DISCARD_REASONS);
+  assert.notStrictEqual(p.discardReasons, Engine.DISCARD_REASONS);
 });
 test('incident k=3 rows', () => {
   const p = vm.incidentPanel(st('incident', 3));

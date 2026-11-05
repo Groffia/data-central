@@ -125,3 +125,25 @@ test('engine with dollar-quote, dollar-amp, double dollar is inlined byte-identi
   assert.ok(fs.readFileSync(path.join(out, 'hq-single.html'), 'utf8').indexOf(text) >= 0);
   assert.ok(fs.readFileSync(path.join(out, 'pages', 'engine.js'), 'utf8') === text);
 });
+
+test('real sources contain no </style in any case', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'src', 'styles.css'), 'utf8');
+  assert.ok(!/<\/style/i.test(css));
+});
+
+test('CSS containing </STYLE> fails the build naming the file and </style', () => {
+  const d = tmp();
+  fs.mkdirSync(path.join(d, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'src', 'styles.css'), 'body { color: red; } /* </STYLE> */\n');
+  fs.writeFileSync(path.join(d, 'index.html'),
+    '<!doctype html><html><head><link rel="stylesheet" href="src/styles.css" data-inline></head><body></body></html>');
+  // Run a copy of the script rooted in the fixture so the real index.html is untouched.
+  fs.mkdirSync(path.join(d, 'scripts'), { recursive: true });
+  fs.copyFileSync(SCRIPT, path.join(d, 'scripts', 'inline.js'));
+  const r = cp.spawnSync(process.execPath, [path.join(d, 'scripts', 'inline.js'), '--out', path.join(d, 'out')], {
+    cwd: d, encoding: 'utf8', env: Object.assign({}, process.env, { ENGINE_PATH: ENGINE })
+  });
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.strictEqual(r.status, 1, out);
+  assert.ok(out.indexOf('styles.css') >= 0 && out.indexOf('</style') >= 0, out);
+});

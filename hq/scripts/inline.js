@@ -76,6 +76,9 @@ refs.forEach(function (ref) {
   if (/<\/script/i.test(text)) {
     fail(s.file + ' contains "</script" (any case), which would end the inline script early. Remove it from the source.');
   }
+  if (/<\/style/i.test(text)) {
+    fail(s.file + ' contains "</style" (any case), which would end the inline style early. Remove it from the source.');
+  }
   sources[ref] = { file: s.file, buf: s.buf, text };
 });
 

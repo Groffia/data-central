@@ -25,7 +25,10 @@
     return m ? m[1] + ' UTC' : String(iso);
   }
 
+  function plural(n, one, many) { return n === 1 ? one : many; }
+
   globalThis.HQ.format = {
+    plural: plural,
     pct1: pct1, fracPct1: fracPct1, days1: days1,
     signedPct1: signedPct1, signedPts1: signedPts1,
     batchLabel: batchLabel, clockLabel: clockLabel

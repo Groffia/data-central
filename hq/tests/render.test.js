@@ -59,7 +59,7 @@ function selectFor(html, id) {
 
 test('selected option equals suggestedReason; five options in order', () => {
   const html = regions('incident', 3).incident;
-  const R = HQ.viewmodel.DISCARD_REASONS;
+  const R = Engine.DISCARD_REASONS;
   const want = { 'dlq-3-4': R[0], 'dlq-3-9': R[1], 'dlq-3-13': R[2], 'dlq-3-17': R[3] };
   Object.keys(want).forEach(function (id) {
     const inner = selectFor(html, id);

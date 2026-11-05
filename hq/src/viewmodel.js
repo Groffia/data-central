@@ -6,6 +6,8 @@
   const GREEN = 'green', AMBER = 'amber', RED = 'red', GREY = 'grey';
   const WAIT = 'Waiting for first export';
 
+  function pl(n, one, many) { return HQ.format.plural(n, one, many); }
+
   function chip(id, name, health, text) { return { id: id, name: name, health: health, text: text }; }
 
   function openEntries(state) {
@@ -17,13 +19,13 @@
     const latest = 'batch-' + state.batchesRun;
     const n = openEntries(state).filter(function (d) { return d.batchId === latest; }).length;
     return n > 0
-      ? chip(1, 'Generation', AMBER, 'Source sent ' + n + ' malformed rows')
+      ? chip(1, 'Generation', AMBER, 'Source sent ' + n + ' malformed ' + pl(n, 'row', 'rows'))
       : chip(1, 'Generation', GREEN, 'Source sent clean data');
   }
 
   function ingestionChip(state, ctx) {
     return state.batchesRun
-      ? chip(2, 'Ingestion', GREEN, 'Landed ' + ctx.exportRows + ' rows unchanged')
+      ? chip(2, 'Ingestion', GREEN, 'Landed ' + ctx.exportRows + ' ' + pl(ctx.exportRows, 'row', 'rows') + ' unchanged')
       : chip(2, 'Ingestion', GREY, 'No export yet');
   }
 
@@ -31,13 +33,13 @@
     if (!state.batchesRun) return chip(3, 'Processing', GREY, WAIT);
     const n = (state.staging || []).length;
     return n > 0
-      ? chip(3, 'Processing', AMBER, n + ' rows held')
+      ? chip(3, 'Processing', AMBER, n + ' ' + pl(n, 'row', 'rows') + ' held')
       : chip(3, 'Processing', GREEN, 'All rows published');
   }
 
   function storageChip(state) {
     return state.batchesRun
-      ? chip(4, 'Storage', GREEN, state.productionRows + ' rows in production')
+      ? chip(4, 'Storage', GREEN, state.productionRows + ' ' + pl(state.productionRows, 'row', 'rows') + ' in production')
       : chip(4, 'Storage', GREY, WAIT);
   }
 
@@ -45,7 +47,7 @@
     const name = 'Governance';
     if (state.gate === 'OPEN') {
       const n = openEntries(state).length;
-      return chip(5, name, RED, n > 0 ? 'Gate open: ' + n + ' rows to resolve' : 'Gate open: ready to retry');
+      return chip(5, name, RED, n > 0 ? 'Gate open: ' + n + ' ' + pl(n, 'row', 'rows') + ' to resolve' : 'Gate open: ready to retry');
     }
     if (state.gate === 'HALF_OPEN') return chip(5, name, AMBER, 'Trial batch pending');
     const acked = (state.alerts || []).some(function (a) { return a.status === 'acknowledged'; });
@@ -119,19 +121,6 @@
     };
   };
 
-  vm.DISCARD_REASONS = Object.freeze(['Missing patient ID', 'Physiologically impossible value',
-    'Malformed or suspicious input', 'Wrong unit, source must resend', 'Other, see note']);
-
-  function suggestedReason(d) {
-    const tests = d.failedTests || [];
-    const has = function (n) { return tests.indexOf(n) >= 0; };
-    if (d.column === 'patient_id' && has('not_null')) return vm.DISCARD_REASONS[0];
-    if (d.column === 'vital_value' && has('range')) return vm.DISCARD_REASONS[1];
-    if (has('matches_pattern')) return vm.DISCARD_REASONS[2];
-    if (d.column === 'unit' && (has('unit_matches_code') || has('accepted_values'))) return vm.DISCARD_REASONS[3];
-    return vm.DISCARD_REASONS[4];
-  }
-
   function observedText(v) { return v === null || v === undefined ? 'null' : JSON.stringify(v); }
 
   vm.incidentPanel = function incidentPanel(state) {
@@ -150,14 +139,14 @@
         return {
           dlqId: d.dlqId, failedTests: (d.failedTests || []).slice(), column: d.column,
           observedValueText: observedText(d.observedValue), reason: d.reason,
-          suggestedReason: suggestedReason(d), repairable: !!d.repairable, status: d.status,
+          suggestedReason: Engine.suggestedReason(d), repairable: !!d.repairable, status: d.status,
           canRepair: !!d.repairable && d.status === 'open', canDiscard: d.status === 'open'
         };
       }),
-      discardReasons: vm.DISCARD_REASONS.slice(),
+      discardReasons: Engine.DISCARD_REASONS.slice(),
       canResolveRetry: gateOpen && open === 0,
       resolveRetryBlockedReason: gateOpen && open > 0
-        ? open + (open === 1 ? ' DLQ row unresolved' : ' DLQ rows unresolved') : null
+        ? open + ' DLQ ' + pl(open, 'row', 'rows') + ' unresolved' : null
     };
   };
 
@@ -181,8 +170,9 @@
     return {
       hasIncident: true,
       placeholder: null,
-      headline: 'Without the gate: ' + b.rowsSilentlyDropped + ' rows vanish silently and ' +
-        b.invalidRowsReachingDashboard + ' impossible readings reach the dashboard.',
+      headline: 'Without the gate: ' + b.rowsSilentlyDropped + ' ' + pl(b.rowsSilentlyDropped, 'row vanishes', 'rows vanish') +
+        ' silently and ' + b.invalidRowsReachingDashboard + ' impossible ' +
+        pl(b.invalidRowsReachingDashboard, 'reading reaches', 'readings reach') + ' the dashboard.',
       rowsStopped: b.rowsStopped,
       droppedList: (b.silentlyDroppedRows || []).map(function (r) { return { dlqId: r.dlqId, reason: r.reason }; }),
       invalidList: (b.invalidRowsListing || []).map(function (r) {

@@ -73,7 +73,7 @@
       '<p class="caption">' + esc(t.label) + '</p>' +
       '<p class="note">' + esc(t.note) + '</p>' +
       '<dl class="today-stats">' +
-      stat('Observations', t.observations) + stat('Abnormal', t.abnormalCount) + stat('Abnormal rate', t.rateText) +
+      stat(HQ.format.plural(t.observations, 'Observation', 'Observations'), t.observations) + stat('Abnormal', t.abnormalCount) + stat('Abnormal rate', t.rateText) +
       (t.notEvaluableText ? stat('Not evaluable', t.notEvaluableText) : '') +
       '</dl>';
   }

@@ -65,7 +65,7 @@ test('rejected, no-op and unknown reason are not kept', () => {
   assert.deepEqual(J(c.getModel().timeline), J(clock));
   assert.deepEqual(J(c.dispatch({ type: 'ack' })), { ok: true, notice: null });
   assert.deepEqual(J(c.dispatch({ type: 'ack' })), { ok: true, notice: 'No change' });
-  for (const reason of ['whatever', 'unrepairable']) {
+  for (const reason of ['whatever', 'Not a listed reason']) {
     const r = c.dispatch({ type: 'discard', dlqId: 'dlq-3-4', reason });
     assert.deepEqual(J(r), { ok: false, notice: 'Unknown discard reason' });
     assert.equal(c.actions().length, n2 + 1);
@@ -78,10 +78,6 @@ test('resolveRetry with open rows is blocked with the engine reason', () => {
   const r = c.dispatch({ type: 'resolveRetry' });
   assert.deepEqual(J(r), { ok: false, notice: '9 DLQ rows unresolved' });
   assert.equal(c.actions().length, n);
-});
-
-test('DISCARD_REASONS is the viewmodel array', () => {
-  assert.equal(HQ.controller.DISCARD_REASONS, HQ.viewmodel.DISCARD_REASONS);
 });
 
 test('full scripted incident via dispatch ends CLOSED with 76 rows', () => {
