@@ -667,6 +667,84 @@ function parseLinkParams(search) {
   return out;
 }
 
+// ===== SECTION: self-test =====
+function hashValues(values) {
+  let h = 0x811c9dc5;
+  const text = values.map((v) => v.toFixed(12)).join(",");
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i) & 0xff;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+const DETERMINISM_HASH = "1f8ea357"; // hashValues of the first 100 values from makeRng(1)
+
+function selfTest() {
+  const gateTrail = (actions, opts) => {
+    const trail = [];
+    for (let i = 1; i <= actions.length; i++) trail.push(replay("incident", actions.slice(0, i), opts).gate);
+    return trail;
+  };
+  const defs = [
+    ["determinism_hash", () => {
+      const rng = makeRng(1);
+      const h = hashValues(Array.from({ length: 100 }, () => rng()));
+      return h === DETERMINISM_HASH ? null : "got " + h;
+    }],
+    ["golden_rows_first", () => {
+      const rows = generateExport(1, "healthy").rows;
+      const ok = CONTRACT.goldenRows.every((g, i) => JSON.stringify(rows[i]) === JSON.stringify(g));
+      return ok ? null : "golden rows changed";
+    }],
+    ["healthy_exports_pass", () => {
+      for (let n = 1; n <= 4; n++) if (runTests(generateExport(n, "healthy").rows).hasErrors) return "export " + n + " has errors";
+      return null;
+    }],
+    ["incident_export_blocks", () => {
+      const s = replay("incident", [runBatchAct(), runBatchAct(), runBatchAct()]);
+      const ok = s.dlq.length === 9 && s.alerts.length === 1 && s.productionRows === 40;
+      return ok ? null : "dlq " + s.dlq.length + ", alerts " + s.alerts.length + ", production " + s.productionRows;
+    }],
+    ["breaker_path", () => {
+      const trail = gateTrail(AUTOPLAY.incident);
+      const iOpen = trail.indexOf("OPEN"), iHalf = trail.indexOf("HALF_OPEN");
+      if (iOpen < 0 || iHalf < iOpen || trail[trail.length - 1] !== "CLOSED") return "autoplay path " + trail.join(",");
+      const acts = [runBatchAct(), runBatchAct(), runBatchAct()];
+      const open = replay("incident", acts);
+      const fix = open.dlq.map((d) => (d.repairable ? { type: "repairRow", dlqId: d.dlqId } : { type: "discardRow", dlqId: d.dlqId, reason: "unrepairable" }));
+      const t = gateTrail([...acts, ...fix, { type: "resolveRetry" }, runBatchAct()], { faultExports: [3, 4] });
+      const n = t.length;
+      return t[n - 2] === "HALF_OPEN" && t[n - 1] === "OPEN" ? null : "failing trial path " + t.slice(-2).join(",");
+    }],
+    ["repair_only_drift", () => {
+      const open = replay("incident", [runBatchAct(), runBatchAct(), runBatchAct()]);
+      const drift = open.dlq.find((d) => d.repairable), hard = open.dlq.find((d) => !d.repairable);
+      const last = (s) => s.events[s.events.length - 1].type;
+      if (last(reduce(open, { type: "repairRow", dlqId: drift.dlqId })) !== "ROW_REPAIRED") return "drift repair not accepted";
+      return last(reduce(open, { type: "repairRow", dlqId: hard.dlqId })) === "ACTION_REJECTED" ? null : "hard failure repair not rejected";
+    }],
+    ["state_deterministic", () => {
+      const a = JSON.stringify(getState("incident", AUTOPLAY.incident)), b = JSON.stringify(getState("incident", AUTOPLAY.incident));
+      return a === b ? null : "states differ";
+    }],
+    ["facility_reconciles", () => {
+      const s = getState("healthy", []);
+      const f = s.facility;
+      if (!getHistory().every((r) => r.beds_staffed === f.bedsStaffed)) return "beds_staffed mismatch";
+      return f.obsPer15Min === (f.patientsInHouse * 24) / 96 ? null : "obsPer15Min mismatch";
+    }],
+  ];
+  const checks = defs.map(([name, fn]) => {
+    try {
+      const detail = fn();
+      return detail === null ? { name, ok: true } : { name, ok: false, detail };
+    } catch (e) {
+      return { name, ok: false, detail: String(e && e.message ? e.message : e) };
+    }
+  });
+  return { passed: checks.every((c) => c.ok), checks };
+}
+
 // ===== END SECTIONS: add new sections above this line =====
 
 const Engine = {
@@ -680,6 +758,7 @@ const Engine = {
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost,
   getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate,
+  selfTest, hashValues, DETERMINISM_HASH,
 };
 
 // ===== EXPORT =====
