@@ -98,3 +98,15 @@ Run in the built-in browser pane at 1024 px against the live site, `https://grof
 
 Notes: the Full version (4:30), the broken-engine banner and the deliberately failing cases were not repeated on the live site (the engine file there cannot be altered); they were run on the local build and are recorded above. The first push failed twice for known reasons (tags absent when `main` was pushed, so the engine tag check could not read `engine-v1.6`; and a YAML error in `release.yml`), both fixed before this run. When ten tags are pushed at once GitHub starts no tag-triggered workflows (it skips tag events beyond three), so the hq-v1.0.1 Release was created by hand from the deployed build. Push release tags one at a time so `release.yml` runs.
 
+
+## Live acceptance (GitHub Pages, hq-v1.1 on commit a905143, 2026-11-05)
+
+Built-in browser pane against `https://groffia.github.io/data-central/hq/`.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42087415660 green (engine, hq, pipeline, shared and script tests, engine tag check against `engine-v1.7`). |
+| `?scenario=incident&step=3` | Pass | Banner "Incident in progress: gate open at Batch 3, production held at Batch 2."; production 40, 11 held, 9 dead-letter rows. |
+| Links into Pipeline | Pass | Ten links (nine dead-letter ids and the Storage chip) in the form `../pipeline/?scenario=incident&step=3#dlq-3-13`. A real click on the `dlq-3-13` link opened Pipeline at that state, "Held at the gate", anchor present. |
+| `a=` state | Pass | `?scenario=incident&a=r.r.r.p:dlq-3-2.d:dlq-3-4:1` opens a diverged state (7 rows to resolve, banner "7 DLQ rows unresolved"); its Pipeline links carry the same `a=`. |
+| Release asset | Pass | Release hq-v1.1 holds `hq-single.html` (110,929 bytes, sha256 a8ff4b92...), attached by the Release workflow on the tag push, its first real run. The file equals the deployed `/hq/hq-single.html` byte for byte and the local build apart from line endings. |

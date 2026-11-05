@@ -34,3 +34,18 @@ engine 206, shared 14, hq 208, pipeline 238, scripts 27 (all passing).
 - The five items under "Not tested by me" above.
 - If an HQ state encodes to more than 2,000 characters (about 1,000 manual runs) the HQ link to Pipeline loses its state silently and Pipeline opens the scenario's opening state.
 - Strange but harmless states exist for decodable hand-made `a=` links (for example `a=-`); Next or Back snaps to the scripted run.
+
+## Live acceptance (GitHub Pages, pipeline-v1.0 on commit a905143, 2026-11-05)
+
+Built-in browser pane against `https://groffia.github.io/data-central/pipeline/`.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42087415660 green. `/`, `/hq/`, `/pipeline/` all HTTP 200. |
+| `?scenario=incident&step=3#dlq-3-13` | Pass | "Held at the gate", `Step 3 of 16`, anchor `dlq-3-13` present, link back to HQ `../hq/?scenario=incident&step=3`. |
+| Diverged `a=` state | Pass | `?scenario=incident&a=r.r.r.p:dlq-3-2.d:dlq-3-4:1` shows "Custom state from HQ (5 actions)", Held, and the HQ link keeps the same `a=`. HQ opens that state (checked above). |
+| Tiering | Pass | 78.4% vs warm and 93.8% vs hot at defaults. |
+| Console, network, layout | Pass | No console messages; no external requests; `scrollWidth` equals `clientWidth` (1009) at 1024 px. |
+| Release asset | Pass | Release pipeline-v1.0 holds `pipeline-single.html` (115,694 bytes), attached by the Release workflow; sha256 f0b5cab3... equals the local build. |
+
+Parked for HQ v1.2: when an encoded state exceeds 2,000 characters, show a short "state too long to link, opens at the nearest step" notice instead of dropping `a=` silently.

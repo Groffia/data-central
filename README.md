@@ -3,7 +3,7 @@
 **An end-to-end data platform demo that shows what happens when bad data arrives, and why running data this way protects the business.**
 
 **Live demo:** https://groffia.github.io/data-central/hq/
-**Pipeline:** https://groffia.github.io/data-central/pipeline/ (live from the next release)
+**Pipeline:** https://groffia.github.io/data-central/pipeline/
 **Offline copy:** `hq-single.html` on the [Releases](../../releases) page. One file, opens from disk, no network.
 
 ## Try it in 20 seconds
@@ -24,8 +24,8 @@
 | Folder | What it is |
 |---|---|
 | `engine/` | `engine.js`: one deterministic simulation (synthetic healthcare data, seed 42, injected failures). No dependencies. Versioned by tags `engine-v1.x`. |
-| `hq/` | The HQ page, Demo Acts 1 to 5. Plain HTML and JavaScript, no libraries, no network access at runtime. Latest release `hq-v1.0.1`. |
-| `pipeline/` | The Pipeline page: Generation, Collection/Ingestion, Processing/Preparation and Storage opened up. Same pattern as HQ, shares code in `shared/`. Live link above; it goes live with the next release. |
+| `hq/` | The HQ page, Demo Acts 1 to 5. Plain HTML and JavaScript, no libraries, no network access at runtime. Latest release `hq-v1.1`. |
+| `pipeline/` | The Pipeline page: Generation, Collection/Ingestion, Processing/Preparation and Storage opened up. Same pattern as HQ, shares code in `shared/`. Latest release `pipeline-v1.0`. Offline copy: `pipeline-single.html` on the Releases page. |
 | `shared/` | Small scripts both pages use (escaping, number formatting, vendor table). |
 | `scripts/` | Builds the site that GitHub Pages serves, and checks that every page carries the exact engine version it declares in `pages.json`. |
 
