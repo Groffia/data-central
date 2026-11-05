@@ -184,4 +184,47 @@
   vm.kpiTiles = kpiTiles;
   vm.header = header;
   vm.stepLabel = stepLabel;
+
+  // ----- Task 11: expected-range check panel -----
+
+  const CHECK_TITLE = 'Expected-range check: a demonstration of the pattern, not a clinical model.';
+  const CHECK_NEUTRAL = 'Not enough data yet (fewer than 30 readings)';
+  const CHECK_EXPLAIN = [
+    'Baseline: the 120-day Abnormal Vital Rate, using the standard definition.',
+    'Range rule: the 95% range of a binomial for a sample this size, because 20 to 80 readings are far noisier than a whole day.',
+    'Why the sample is small: the demo publishes only a few batches of 20 readings each, so today holds just 20 to 80.',
+    'The five hand-picked edge-case rows are left out: they are deliberately abnormal and would make every healthy batch look unusual.',
+    'It does not predict anything, it is not for clinical use, and it is not a diagnosis.'
+  ];
+
+  function checkRate(abnormal, total) {
+    if (!total) return abnormal + ' of ' + total;
+    return abnormal + ' of ' + total + ' = ' + ((abnormal / total) * 100).toFixed(1) + '%';
+  }
+
+  function checkPanel(state) {
+    let c = null;
+    try { c = Engine.liveSampleCheck(state); } catch (e) { c = null; }
+    if (!c) {
+      return {
+        title: CHECK_TITLE, withHandPickedText: '', withoutHandPickedText: '', rangeText: '',
+        verdict: CHECK_NEUTRAL, level: 'neutral', explain: CHECK_EXPLAIN.slice()
+      };
+    }
+    const all = checkRate(c.abnormal, c.published);
+    const level = c.verdict === 'Within the expected range' ? 'ok' : c.verdict === 'Above the expected range' ? 'warn' : 'neutral';
+    return {
+      title: CHECK_TITLE,
+      withHandPickedText: c.handPicked > 0 ? all + ' (counting the five hand-picked rows)' : all,
+      withoutHandPickedText: checkRate(c.abnormalReadings, c.readings) + ' (without them; this is the number the verdict uses)',
+      rangeText: c.readings > 0 && c.upperLimitPct !== null
+        ? 'Expected range for ' + c.readings + ' readings at the 120-day rate of ' + (c.baselineRate * 100).toFixed(1) + '%: up to ' + c.upperLimitPct.toFixed(1) + '%'
+        : 'No readings yet',
+      verdict: c.verdict,
+      level: level,
+      explain: CHECK_EXPLAIN.slice()
+    };
+  }
+
+  vm.checkPanel = checkPanel;
 })();
