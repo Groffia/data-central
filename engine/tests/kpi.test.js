@@ -121,3 +121,13 @@ test("demo headline numbers are pinned", () => {
   assert.strictEqual(f.obsPer15Min, 78.5);
   assert.strictEqual(f.obsPerMonth, 226080);
 });
+
+test("TIERING_DEFAULTS is exported, frozen, and the base of tieringCost", () => {
+  assert.deepStrictEqual({ ...Engine.TIERING_DEFAULTS }, { hotToWarmDays: 30, warmToColdDays: 180, retentionDays: 2555, dailyGB: 18, halfLifeDays: 45 });
+  assert.ok(Object.isFrozen(Engine.TIERING_DEFAULTS));
+  assert.deepStrictEqual(Engine.tieringCost(), Engine.tieringCost(Engine.TIERING_DEFAULTS));
+  const copy = { ...Engine.TIERING_DEFAULTS, hotToWarmDays: 5 };
+  assert.ok(copy.hotToWarmDays === 5);
+  assert.strictEqual(Engine.TIERING_DEFAULTS.hotToWarmDays, 30);
+  assert.deepStrictEqual(Engine.tieringCost(), Engine.tieringCost(Engine.TIERING_DEFAULTS));
+});

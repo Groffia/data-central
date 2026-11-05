@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3 (2026-11-05)
+
+Added `Engine.TIERING_DEFAULTS` (frozen `{hotToWarmDays:30, warmToColdDays:180, retentionDays:2555, dailyGB:18, halfLifeDays:45}`), the base `tieringCost` merges its overrides onto. No behavior change. 173 tests.
+
 ## v1.2 (2026-11-04)
 
 Branch feat/engine-v1.2. 172 tests (151 in v1.1).

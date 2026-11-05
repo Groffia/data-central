@@ -649,7 +649,7 @@ function facilityProfile(history) {
 // Prices are illustrative, not vendor quotes (Build File 2, B3).
 const TIER_STORAGE = { hot: 0.080, warm: 0.023, cold: 0.002 }; // $/GB-month
 const TIER_RETRIEVAL = { hot: 0, warm: 0, cold: 0.020 }; // $/GB
-const TIERING_DEFAULTS = { hotToWarmDays: 30, warmToColdDays: 180, retentionDays: 2555, dailyGB: 18, halfLifeDays: 45 };
+const TIERING_DEFAULTS = Object.freeze({ hotToWarmDays: 30, warmToColdDays: 180, retentionDays: 2555, dailyGB: 18, halfLifeDays: 45 });
 
 function tieringCost(settings) {
   const s = { ...TIERING_DEFAULTS, ...(settings || {}) };
@@ -912,7 +912,7 @@ const Engine = {
   REPAIRABLE_ROWS, HARD_FAIL_ROWS, repairRow,
   runTests,
   initialState, reduce, replay,
-  getHistory, computeKpis, facilityProfile, tieringCost,
+  getHistory, computeKpis, facilityProfile, tieringCost, TIERING_DEFAULTS,
   getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep,naiveAbnormalRate, naiveAbnormalStats,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
