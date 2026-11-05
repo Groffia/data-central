@@ -798,6 +798,16 @@ function parseLinkParams(search) {
   return out;
 }
 
+// The actions a page applies for the `step` link parameter: the first `step` scripted actions, never fewer than
+// the scenario's prelude and never more than the whole script. Anything that is not a non-negative integer
+// becomes the floor. Returns fresh copies, so callers cannot change AUTOPLAY.
+function actionsForStep(scenario, step) {
+  assertScenario(scenario);
+  const floor = PRELUDE[scenario].length, ceil = AUTOPLAY[scenario].length;
+  const n = Number.isInteger(step) && step >= 0 ? Math.min(Math.max(step, floor), ceil) : floor;
+  return AUTOPLAY[scenario].slice(0, n).map((a) => ({ ...a }));
+}
+
 // ===== SECTION: self-test =====
 function hashValues(values) {
   let h = 0x811c9dc5;
@@ -896,7 +906,7 @@ const Engine = {
   runTests,
   initialState, reduce, replay,
   getHistory, computeKpis, facilityProfile, tieringCost,
-  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, naiveAbnormalRate, naiveAbnormalStats,
+  getState, getTimeline, AUTOPLAY, PRELUDE, parseLinkParams, actionsForStep,naiveAbnormalRate, naiveAbnormalStats,
   selfTest, hashValues, DETERMINISM_HASH, GENERATOR_HASH, abnormalShare,
 };
 
