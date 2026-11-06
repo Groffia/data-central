@@ -57,5 +57,5 @@ Patch release: the only change is `<link rel="icon" href="data:,">` in the head,
 | Item | Result | Observed |
 |---|---|---|
 | Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
-| First load, console and network | Pass | Console empty and no `favicon` request on the first load of the page, read in the built-in browser pane in a new tab. That pane is not a cold profile (it may already know the old 404), so a cold-profile check is still Stephen's. |
+| First load, console and network | Pass | Cold-profile check by Stephen (fresh browser per page, no cache; the same method reproduced the 404 before the fix): console empty, no favicon or external requests on the first load of `/hq/`, `/pipeline/`, `/value/`, `/brain/` and `hq-single.html`. Also read in the built-in browser pane in a new tab: console empty, no `favicon` request. |
 | Release asset | Pass | Release run 42141358063 green. `value-single.html` (153,148 bytes, sha256 c6932885a4925a184dfb1e818667d8508cdd8f4fe6de292cf3626d69b907acac) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |

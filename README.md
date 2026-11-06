@@ -33,8 +33,6 @@
 | `shared/` | Small scripts both pages use (escaping, number formatting, vendor table). |
 | `scripts/` | Builds the site that GitHub Pages serves, and checks that every page carries the exact engine version it declares in `pages.json`. |
 
-More pages will follow the same pattern.
-
 ## Run it yourself
 
 Node 20, nothing to install.
@@ -44,6 +42,10 @@ cd engine && node --test tests/
 cd ../hq && node --test tests/ && node ../scripts/inline.js .
 cd ../pipeline && node --test tests/ && node ../scripts/inline.js .
 cd ../value && node --test tests/ && node ../scripts/inline.js .
+cd ../brain && node --test tests/ && node ../scripts/inline.js .
+cd ../shared && node --test tests/
+cd ../scripts && node --test .
+cd .. && node scripts/build-site.js   # every page into site/, engine copies checked
 ```
 
 Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve.js dist/pages` from `hq/`. Full build notes and the acceptance record are in `hq/README.md` and `hq/ACCEPTANCE.md`.
