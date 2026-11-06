@@ -65,7 +65,7 @@ test('scripts: all data-inline, exist on disk, in order', () => {
     else assert.ok(fs.existsSync(path.join(ROOT, s.src)), s.src);
   });
   assert.deepStrictEqual(scripts.map(function (s) { return s.src; }), [
-    'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'shared/brand.js',
+    'shared/settings.js', 'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'shared/brand.js',
     'src/lineage.js', 'src/viewmodel.js', 'src/graph.js', 'src/localstate.js', 'src/render.js',
     'src/controller.js', 'src/main.js'
   ]);

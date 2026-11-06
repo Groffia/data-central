@@ -38,7 +38,7 @@ test('scripts: all data-inline, exist on disk, in order', () => {
     else assert.ok(fs.existsSync(path.join(ROOT, s.src)), s.src);
   });
   assert.deepStrictEqual(scripts.map(function (s) { return s.src; }), [
-    'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'shared/brand.js', 'src/links.js', 'src/viewmodel.js', 'src/render.js',
+    'shared/settings.js', 'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'shared/brand.js', 'src/links.js', 'src/viewmodel.js', 'src/render.js',
     'src/controller.js', 'src/autoplay.js', 'src/main.js'
   ]);
 });

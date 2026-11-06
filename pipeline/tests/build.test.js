@@ -22,7 +22,7 @@ test('build succeeds', () => {
 test('pipeline-single.html has the engine and shared files exactly once, no external refs', () => {
   const html = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
   assert.strictEqual(html.split(engineText).length - 1, 1);
-  ['escape.js', 'format.js', 'vendor.js', 'brand.js'].forEach(function (n) {
+  ['escape.js', 'format.js', 'vendor.js', 'brand.js', 'settings.js'].forEach(function (n) {
     const t = fs.readFileSync(path.join(SHARED, n), 'utf8');
     assert.strictEqual(html.split(t).length - 1, 1, n);
   });

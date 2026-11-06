@@ -58,7 +58,7 @@ test('styles define reduced-motion and focus-visible rules', () => {
 });
 
 test('every colour is a token: no hex or rgb() outside :root', () => {
-  const outside = bare.replace(/:root\s*\{[^}]*\}/g, '');
+  const outside = bare.replace(/:root[^{]*\{[^}]*\}/g, '');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(outside), 'hex colour outside :root');
   assert.ok(!/\brgba?\(|\bhsla?\(/.test(outside), 'rgb/hsl colour outside :root');
 });

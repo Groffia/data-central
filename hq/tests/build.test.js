@@ -30,7 +30,7 @@ function fixtureEngine(text) {
 const srcDir = path.join(ROOT, 'src');
 const srcFiles = fs.readdirSync(srcDir).map(function (n) { return path.join(srcDir, n); });
 const sharedDir = path.join(ROOT, '..', 'shared');
-const sharedFiles = ['escape.js', 'format.js', 'vendor.js', 'brand.js'].map(function (n) { return path.join(sharedDir, n); });
+const sharedFiles = ['escape.js', 'format.js', 'vendor.js', 'brand.js', 'settings.js'].map(function (n) { return path.join(sharedDir, n); });
 
 test('real engine and every src file contain no </script in any case', () => {
   [ENGINE].concat(srcFiles, sharedFiles).forEach(function (f) {
@@ -100,7 +100,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const html = fs.readFileSync(path.join(OUT, 'hq-single.html'), 'utf8');
   const inline = [];
   html.replace(/<script>([\s\S]*?)<\/script>/g, function (m, body) { inline.push(body); return m; });
-  assert.strictEqual(inline.length, 11);
+  assert.strictEqual(inline.length, 12);
   const a = fakeDocRun(inline);
   assert.strictEqual((a['region-stages'].match(/data-health="/g) || []).length, 8);
   assert.ok(a['region-footer'].indexOf(FOOTER) >= 0);
@@ -109,7 +109,7 @@ test('inlined single-file scripts render stages (8 health attrs) and footer; pag
   const idx = fs.readFileSync(path.join(pagesDir, 'index.html'), 'utf8');
   const srcs = [];
   idx.replace(/<script\s+src="([^"]+)"/g, function (m, s) { srcs.push(s); return m; });
-  assert.strictEqual(srcs.length, 11);
+  assert.strictEqual(srcs.length, 12);
   const b = fakeDocRun(srcs.map(function (s) { return fs.readFileSync(path.join(pagesDir, s), 'utf8'); }));
   assert.deepStrictEqual(b, a);
 });
