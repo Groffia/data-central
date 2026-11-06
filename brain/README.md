@@ -9,7 +9,7 @@ Stages 5 and 8 for Tamsworth Health: who is accountable for the data and what ha
 - Lineage and impact (stage 5): source fields to Bronze, Silver, the Gold models and the four KPI tiles, with a "what does this feed, what feeds it" panel and a list alternative.
 - Access log (stage 5): a simulated log of what the pipeline and the operator did in this run, plus any erasure made on the page.
 - Retention and retirement (stage 8): the example retention timeline, a legal-hold toggle, a link to Pipeline's storage panel.
-- Erasure (stage 8): where one patient's rows live in each layer, what erasing them changes, and five checks. Bronze rows stay but become unreadable (simulated).
+- Erasure (stage 8): where one patient's rows live in each layer, what erasing them changes, and six checks. Bronze rows stay but become unreadable (simulated).
 
 A table below the panels maps the lineage and the access log to Databricks, Snowflake and Fabric equivalents.
 

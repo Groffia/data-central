@@ -3,13 +3,14 @@ const assert = require("node:assert");
 const Engine = require("../engine.js");
 
 const BLOCK = "Erasure blocked: legal hold is on.";
-const CHECK_IDS = ["subject-rows-gone", "published-count", "others-unchanged", "keys-unique", "kpis-unchanged"];
+const CHECK_IDS = ["subject-rows-gone", "published-count", "others-unchanged", "keys-unique", "kpis-unchanged", "bronze-unreadable"];
 const CHECK_LABELS = [
   "No row of the subject remains in staging, Silver, the dead-letter queue or dim_patient",
   "The published row count fell by exactly the subject's Silver rows",
   "Every other subject's rows are unchanged",
   "Production keys are still unique",
   "The seven-day KPI values are unchanged",
+  "Every Bronze row of the subject, matched by id or by name, ZIP and birth date, is unreadable",
 ];
 const pool = () => Engine.buildPatientPool().map((p) => p.patient_id);
 const acts = (sc, step) => Engine.actionsForStep(sc, step);
@@ -124,7 +125,7 @@ test("the KPI history is untouched", () => {
   assert.deepStrictEqual(Engine.computeKpis(Engine.getHistory()).map((k) => k.value), r.state.kpis.map((k) => k.value));
 });
 
-test("checks: the five ids and labels, all passing after a correct erasure", () => {
+test("checks: the six ids and labels, all passing after a correct erasure", () => {
   const a = acts("incident", 3);
   const r = Engine.eraseSubjects("incident", a, [busySubject()]);
   assert.deepStrictEqual(r.checks.map((c) => c.id), CHECK_IDS);
@@ -242,4 +243,30 @@ test("bad arguments return null; an unknown scenario throws", () => {
   assert.strictEqual(Engine.eraseSubjects("healthy", [], [null]), null);
   assert.strictEqual(Engine.eraseSubjects("healthy", [], undefined), null);
   assert.throws(() => Engine.eraseSubjects("nope", [], []));
+});
+
+test("a field-matched patient has two Bronze rows (the batch-3 row behind the dead-letter row counts), all unreadable after erasure", () => {
+  const a = acts("incident", 3);
+  const st = Engine.getState("incident", a);
+  for (const [id, dlqId] of [["TMH-P-012004", "dlq-3-4"], ["TMH-P-536398", "dlq-3-13"]]) {
+    const f = fp("incident", a, id);
+    assert.strictEqual(f.bronze, 2, id);
+    const d = st.dlq.find((x) => x.dlqId === dlqId).payload;
+    const inBatch3 = Engine.inspectBatch("incident", a, 3).rows.filter((r) => r.patient_name === d.patient_name && r.patient_zip5 === d.patient_zip5 && r.birth_date === d.birth_date);
+    assert.ok(inBatch3.length >= 1, "the raw row behind " + dlqId + " is in batch 3");
+    const r = Engine.eraseSubjects("incident", a, [id]);
+    assert.strictEqual(r.footprints[0].bronze, 2);
+    assert.strictEqual(r.state.unreadableRawRows, 2);
+    const c = r.checks.find((x) => x.id === "bronze-unreadable");
+    assert.strictEqual(c.pass, true);
+    assert.strictEqual(r.checks.length, 6);
+  }
+});
+
+test("the Bronze recount behind bronze-unreadable agrees with the rows marked unreadable", () => {
+  // The check compares an independent recount of the subject's Bronze rows with the rows marked unreadable.
+  const a = acts("incident", 3);
+  const r = Engine.eraseSubjects("incident", a, ["TMH-P-012004"]);
+  const seen = [1, 2, 3].reduce((n, b) => n + Engine.inspectBatch("incident", a, b).rows.filter((x) => x.patient_id === "TMH-P-012004" || x.patient_name === Engine.buildPatientPool().find((p) => p.patient_id === "TMH-P-012004").patient_name).length, 0);
+  assert.strictEqual(seen, r.state.unreadableRawRows);
 });

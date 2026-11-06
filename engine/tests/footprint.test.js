@@ -6,6 +6,7 @@ const pool = () => Engine.buildPatientPool().map((p) => p.patient_id);
 const ids = new Set(pool());
 const fp = (sc, step, id) => Engine.subjectFootprint(sc, Engine.actionsForStep(sc, step), id);
 const sum = (sc, step, key) => pool().reduce((n, id) => n + fp(sc, step, id)[key], 0);
+const byFields = (r) => Engine.buildPatientPool().some((p) => p.patient_name === r.patient_name && p.patient_zip5 === r.patient_zip5 && p.birth_date === r.birth_date);
 const subjectOf = (p) => (p && typeof p === "object" ? (typeof p.patient_id === "string" ? p.patient_id : typeof p.patientId === "string" ? p.patientId : null) : null);
 
 test("healthy step 4: per-subject rows add up to the rows in production and the rows landed", () => {
@@ -29,11 +30,11 @@ test("incident step 3: every layer adds up once rows with no cohort id are count
   for (let n = 1; n <= st.batchesRun; n++) {
     const b = Engine.inspectBatch("incident", acts, n);
     landed += b.rows.length;
-    unmatched += outside(b.rows);
+    unmatched += b.rows.filter((r) => !ids.has(subjectOf(r)) && !byFields(r)).length;
   }
   assert.strictEqual(landed, st.bronzeRows);
   assert.strictEqual(sum("incident", 3, "bronze") + unmatched, st.bronzeRows);
-  assert.ok(unmatched >= 2, "the null-id row and the injection-string row match nobody");
+  assert.strictEqual(unmatched, 0, "every Bronze row belongs to a cohort patient, by id or by name, ZIP and birth date");
   assert.strictEqual(st.dlq.length, 9);
   assert.strictEqual(st.staging.length, 11);
 });

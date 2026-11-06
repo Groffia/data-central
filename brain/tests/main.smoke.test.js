@@ -81,7 +81,7 @@ test('the erase flow: pick, erase, effects and checks appear, the access log lea
   assert.ok(p.html('erasure').indexOf('footprint-table') >= 0);
   p.clickRendered(ERASE);
   assert.ok(p.html('erasure').indexOf('Published readings:') >= 0);
-  assert.equal((p.html('erasure').match(/: Pass<\/li>/g) || []).length, 5);
+  assert.equal((p.html('erasure').match(/: Pass<\/li>/g) || []).length, 6);
   const log = p.html('access');
   assert.ok(log.indexOf('privacy-office') >= 0 && log.indexOf('privacy-office') < log.indexOf('svc-ingest'));
   p.clickRendered('button[data-cmd="reset-erasures"]');

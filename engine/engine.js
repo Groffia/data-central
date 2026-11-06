@@ -1298,7 +1298,7 @@ function accessLog(scenario, actions, erasures) {
 }
 
 // Bronze rows (every landed row of every batch run, held or published, counted from the same exports inspectBatch
-// returns) per patient id, for the ids in `wanted`. One replay pass.
+// returns; matched by id or by name, ZIP and birth date) per patient id, for the ids in `wanted`. One replay pass.
 function bronzeCounts(scenario, actions, wanted) {
   const counts = new Map([...wanted].map((id) => [id, 0]));
   let before = replay(scenario, [], undefined);
@@ -1307,7 +1307,8 @@ function bronzeCounts(scenario, actions, wanted) {
     if (after.batchesRun === before.batchesRun + 1) {
       const gen = before.faultExports ? { faultExports: before.faultExports } : undefined;
       for (const row of generateExport(after.batchesRun, scenario, gen).rows) {
-        const id = rowSubject(row);
+        // By id, or (null or malformed id) by exact name, ZIP and birth date, as for dead-letter rows.
+        const id = dlqSubject(row).id;
         if (id !== null && counts.has(id)) counts.set(id, counts.get(id) + 1);
       }
     }
@@ -1316,8 +1317,8 @@ function bronzeCounts(scenario, actions, wanted) {
   return { counts, final: before };
 }
 
-// Rows per layer for one subject: Bronze, staging, Silver, the dead-letter queue and dim_patient. Rows with a null,
-// missing or non-cohort id match nobody, so an id outside the cohort has no footprint. Pure; null for a non-string id
+// Rows per layer for one subject: Bronze, staging, Silver, the dead-letter queue and dim_patient. Bronze and dead-letter
+// rows with a null or malformed id are matched by exact name, ZIP and birth date; an id outside the cohort has no footprint. Pure; null for a non-string id
 // or bad actions.
 function subjectFootprint(scenario, actions, patientId) {
   assertScenario(scenario);
@@ -1336,6 +1337,7 @@ const ERASURE_CHECKS = Object.freeze([
   ["others-unchanged", "Every other subject's rows are unchanged"],
   ["keys-unique", "Production keys are still unique"],
   ["kpis-unchanged", "The seven-day KPI values are unchanged"],
+  ["bronze-unreadable", "Every Bronze row of the subject, matched by id or by name, ZIP and birth date, is unreadable"],
 ]);
 
 // Apply an erasure list to the state getState(scenario, actions) returns. The list carries no step or time: it applies to
@@ -1388,6 +1390,11 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
       after: { staging: a.staging, silver: a.silver, deadLetter: a.deadLetter, deadLetterByFields: a.deadLetterByFields, dimPatient: a.dimPatient },
     };
   });
+  // Bronze rows of the erased subjects recounted from the exports inspectBatch returns (a separate route from bronzeCounts),
+  // minus the rows marked unreadable: none may stay readable.
+  let bronzeSeen = 0;
+  for (let n = 1; n <= base.batchesRun; n++) bronzeSeen += inspectBatch(scenario, actions, n).rows.filter((r) => gone.has(dlqSubject(r).id)).length;
+  const bronzeReadable = bronzeSeen - state.unreadableRawRows;
   const silverGone = footprints.reduce((n, f) => n + f.silver, 0);
   // Recounted from the remaining rows, not read back from the counters.
   const keyList = state.productionData.map(keyOf).filter((k) => k !== null);
@@ -1400,6 +1407,7 @@ function eraseSubjects(scenario, actions, patientIds, opts) {
     }),
     new Set(keyList.map((k) => JSON.stringify(k))).size === keyList.length && JSON.stringify(keyList) === JSON.stringify(state.productionKeys),
     JSON.stringify(state.kpis) === JSON.stringify(base.kpis) && JSON.stringify(computeKpis(getHistory()).map((k) => k.value)) === JSON.stringify(state.kpis.map((k) => k.value)),
+    bronzeReadable === 0,
   ];
   const checks = ERASURE_CHECKS.map(([id, label], i) => ({ id, label, pass: results[i] }));
   return { state, erased, ignored, blocked: false, reason: null, footprints, checks };

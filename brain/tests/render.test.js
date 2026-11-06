@@ -109,7 +109,7 @@ test('erasure: labelled select, buttons with names and disabled states, the verb
   assert.ok(e.indexOf('Checks appear after an erasure.') >= 0);
 });
 
-test('erasure: a selected, then an erased subject shows the footprint, raw-layer line, effects and five passing checks', () => {
+test('erasure: a selected, then an erased subject shows the footprint, raw-layer line, effects and six passing checks', () => {
   const id = IDS.find((x) => { const f = E.subjectFootprint('incident', E.actionsForStep('incident', 3), x); return f.silver > 0 && f.bronze > 0; });
   const sel = R.erasure(model('incident', 3, { selectedSubject: id }));
   assert.ok(/<option value="[^"]+" selected>/.test(sel));
@@ -119,7 +119,7 @@ test('erasure: a selected, then an erased subject shows the footprint, raw-layer
   assert.strictEqual(count(sel, 'class="footprint-table"'), 1);
   const done = R.erasure(model('incident', 3, { selectedSubject: id, erased: [id] }));
   assert.ok(done.indexOf('Published readings:') >= 0);
-  assert.strictEqual(count(done, ': Pass</li>'), 5);
+  assert.strictEqual(count(done, ': Pass</li>'), 6);
   assert.strictEqual(count(done, ': Fail</li>'), 0);
   assert.ok(/<button[^>]*data-cmd="erase"[^>]* disabled>/.test(done));
   assert.ok(done.indexOf('<p class="erase-reason">Erased ' + id + '</p>') >= 0);

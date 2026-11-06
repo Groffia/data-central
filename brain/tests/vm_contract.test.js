@@ -107,7 +107,7 @@ test('vendor: the lineage-and-catalog row and the access-and-audit-log row, from
   const v = build('healthy', 4).vendor;
   assert.deepStrictEqual(v.columns, ['Component', 'Databricks', 'Snowflake', 'Fabric']);
   assert.deepStrictEqual(v.rows, [
-    ['Lineage and catalog', 'Unity Catalog', 'Snowflake Horizon Catalog / Atlan', 'Microsoft Purview'],
+    ['Lineage and catalog', 'Unity Catalog', 'Snowflake Horizon Catalog', 'Microsoft Purview'],
     ['Access and audit log', 'Audit log system table', 'ACCESS_HISTORY view', 'Microsoft Purview audit log']
   ]);
 });

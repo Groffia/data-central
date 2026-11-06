@@ -119,7 +119,7 @@ test('stepping keeps the subject erased and the checks passing, at every step of
       const e = build(sc, step, { selectedSubject: id, erased: [id] }).erasure;
       assert.deepStrictEqual(e.erased, [id], sc + step);
       e.checks.forEach((c) => assert.strictEqual(c.pass, true, sc + step + c.id));
-      assert.strictEqual(e.checks.length, 5);
+      assert.strictEqual(e.checks.length, 6);
     }
   }
 });
@@ -130,7 +130,7 @@ test('legal hold: the button is disabled with the verbatim reason, and existing 
   assert.strictEqual(e.canErase, false);
   assert.strictEqual(e.eraseReason, BLOCK);
   const kept = build('incident', 3, { selectedSubject: id, erased: [id], legalHold: true }).erasure;
-  assert.strictEqual(kept.checks.length, 5);
+  assert.strictEqual(kept.checks.length, 6);
   assert.strictEqual(kept.canReset, true);
 });
 
@@ -147,5 +147,16 @@ test('bad local state: the panel still builds with nothing selected', () => {
     const e = build('healthy', 4, bad).erasure;
     assert.ok(Array.isArray(e.options));
     assert.strictEqual(e.checks.length, 0);
+  });
+});
+
+test('a subject whose raw row sits behind a dead-letter row shows Bronze 2 and 2 (unreadable), for both field-matched patients', () => {
+  ['TMH-P-012004', 'TMH-P-536398'].forEach((id) => {
+    const e = build('incident', 3, { selectedSubject: id, erased: [id] }).erasure;
+    const b = e.footprint.layers[0];
+    assert.deepStrictEqual([b.before, b.after, b.afterText], [2, 2, '2 (unreadable)'], id);
+    const c = e.checks.find((x) => x.id === 'bronze-unreadable');
+    assert.strictEqual(c.pass, true, id);
+    assert.strictEqual(e.checks.length, 6);
   });
 });
