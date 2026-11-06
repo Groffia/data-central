@@ -59,3 +59,16 @@ Patch release: the only change is `<link rel="icon" href="data:,">` in the head,
 | Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
 | First load, console and network | Pass | Cold-profile check by Stephen (fresh browser per page, no cache; the same method reproduced the 404 before the fix): console empty, no favicon or external requests on the first load of `/hq/`, `/pipeline/`, `/value/`, `/brain/` and `hq-single.html`. Also read in the built-in browser pane in a new tab: console empty, no `favicon` request. |
 | Release asset | Pass | Release run 42141358063 green. `value-single.html` (153,148 bytes, sha256 c6932885a4925a184dfb1e818667d8508cdd8f4fe6de292cf3626d69b907acac) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |
+
+## Live acceptance (GitHub Pages, value-v1.1.0 on commit c2d5ed3, 2026-11-05)
+
+Minor release: the PRAXIS.FASTI look on every page (shared stylesheet, light and dark themes, embedded fonts, wordmark header) and a Settings gear in the top right with a dark mode switch. No engine change.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42150022938 green on main c2d5ed3 (all suites; engine unchanged, `engine-v1.9`). |
+| From HQ | Pass | A real click on HQ's Abnormal Vital Rate link opened `/value/?scenario=incident&step=3#kpi-abnormal-vital-rate`; the four tiles render and the target tile is highlighted. |
+| Console, network, layout | Pass | No console messages on any page after the clicks; no external requests (fonts are embedded); no horizontal scroll at the pane width tested (943 px; not re-measured at exactly 1024 px). |
+| Settings | Pass | Real clicks: the gear opened the panel and the switch flipped light and dark; the choice was saved and carried to the next page. |
+| Single file | Pass | `value-single.html` loaded over http (same bytes as `file://`): no sub-requests, empty console, gear and switch work. The browser pane cannot run scripts from `file://`, so a true `file://` open was not done by Claude. |
+| Release asset | Pass | Release run 42150365866 green. `value-single.html` (387,832 bytes, sha256 df8a479320202c84775feda89392654ec33255db78bb36ac2be64e1b97df6b5a) equals the local build and the file served on Pages. |

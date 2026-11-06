@@ -82,3 +82,16 @@ Patch release: the only change is `<link rel="icon" href="data:,">` in the head,
 | Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
 | First load, console and network | Pass | Cold-profile check by Stephen (fresh browser per page, no cache; the same method reproduced the 404 before the fix): console empty, no favicon or external requests on the first load of `/hq/`, `/pipeline/`, `/value/`, `/brain/` and `hq-single.html`. Also read in the built-in browser pane in a new tab: console empty, no `favicon` request. |
 | Release asset | Pass | Release run 42141247306 green. `pipeline-single.html` (138,204 bytes, sha256 fcbeebf5aa7610318310639490508abc7669b58c590960a92cf41ca1be122811) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |
+
+## Live acceptance (GitHub Pages, pipeline-v1.1.0 on commit c2d5ed3, 2026-11-05)
+
+Minor release: the PRAXIS.FASTI look on every page (shared stylesheet, light and dark themes, embedded fonts, wordmark header) and a Settings gear in the top right with a dark mode switch. No engine change.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42150022938 green on main c2d5ed3 (all suites; engine unchanged, `engine-v1.9`). |
+| From HQ and back | Pass | A real click on HQ's `dlq-3-4` link opened `/pipeline/?scenario=incident&step=3#dlq-3-4` with the row highlighted; "Open this state in HQ" returned to HQ. |
+| Console, network, layout | Pass | No console messages on any page after the clicks; no external requests (fonts are embedded); no horizontal scroll at the pane width tested (943 px; not re-measured at exactly 1024 px). |
+| Settings | Pass | Real clicks: the gear opened the panel and the switch flipped light and dark; the choice was saved and carried to the next page. |
+| Single file | Pass | `pipeline-single.html` loaded over http (same bytes as `file://`): no sub-requests, empty console, gear and switch work. The browser pane cannot run scripts from `file://`, so a true `file://` open was not done by Claude. |
+| Release asset | Pass | Release run 42150269099 green. `pipeline-single.html` (373,300 bytes, sha256 f1f3b1c5079380ea8b8e773b0d8237f0ad64290f26601fa1492c04e161b95788) equals the local build and the file served on Pages. |

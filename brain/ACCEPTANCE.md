@@ -51,3 +51,17 @@ Patch release: the only change is `<link rel="icon" href="data:,">` in the head,
 | Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
 | First load, console and network | Pass | Cold-profile check by Stephen (fresh browser per page, no cache; the same method reproduced the 404 before the fix): console empty, no favicon or external requests on the first load of `/hq/`, `/pipeline/`, `/value/`, `/brain/` and `hq-single.html`. Also read in the built-in browser pane in a new tab: console empty, no `favicon` request. |
 | Release asset | Pass | Release run 42141438171 green. `brain-single.html` (144,845 bytes, sha256 e8bd7c83f4050096629cf0b4392747108329d6382c9718071b3de814e31b4005) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |
+
+## Live acceptance (GitHub Pages, brain-v1.1.0 on commit c2d5ed3, 2026-11-05)
+
+Minor release: the PRAXIS.FASTI look on every page (shared stylesheet, light and dark themes, embedded fonts, wordmark header) and a Settings gear in the top right with a dark mode switch. No engine change.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42150022938 green on main c2d5ed3 (all suites; engine unchanged, `engine-v1.9`). |
+| From HQ | Pass | A real click on HQ's chip 5 opened `/brain/?scenario=incident&step=3#stage-phi`. |
+| Erasure of `TMH-P-012004` | Pass | Bronze 2 to 2 (unreadable), Silver 1 to 0, matched dead-letter row 1 to 0, dim_patient 1 to 0; six checks pass; "Erased TMH-P-012004"; `dlq-3-4` gone; the access log has the ERASE row (3 rows). |
+| Console, network, layout | Pass | No console messages on any page after the clicks; no external requests (fonts are embedded); no horizontal scroll at the pane width tested (943 px; not re-measured at exactly 1024 px). |
+| Settings | Pass | Real clicks: the gear opened the panel and the switch flipped light and dark; the choice was saved and carried to the next page. |
+| Single file | Pass | `brain-single.html` loaded over http (same bytes as `file://`): no sub-requests, empty console, gear and switch work. The browser pane cannot run scripts from `file://`, so a true `file://` open was not done by Claude. |
+| Release asset | Pass | Release run 42150439683 green. `brain-single.html` (379,795 bytes, sha256 79076ec6346b326c440f7b381464bd077d5eec049612f18632bb8aa4e3fa3ea8) equals the local build and the file served on Pages. |

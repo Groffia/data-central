@@ -149,3 +149,16 @@ Patch release: the only change is `<link rel="icon" href="data:,">` in the head,
 | Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
 | First load, console and network | Pass | Cold-profile check by Stephen (fresh browser per page, no cache; the same method reproduced the 404 before the fix): console empty, no favicon or external requests on the first load of `/hq/`, `/pipeline/`, `/value/`, `/brain/` and `hq-single.html`. Also read in the built-in browser pane in a new tab: console empty, no `favicon` request. |
 | Release asset | Pass | Release run 42141139670 green. `hq-single.html` (139,543 bytes, sha256 68639f6a3c68703d206eebe4cd6fb6b113d79beaef4ad24df8cf481e6a47e870) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |
+
+## Live acceptance (GitHub Pages, hq-v1.4.0 on commit c2d5ed3, 2026-11-05)
+
+Minor release: the PRAXIS.FASTI look on every page (shared stylesheet, light and dark themes, embedded fonts, wordmark header) and a Settings gear in the top right with a dark mode switch. No engine change.
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42150022938 green on main c2d5ed3 (all suites; engine unchanged, `engine-v1.9`). |
+| HQ links | Pass | Real clicks: chip 5 opened `/brain/?scenario=incident&step=3#stage-phi` (target highlighted); the Abnormal Vital Rate link opened Value at `#kpi-abnormal-vital-rate`; the `dlq-3-4` link opened Pipeline at `#dlq-3-4`; "Open this state in HQ" returned to HQ. |
+| Console, network, layout | Pass | No console messages on any page after the clicks; no external requests (fonts are embedded); no horizontal scroll at the pane width tested (943 px; not re-measured at exactly 1024 px). |
+| Settings | Pass | Real clicks: the gear opened the panel and the switch flipped light and dark; the choice was saved and carried to the next page. |
+| Single file | Pass | `hq-single.html` loaded over http (same bytes as `file://`): no sub-requests, empty console, gear and switch work. The browser pane cannot run scripts from `file://`, so a true `file://` open was not done by Claude. |
+| Release asset | Pass | Release run 42150172925 green. `hq-single.html` (375,280 bytes, sha256 79a1b91982eb2f849c6bfd02ebb03263ffe9be80573c10a37504ad44f6cd5b09) equals the local build and the file served on Pages. |

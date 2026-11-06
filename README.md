@@ -26,10 +26,10 @@
 | Folder | What it is |
 |---|---|
 | `engine/` | `engine.js`: one deterministic simulation (synthetic healthcare data, seed 42, injected failures). No dependencies. Versioned by tags `engine-v1.x`. |
-| `hq/` | The HQ page, Demo Acts 1 to 5. Plain HTML and JavaScript, no libraries, no network access at runtime. Latest release `hq-v1.3.1`. |
-| `pipeline/` | The Pipeline page: Generation, Collection/Ingestion, Processing/Preparation and Storage opened up. Same pattern as HQ, shares code in `shared/`. Latest release `pipeline-v1.0.3`. Offline copy: `pipeline-single.html` on the Releases page. |
-| `value/` | The Value page: stages 6 and 7 for Tamsworth Health, with the expected-range check and governed metric definitions. Latest release `value-v1.0.2`. Offline copy: `value-single.html` on the Releases page. |
-| `brain/` | The Brain page: stages 5 and 8 for Tamsworth Health, with the data contract and ownership, sensitive fields, lineage, a simulated access log, retention and a one-subject erasure. Latest release `brain-v1.0.1`. Offline copy: `brain-single.html` on the Releases page. |
+| `hq/` | The HQ page, Demo Acts 1 to 5. Plain HTML and JavaScript, no libraries, no network access at runtime. Latest release `hq-v1.4.0`. |
+| `pipeline/` | The Pipeline page: Generation, Collection/Ingestion, Processing/Preparation and Storage opened up. Same pattern as HQ, shares code in `shared/`. Latest release `pipeline-v1.1.0`. Offline copy: `pipeline-single.html` on the Releases page. |
+| `value/` | The Value page: stages 6 and 7 for Tamsworth Health, with the expected-range check and governed metric definitions. Latest release `value-v1.1.0`. Offline copy: `value-single.html` on the Releases page. |
+| `brain/` | The Brain page: stages 5 and 8 for Tamsworth Health, with the data contract and ownership, sensitive fields, lineage, a simulated access log, retention and a one-subject erasure. Latest release `brain-v1.1.0`. Offline copy: `brain-single.html` on the Releases page. |
 | `shared/` | Small scripts both pages use (escaping, number formatting, vendor table, the wordmark header, the shared stylesheet and the embedded fonts). |
 | `scripts/` | Builds the site that GitHub Pages serves, and checks that every page carries the exact engine version it declares in `pages.json`. |
 

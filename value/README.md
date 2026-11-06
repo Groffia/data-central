@@ -1,6 +1,6 @@
 # Value page
 
-Stages 6 and 7 for Tamsworth Health; spec: Page Spec v1 - Value, kept outside this repo. Released as `value-v1.0.2`.
+Stages 6 and 7 for Tamsworth Health; spec: Page Spec v1 - Value, kept outside this repo. Released as `value-v1.1.0`.
 
 ## What the page shows
 
