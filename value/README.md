@@ -36,10 +36,6 @@ From the repo root, `node scripts/build-site.js` builds every page into `site/` 
 
 Requires engine tag `engine-v1.9` (value-v1.0.1 is a copy-only release: the engine moved to v1.9 for the Brain page and nothing in this page changed; value-v1.0 needed `engine-v1.8`).
 
-## Not done / parked
-
-- Axis widening for huge spikes.
-
 ## Vendor names checked
 
 The "Metrics layer" and "Dashboards" rows use product names from the vendors' own documentation:
