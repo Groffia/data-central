@@ -49,3 +49,13 @@ Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) agai
 | Release asset | Pass | Release run 42139881461 green. `value-single.html` (153,116 bytes, sha256 fa71fa2c34b543104f76e534a487fdb733d9b61ebd4ee652c7610fe2b165d351) equals the local build and the file served on Pages. |
 
 Live checks run in the built-in browser at 1024 px; every click was a real click.
+
+## Live acceptance (GitHub Pages, value-v1.0.2 on commit 7fd6809, 2026-11-05)
+
+Patch release: the only change is `<link rel="icon" href="data:,">` in the head, so a browser makes no `/favicon.ico` request (the host has none, and a fresh browser logged a 404 on first load).
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
+| First load, console and network | Pass | Console empty and no `favicon` request on the first load of the page, read in the built-in browser pane in a new tab. That pane is not a cold profile (it may already know the old 404), so a cold-profile check is still Stephen's. |
+| Release asset | Pass | Release run 42141358063 green. `value-single.html` (153,148 bytes, sha256 c6932885a4925a184dfb1e818667d8508cdd8f4fe6de292cf3626d69b907acac) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |

@@ -41,3 +41,13 @@ URL: https://groffia.github.io/data-central/brain/
 | Release asset | Pass | Release run 42139982802 green. `brain-single.html` (144,813 bytes, sha256 6f485c20bd83a840ce8dc1119fbc9b3fd1c11b9551a19da144073de2d2a1cf51) equals the local build, the file served on Pages and the file read from `file://` before release. |
 
 Not re-run live: a diverged `a=` link into Brain, the legal hold, and the lineage graph (covered by the local record above).
+
+## Live acceptance (GitHub Pages, brain-v1.0.1 on commit 7fd6809, 2026-11-05)
+
+Patch release: the only change is `<link rel="icon" href="data:,">` in the head, so a browser makes no `/favicon.ico` request (the host has none, and a fresh browser logged a 404 on first load).
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42140924068 green on main 7fd6809 (all suites; engine unchanged, `engine-v1.9`). |
+| First load, console and network | Pass | Console empty and no `favicon` request on the first load of the page, read in the built-in browser pane in a new tab. That pane is not a cold profile (it may already know the old 404), so a cold-profile check is still Stephen's. |
+| Release asset | Pass | Release run 42141438171 green. `brain-single.html` (144,845 bytes, sha256 e8bd7c83f4050096629cf0b4392747108329d6382c9718071b3de814e31b4005) equals the local build and the file served on Pages. The single file differs from the previous release by that one line. |
