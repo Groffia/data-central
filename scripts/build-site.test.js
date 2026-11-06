@@ -227,7 +227,7 @@ test('integration: site/value/ and value-single.html are built, engine identical
   assert.doesNotMatch(single, /<meta[^>]*pipeline-base/i);
   assert.doesNotMatch(single, EXT);
   assert.doesNotMatch(single, /<script[^>]*\ssrc\s*=/i);
-  assert.doesNotMatch(single, /<link\b/i);
+  assert.doesNotMatch(single.replace('<link rel="icon" href="data:,">', ''), /<link\b/i);
   assert.ok(/<script>/.test(single));
 
   // No-network scan over every built file of the value page.

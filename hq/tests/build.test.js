@@ -50,9 +50,10 @@ test('hq-single.html contains the engine text, footer, and no external refs', ()
   assert.ok(html.indexOf(engineText) >= 0);
   assert.ok(html.indexOf('globalThis.Engine = Engine') >= 0);
   assert.ok(!/<script\s+src/i.test(html));
-  assert.ok(!/<link/i.test(html));
-  assert.ok(!/\ssrc=/i.test(html));
-  assert.ok(!/\shref=(?!"#)/i.test(html));
+  const bare = html.replace('<link rel="icon" href="data:,">', '');
+  assert.ok(!/<link/i.test(bare), 'only the empty icon link is allowed');
+  assert.ok(!/\ssrc=/i.test(bare));
+  assert.ok(!/\shref=(?!"#)/i.test(bare));
   assert.ok(!/data-inline/.test(html));
   sharedFiles.forEach(function (f) {
     const t = fs.readFileSync(f, 'utf8');
@@ -154,4 +155,12 @@ test('CSS containing </STYLE> fails the build naming the file and </style', () =
   const out = (r.stdout || '') + (r.stderr || '');
   assert.strictEqual(r.status, 1, out);
   assert.ok(out.indexOf('styles.css') >= 0 && out.indexOf('</style') >= 0, out);
+});
+
+test('hq-single.html has the empty icon link, so the browser makes no /favicon.ico request', () => {
+  const out = tmp();
+  assert.strictEqual(build(out).code, 0);
+  const html = fs.readFileSync(path.join(out, 'hq-single.html'), 'utf8');
+  assert.strictEqual(html.split('<link rel="icon" href="data:,">').length - 1, 1);
+  assert.ok(html.indexOf('<link rel="icon" href="data:,">') < html.indexOf('</head>'));
 });

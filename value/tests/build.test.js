@@ -26,7 +26,7 @@ test('value-single.html has engine and shared files once, no external refs', () 
     assert.strictEqual(html.split(t).length - 1, 1, n);
   });
   assert.ok(!/<script\s+src/i.test(html));
-  assert.ok(!/<link/i.test(html));
+  assert.ok(!/<link/i.test(html.replace('<link rel="icon" href="data:,">', '')), 'only the empty icon link is allowed');
   assert.ok(!/data-inline/.test(html));
   assert.ok(!/(?:src|href)\s*=\s*"https?:/i.test(html));
   assert.ok(/<style>[\s\S]*<\/style>/.test(html));
@@ -51,4 +51,10 @@ test('pages form has engine and shared files byte-for-byte and relative refs', (
   const idx = fs.readFileSync(path.join(pages, 'index.html'), 'utf8');
   assert.ok(idx.indexOf('src="src/main.js"') >= 0);
   assert.ok(!/data-inline/.test(idx));
+});
+
+test('value-single.html has the empty icon link, so the browser makes no /favicon.ico request', () => {
+  const html = fs.readFileSync(path.join(OUT, 'value-single.html'), 'utf8');
+  assert.strictEqual(html.split('<link rel="icon" href="data:,">').length - 1, 1);
+  assert.ok(html.indexOf('<link rel="icon" href="data:,">') < html.indexOf('</head>'));
 });

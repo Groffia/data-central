@@ -27,7 +27,7 @@ test('pipeline-single.html has the engine and shared files exactly once, no exte
     assert.strictEqual(html.split(t).length - 1, 1, n);
   });
   assert.ok(!/<script\s+src/i.test(html));
-  assert.ok(!/<link/i.test(html));
+  assert.ok(!/<link/i.test(html.replace('<link rel="icon" href="data:,">', '')), 'only the empty icon link is allowed');
   assert.ok(!/data-inline/.test(html));
   assert.ok(/<style>[\s\S]*<\/style>/.test(html));
 });
@@ -163,4 +163,10 @@ test('</style in the stylesheet fails the build; so does it in a shared file', (
   const g = fixture({ shared: 'var a = "</Style>";\n' });
   assert.strictEqual(g.code, 1, g.out);
   assert.ok(g.out.indexOf('escape.js') >= 0 && g.out.indexOf('</style') >= 0, g.out);
+});
+
+test('pipeline-single.html has the empty icon link, so the browser makes no /favicon.ico request', () => {
+  const html = fs.readFileSync(path.join(OUT, 'pipeline-single.html'), 'utf8');
+  assert.strictEqual(html.split('<link rel="icon" href="data:,">').length - 1, 1);
+  assert.ok(html.indexOf('<link rel="icon" href="data:,">') < html.indexOf('</head>'));
 });
