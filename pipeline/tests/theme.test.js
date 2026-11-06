@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { loadPipeline } = require('./helpers/load');
 
-const css = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+// The look is shared (shared/praxis.css holds the tokens); the page adds its own rules.
+const css = fs.readFileSync(path.join(__dirname, '..', '..', 'shared', 'praxis.css'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
 const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
 
 function token(name) {
@@ -58,7 +59,7 @@ test('styles define reduced-motion and focus-visible rules', () => {
 });
 
 test('every colour is a token: no hex or rgb() outside :root', () => {
-  const outside = bare.replace(/:root\s*\{[^}]*\}/, '');
+  const outside = bare.replace(/:root\s*\{[^}]*\}/g, '');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(outside), 'hex colour outside :root');
   assert.ok(!/\brgba?\(|\bhsla?\(/.test(outside), 'rgb/hsl colour outside :root');
 });
@@ -95,7 +96,7 @@ test('severity chips, pass/fail marks and statuses use text tokens that pass on 
     ['.note', 'text-2', ['panel']],
     ['.muted', 'text-2', ['panel']],
     ['.hq-link', 'indigo', ['bg', 'panel']],
-    ['.stage-label', 'indigo', ['panel', 'bg']]
+    ['.stage-label', 'text-2', ['panel', 'bg']]
   ];
   checks.forEach(function (c) {
     const fg = decl(rule(c[0]), 'color');

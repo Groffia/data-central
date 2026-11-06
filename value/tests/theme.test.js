@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { loadValue } = require('./helpers/load');
 
-const css = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+// The look is shared (shared/praxis.css holds the tokens); the page adds its own rules.
+const css = fs.readFileSync(path.join(__dirname, '..', '..', 'shared', 'praxis.css'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
 const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
 
 function token(name) {
@@ -65,7 +66,7 @@ test('styles define reduced-motion and focus-visible rules', () => {
 });
 
 test('every colour is a token: no hex or rgb() outside :root', () => {
-  const outside = bare.replace(/:root\s*\{[^}]*\}/, '');
+  const outside = bare.replace(/:root\s*\{[^}]*\}/g, '');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(outside), 'hex colour outside :root');
   assert.ok(!/\brgba?\(|\bhsla?\(/.test(outside), 'rgb/hsl colour outside :root');
 });
@@ -142,7 +143,7 @@ test('delta directions, held text, check verdicts and panels use text tokens tha
     ['.def-message', 'color', 'text', ['panel']],
     ['.kpi-tile h3', 'color', 'text-2', ['panel-2']],
     ['pre.yaml', 'color', 'text', ['panel']],
-    ['.stage-label', 'color', 'indigo', ['panel', 'bg']],
+    ['.stage-label', 'color', 'text-2', ['panel', 'bg']],
     ['.caption', 'color', 'text-2', ['panel', 'panel-2']]
   ];
   checks.forEach(function (c) {
@@ -198,7 +199,7 @@ test('wide tables and charts scroll inside their container, and the renderer wra
 test('no horizontal scroll by construction: border-box, capped content column, scroll contained', () => {
   assert.ok(/\*\s*\{\s*box-sizing:\s*border-box/.test(bare));
   assert.ok(/header,\s*main,\s*footer\s*\{[^}]*max-width:\s*1200px/.test(bare));
-  assert.ok(/#region-header,\s*#region-footer\s*\{[^}]*max-width:\s*1168px/.test(bare));
+  assert.ok(/#region-footer\s*\{[^}]*max-width:\s*1168px/.test(bare));
   assert.ok(/body\s*\{[^}]*overflow-x:\s*hidden/.test(bare));
   assert.ok(/\.region\s*\{[^}]*min-width:\s*0/.test(bare));
   assert.ok(/\.kpi-grid\s*\{[^}]*minmax\(200px, 1fr\)/.test(bare));

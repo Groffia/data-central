@@ -217,7 +217,7 @@ function bootMain(metaContent) {
   };
   const ctx = vm.createContext({ Engine, document, window: { setTimeout: function () { return 1; }, clearTimeout: function () {} },
     location: { search: '?scenario=incident&step=3' }, performance: { now: function () { return 0; } }, console });
-  ['../../shared/escape', '../../shared/format', '../../shared/vendor', 'links', 'viewmodel', 'render', 'controller', 'autoplay', 'main'].forEach(function (n) {
+  ['../../shared/escape', '../../shared/format', '../../shared/vendor', '../../shared/brand', 'links', 'viewmodel', 'render', 'controller', 'autoplay', 'main'].forEach(function (n) {
     const f = path.join(ROOT, 'src', n + '.js');
     vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
   });

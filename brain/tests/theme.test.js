@@ -5,8 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const css = fs.readFileSync(path.join(ROOT, 'src', 'styles.css'), 'utf8');
+// The look is shared (shared/praxis.css holds the tokens); the page adds its own rules.
+const css = fs.readFileSync(path.join(__dirname, '..', '..', 'shared', 'praxis.css'), 'utf8') + '\n' + fs.readFileSync(path.join(ROOT, 'src', 'styles.css'), 'utf8');
 const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+// The page's own rules, for the tests that check this page's markup uses them.
+const pageBare = fs.readFileSync(path.join(ROOT, 'src', 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
 function token(name) {
   const m = new RegExp('--' + name + '\\s*:\\s*(#[0-9a-fA-F]{6})\\b').exec(css);
@@ -55,7 +58,7 @@ test('styles define reduced-motion and focus-visible rules', () => {
 });
 
 test('every colour is a token: no hex or rgb() outside :root', () => {
-  const outside = bare.replace(/:root\s*\{[^}]*\}/, '');
+  const outside = bare.replace(/:root\s*\{[^}]*\}/g, '');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(outside), 'hex colour outside :root');
   assert.ok(!/\brgba?\(|\bhsla?\(/.test(outside), 'rgb/hsl colour outside :root');
 });
@@ -118,7 +121,7 @@ test('no dead CSS: every class and id selector in the stylesheet appears in the 
   hay.replace(/class="edge edge-'/g, (m) => { ['plain', 'hot', 'dim'].forEach((s) => used.add('edge-' + s)); return m; });
   hay.replace(/'tier tier-paused'|"tier tier-paused"/g, (m) => { used.add('tier-paused'); return m; });
   const dead = [];
-  bare.replace(/([^{}]+)\{/g, (m, sel) => {
+  pageBare.replace(/([^{}]+)\{/g, (m, sel) => {
     if (sel.trim().charAt(0) === '@') return m;
     (sel.match(/\.([A-Za-z_][\w-]*)/g) || []).forEach((c) => { if (!used.has(c.slice(1))) dead.push(c); });
     (sel.match(/#([A-Za-z_][\w-]*)/g) || []).forEach((c) => { if (hay.indexOf(c.slice(1)) < 0) dead.push(c); });
@@ -127,10 +130,11 @@ test('no dead CSS: every class and id selector in the stylesheet appears in the 
   assert.deepEqual(dead, []);
 });
 
+
 test('no element selector in the stylesheet matches nothing in the page (header and footer elements do not exist)', () => {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   ['header', 'footer', 'main', 'section', 'details', 'summary', 'code', 'pre'].forEach((tag) => {
-    const inCss = new RegExp('(^|[\s,}])' + tag + '\s*[,{:]', 'm').test(bare);
+    const inCss = new RegExp('(^|[\s,}])' + tag + '\s*[,{:]', 'm').test(pageBare);
     if (inCss) assert.ok(new RegExp('<' + tag + '\b').test(html), tag + ' is styled but not in index.html');
   });
 });

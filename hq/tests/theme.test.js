@@ -4,7 +4,8 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const css = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+// The look is shared (shared/praxis.css holds the tokens); the page adds its own rules.
+const css = fs.readFileSync(path.join(__dirname, '..', '..', 'shared', 'praxis.css'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
 
 function token(name) {
   const m = new RegExp('--' + name + '\\s*:\\s*(#[0-9a-fA-F]{6})\\b').exec(css);

@@ -51,14 +51,17 @@ test('scripts: all data-inline, exist on disk, in order', () => {
     else assert.ok(fs.existsSync(path.join(ROOT, s.src)), s.src);
   });
   assert.deepStrictEqual(scripts.map(function (s) { return s.src; }), [
-    'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js',
+    'engine.js', 'shared/escape.js', 'shared/format.js', 'shared/vendor.js', 'shared/brand.js',
     'src/viewmodel.js', 'src/render.js', 'src/controller.js', 'src/main.js'
   ]);
 });
 
 test('stylesheet link is data-inline and exists', () => {
-  const m = /<link\b[^>]*rel="stylesheet"[^>]*>/.exec(html);
-  assert.ok(m && /href="src\/styles\.css"/.test(m[0]) && /\bdata-inline\b/.test(m[0]));
+  const links = html.match(/<link\b[^>]*rel="stylesheet"[^>]*>/g) || [];
+  assert.deepStrictEqual(links.map(function (l) { return /href="([^"]*)"/.exec(l)[1]; }), ['shared/fonts.css', 'shared/praxis.css', 'src/styles.css']);
+  links.forEach(function (l) { assert.ok(/\bdata-inline\b/.test(l), l); });
+  assert.ok(fs.existsSync(path.join(ROOT, '..', 'shared', 'fonts.css')));
+  assert.ok(fs.existsSync(path.join(ROOT, '..', 'shared', 'praxis.css')));
   assert.ok(fs.existsSync(path.join(ROOT, 'src', 'styles.css')));
 });
 

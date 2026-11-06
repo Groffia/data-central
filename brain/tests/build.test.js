@@ -21,7 +21,7 @@ test('build succeeds', () => {
 test('brain-single.html has engine and shared files once, no external refs', () => {
   const html = fs.readFileSync(path.join(OUT, 'brain-single.html'), 'utf8');
   assert.strictEqual(html.split(engineText).length - 1, 1);
-  ['escape.js', 'format.js', 'vendor.js'].forEach(function (n) {
+  ['escape.js', 'format.js', 'vendor.js', 'brand.js'].forEach(function (n) {
     const t = fs.readFileSync(path.join(SHARED, n), 'utf8');
     assert.strictEqual(html.split(t).length - 1, 1, n);
   });

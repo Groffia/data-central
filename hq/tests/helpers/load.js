@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SHARED_DIR = path.join(ROOT, '..', 'shared');
-const SHARED_ORDER = ['escape', 'format', 'vendor'];
+const SHARED_ORDER = ['escape', 'format', 'vendor', 'brand'];
 const ORDER = ['links', 'viewmodel', 'render', 'controller', 'autoplay'];
 
 function loadHQ() {

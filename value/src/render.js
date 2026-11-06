@@ -56,8 +56,7 @@
     const label = typeof s.label === 'string' ? s.label : 'Step ' + s.n + ' of ' + s.m;
     const hq = safeHref(h.hqHref);
     const pl = safeHref(h.pipelineHref);
-    return '<h1>' + esc(h.title) + '</h1>' +
-      '<p class="subtitle">' + esc(h.subtitle) + '</p>' +
+    return '<div class="top">' + globalThis.Shared.brand.html(h.title) +
       '<div class="header-controls">' +
       '<div class="scenario-switch" role="group" aria-label="Scenario">' +
       button('Healthy', 'scenario', { data: { value: 'healthy' }, pressed: sc === 'healthy' }) +
@@ -70,7 +69,8 @@
       '</div>' +
       (hq ? '<a class="hq-link"' + attr('href', hq) + '>Open this state in HQ</a>' : '') +
       (pl ? '<a class="pipeline-link"' + attr('href', pl) + '>Open this state in Pipeline</a>' : '') +
-      '</div>' +
+      '</div></div>' +
+      '<p class="subtitle">' + esc(h.subtitle) + '</p>' +
       '<p class="step-text">' + esc(s.text) + '</p>';
   }
 

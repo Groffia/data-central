@@ -161,7 +161,7 @@ function boot(html, valueMeta, pipelineMeta) {
   if (html) {
     html.replace(/<script>([\s\S]*?)<\/script>/g, (m, code) => { vm.runInContext(code, ctx); return m; });
   } else {
-    ['../../shared/escape', '../../shared/format', '../../shared/vendor', 'links', 'viewmodel', 'render', 'controller', 'autoplay', 'main'].forEach((n) => {
+    ['../../shared/escape', '../../shared/format', '../../shared/vendor', '../../shared/brand', 'links', 'viewmodel', 'render', 'controller', 'autoplay', 'main'].forEach((n) => {
       const f = path.join(ROOT, 'src', n + '.js');
       vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
     });

@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SHARED_DIR = path.join(ROOT, '..', 'shared');
-const SHARED_ORDER = ['escape', 'format', 'vendor'];
+const SHARED_ORDER = ['escape', 'format', 'vendor', 'brand'];
 // 'main-never' holds main.js's slot in the order but is never a file: main.js is the only DOM-touching script and is not loaded in tests.
 const ORDER = ['viewmodel', 'chart', 'definitions', 'render', 'controller', 'main-never'];
 

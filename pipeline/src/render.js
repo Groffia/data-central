@@ -50,8 +50,7 @@
     const h = vm.header;
     const s = h.steps;
     const link = safeHref(h.hqHref);
-    return '<h1>' + esc(h.title) + '</h1>' +
-      '<p class="subtitle">' + esc(h.subtitle) + '</p>' +
+    return '<div class="top">' + Shared.brand.html(h.title) +
       '<div class="header-controls">' +
       '<div class="scenario-switch" role="group" aria-label="Scenario">' +
       button('Healthy', 'scenario', { scenario: 'healthy', pressed: vm.scenario === 'healthy' }) +
@@ -63,7 +62,8 @@
       button('Next', 'next', { disabled: !h.canNext }) +
       '</div>' +
       (link ? '<a class="hq-link"' + attr('href', link) + '>Open this state in HQ</a>' : '') +
-      '</div>' +
+      '</div></div>' +
+      '<p class="subtitle">' + esc(h.subtitle) + '</p>' +
       '<p class="step-text">' + esc(s.text) + '</p>';
   }
 

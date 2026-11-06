@@ -1,95 +1,16 @@
-:root {
-  --bg: #0b1020;
-  --panel: #151b2e;
-  --panel-2: #1d2540;
-  --border: #323c5c;
-  --text: #e8ebf5;
-  --text-2: #aab2c8;
-  --green: #3ddc97;
-  --amber: #f5b942;
-  --red: #ff7070;
-  --indigo: #9aa2ff;
-  --grey: #8a93ab;
-  --on-green: #06150e;
-  --on-amber: #1a1203;
-  --on-red: #1f0505;
-  --on-indigo: #0a0c28;
-}
-* { box-sizing: border-box; }
-html { color-scheme: dark; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  overflow-x: hidden;
-}
-h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
-h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
-h3 { font-size: 1rem; margin: 10px 0 .25rem; }
-p { margin: 0 0 .5rem; }
-a { color: var(--indigo); }
-code { overflow-wrap: anywhere; }
-header, main, footer { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
-header { padding-top: 16px; padding-bottom: 8px; }
-.subtitle { color: var(--text-2); }
-footer { padding: 16px; color: var(--text-2); font-size: .85rem; }
-.region { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin: 12px 0; min-width: 0; overflow-wrap: anywhere; }
-.region:empty { display: none; }
-.skip-link { position: absolute; left: -999px; top: 0; background: var(--indigo); color: var(--on-indigo); padding: 6px 10px; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
-.skip-link:focus { left: 8px; z-index: 10; }
-
-.caption-bar {
-  position: sticky; top: 0; z-index: 5; max-width: 1200px; margin: 0 auto; padding: 8px 16px;
-  background: var(--panel-2); border-bottom: 2px solid var(--indigo); color: var(--text);
-}
-.caption-bar:empty { padding: 0; min-height: 0; border-bottom: 0; margin-bottom: 0; }
-
-/* header: scenario switch, stepper, HQ link */
-.header-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
-.scenario-switch, .stepper { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.step-label { font-weight: 600; }
-.hq-link { color: var(--indigo); font-weight: 600; }
-.stage-label { color: var(--indigo); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 0; }
-
-button {
-  font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--border);
-  border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: background-color .15s, border-color .15s;
-}
-button:hover:not(:disabled) { background: var(--border); }
-button[aria-pressed="true"] { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); font-weight: 600; }
-button:disabled { cursor: not-allowed; opacity: .55; background: transparent; border-style: dashed; color: var(--text-2); }
-:focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; }
-.region :focus-visible, header :focus-visible { outline-color: var(--text); box-shadow: 0 0 0 5px var(--indigo); }
-
-/* text, notices, alerts */
-.caption, .note, .placeholder { color: var(--text-2); }
 .note { border-left: 4px solid var(--amber); padding-left: 8px; margin-top: 8px; }
-.notice { color: var(--text); border-left: 4px solid var(--indigo); padding-left: 8px; margin: 0; }
-details { margin: 6px 0; }
-summary { cursor: pointer; }
-
-/* tables: wide ones scroll inside their wrapper, never the page */
-.table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; }
-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
-th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
-
 /* ===== Value page ===== */
 /* header and footer regions sit outside <main>: give them the same capped column */
-#region-header, #region-footer { max-width: 1168px; margin-left: auto; margin-right: auto; }
+#region-footer { max-width: 1168px; margin-left: auto; margin-right: auto; }
 #region-footer { color: var(--text-2); font-size: .85rem; }
 .kpi-tile, #stage-definitions, #stage-check { scroll-margin-top: 64px; }
 #stage-definitions, #stage-check { display: block; }
-
 /* deep-link target highlight: an outline, never colour alone */
 .focus-target { outline: 3px solid var(--indigo); outline-offset: 2px; }
 .kpi-tile.focus-target { background: var(--panel-2); }
 #stage-definitions.focus-target, #stage-check.focus-target { border-top: 3px solid var(--indigo); outline: 0; }
-
 /* step text and notices */
-.step-text { color: var(--text); margin-top: 8px; }
 .notice[role="alert"] { font-weight: 600; }
-
 /* KPI tiles */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 8px; }
 .kpi-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -107,7 +28,6 @@ th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
 .held-text { color: var(--amber); font-weight: 600; }
 .source, .freshness { font-size: .8rem; }
 .sparkline { display: block; width: 100%; max-width: 160px; height: auto; color: var(--indigo); margin: 4px 0; }
-
 /* trends: one figure per KPI, the chart scales with the column */
 .trend { margin: 14px 0; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; min-width: 0; overflow-x: auto; }
 .trend figcaption { font-weight: 700; margin-bottom: 4px; }
@@ -118,7 +38,6 @@ th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
 .trend .axis-label { fill: var(--text-2); font-size: 11px; }
 .trend-summary { margin-top: 6px; }
 .trend .table-wrap { margin-top: 8px; }
-
 /* compare */
 .compare-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .compare-col { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -128,7 +47,6 @@ th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
 .big { font-size: 1.15rem; font-weight: 700; }
 .rate { font-weight: 700; }
 .dropped-reasons { margin: 0 0 .5rem; padding-left: 1.2rem; }
-
 /* definitions panel */
 .def-global { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 8px; }
 .mode-switch { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -137,13 +55,11 @@ th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
 .metric-panel h3 { margin-top: 0; }
 .def-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 6px 0; }
 .def-controls label { font-weight: 600; }
-select { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; max-width: 100%; }
 pre.yaml { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; max-width: 100%; white-space: pre; font-size: .85rem; }
 pre.yaml code { overflow-wrap: normal; }
 .conflict { background: var(--red); color: var(--on-red); font-weight: 700; padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
 .consumers-table th[scope="row"] { color: var(--text); white-space: normal; }
 .changelog { margin: 0 0 .5rem; padding-left: 1.2rem; }
-
 /* expected-range check */
 .check-lead { font-weight: 700; }
 .check-question { font-style: italic; }
@@ -151,15 +67,10 @@ pre.yaml code { overflow-wrap: normal; }
 .verdict[data-level="ok"] { background: var(--green); color: var(--on-green); border-color: var(--green); }
 .verdict[data-level="warn"] { background: var(--amber); color: var(--on-amber); border-color: var(--amber); }
 .verdict[data-level="neutral"] { background: var(--panel-2); color: var(--text); }
-
 /* vendor table */
 .vendor-table th[scope="row"] { color: var(--text); white-space: normal; }
-
 @media (max-width: 640px) {
   .compare-columns { grid-template-columns: minmax(0, 1fr); }
-  #region-header, #region-footer { margin-left: 0; margin-right: 0; }
+  #region-footer { margin-left: 0; margin-right: 0; }
   .region { padding: 12px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }

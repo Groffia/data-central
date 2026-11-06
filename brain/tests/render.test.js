@@ -32,7 +32,7 @@ test('every region renders a string for a real model and for an empty one', () =
 
 test('header: title, scenario switch with aria-pressed, stepper, both links, step text', () => {
   const h = R.header(model('incident', 3));
-  assert.ok(h.indexOf('<h1>Brain: Control and Accountability</h1>') === 0);
+  assert.ok(h.indexOf('<h1 aria-label="Brain: Control and Accountability"><span class="w1">Brain</span> <span class="w2">Control and Accountability</span></h1>') > 0);
   assert.ok(/data-cmd="scenario" data-value="incident" aria-pressed="true"/.test(h));
   assert.ok(/data-cmd="scenario" data-value="healthy" aria-pressed="false"/.test(h));
   assert.ok(/data-cmd="back"/.test(h) && /data-cmd="next"/.test(h));

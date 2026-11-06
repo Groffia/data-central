@@ -26,14 +26,14 @@
   }
 
   function header(vm) {
-    return '<h1>' + esc('HQ: Data Platform Control Room') + '</h1>' +
-      '<p class="subtitle">' + esc('Tamsworth Health, synthetic hospital data platform') + '</p>' +
+    return '<div class="top">' + Shared.brand.html('HQ: Data Platform Control Room') +
       '<div class="header-controls">' +
       '<div class="scenario-switch" role="group" aria-label="Scenario">' +
       scenarioButton('Healthy', 'healthy', vm.scenario) + scenarioButton('Incident', 'incident', vm.scenario) +
       '</div>' +
       '<div class="watch-controls">' + button('Watch', 'watch') + button('Watch full version', 'watchFull') + '</div>' +
-      '</div>';
+      '</div></div>' +
+      '<p class="subtitle">' + esc('Tamsworth Health, synthetic hospital data platform') + '</p>';
   }
 
   function banner(vm) {

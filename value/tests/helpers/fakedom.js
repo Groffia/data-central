@@ -9,7 +9,7 @@ const vm = require('node:vm');
 const ROOT = path.join(__dirname, '..', '..');
 const SHARED = path.join(ROOT, '..', 'shared');
 const FILES = [
-  path.join(SHARED, 'escape.js'), path.join(SHARED, 'format.js'), path.join(SHARED, 'vendor.js'),
+  path.join(SHARED, 'escape.js'), path.join(SHARED, 'format.js'), path.join(SHARED, 'vendor.js'), path.join(SHARED, 'brand.js'),
   path.join(ROOT, 'src', 'viewmodel.js'), path.join(ROOT, 'src', 'chart.js'), path.join(ROOT, 'src', 'definitions.js'),
   path.join(ROOT, 'src', 'render.js'), path.join(ROOT, 'src', 'controller.js'), path.join(ROOT, 'src', 'main.js')
 ];

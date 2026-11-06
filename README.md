@@ -30,7 +30,7 @@
 | `pipeline/` | The Pipeline page: Generation, Collection/Ingestion, Processing/Preparation and Storage opened up. Same pattern as HQ, shares code in `shared/`. Latest release `pipeline-v1.0.3`. Offline copy: `pipeline-single.html` on the Releases page. |
 | `value/` | The Value page: stages 6 and 7 for Tamsworth Health, with the expected-range check and governed metric definitions. Latest release `value-v1.0.2`. Offline copy: `value-single.html` on the Releases page. |
 | `brain/` | The Brain page: stages 5 and 8 for Tamsworth Health, with the data contract and ownership, sensitive fields, lineage, a simulated access log, retention and a one-subject erasure. Latest release `brain-v1.0.1`. Offline copy: `brain-single.html` on the Releases page. |
-| `shared/` | Small scripts both pages use (escaping, number formatting, vendor table). |
+| `shared/` | Small scripts both pages use (escaping, number formatting, vendor table, the wordmark header, the shared stylesheet and the embedded fonts). |
 | `scripts/` | Builds the site that GitHub Pages serves, and checks that every page carries the exact engine version it declares in `pages.json`. |
 
 ## Run it yourself
@@ -56,3 +56,4 @@ Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve
 - Built by Stephen Groff ([LinkedIn](https://www.linkedin.com/in/groffstephen)).
 - Built with Claude, working from written specs, test-first plans and independent reviews of each task.
 - Licensed under the [MIT License](LICENSE).
+- Fonts are embedded so no page makes a network request: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono and Archivo, from Google Fonts, under the [SIL Open Font License 1.1](https://openfontlicense.org/). The look follows my PRAXIS.FASTI artifact.

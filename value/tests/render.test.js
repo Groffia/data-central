@@ -33,7 +33,7 @@ test('every key renders a string; all non-empty for a normal model, notice empty
 
 test('header: title, scenario buttons, stepper, links with the exact texts', () => {
   const h = R.header(model('incident', 3));
-  has(h, '<h1>Value: What the Business Sees</h1>');
+  has(h, '<h1 aria-label="Value: What the Business Sees"><span class="w1">Value</span> <span class="w2">What the Business Sees</span></h1>');
   has(h, 'Tamsworth Health');
   has(h, 'data-cmd="scenario" data-value="healthy" aria-pressed="false">Healthy</button>');
   has(h, 'data-cmd="scenario" data-value="incident" aria-pressed="true">Incident</button>');
@@ -302,7 +302,7 @@ test('broken-engine model renders: notice shown, controls present, no tiles, foo
 
 test('render.all: stable region order and no raw "undefined" for a real model', () => {
   const out = R.all(model('incident', 3));
-  const order = ['<h1>', 'KPI dashboard', 'Trends over 120 days', 'With the gate and without it', 'stage-definitions', 'stage-check', 'In production this is', 'All data is synthetic'];
+  const order = ['<h1 aria-label=', 'KPI dashboard', 'Trends over 120 days', 'With the gate and without it', 'stage-definitions', 'stage-check', 'In production this is', 'All data is synthetic'];
   let at = -1;
   order.forEach((s) => { const i = out.indexOf(s); assert.ok(i > at, s); at = i; });
   assert.ok(!/undefined|NaN/.test(out));

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const SHARED = path.join(__dirname, '..', '..');
-const ORDER = ['escape', 'format', 'vendor'];
+const ORDER = ['escape', 'format', 'vendor', 'brand'];
 
 function loadShared() {
   const context = vm.createContext({ console });
