@@ -34,7 +34,7 @@ node ../scripts/inline.js .        # shared inliner: writes dist\value-single.ht
 
 From the repo root, `node scripts/build-site.js` builds every page into `site/` and checks each engine copy.
 
-Requires engine tag `engine-v1.8`.
+Requires engine tag `engine-v1.9` (value-v1.0.1 is a copy-only release: the engine moved to v1.9 for the Brain page and nothing in this page changed; value-v1.0 needed `engine-v1.8`).
 
 ## Not done / parked
 

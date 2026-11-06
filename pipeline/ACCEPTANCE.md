@@ -61,3 +61,14 @@ Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) agai
 | Link from HQ with `a=` | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r#dlq-3-2` opens with the `dlq-3-2` anchor present and highlighted; all ten HQ links keep the same `a=`. |
 | Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
 | Release asset | Pass | Release run 42119219602 green. `pipeline-single.html` (123,518 bytes, sha256 23fec9bf...) equals the local build and the file served on Pages. |
+
+## Live acceptance (GitHub Pages, pipeline-v1.0.2 on commit d94aad3, 2026-11-05)
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42139546465 green on main d94aad3 (all suites and the engine tag check against `engine-v1.9`). |
+| From HQ and back | Pass | A real click on HQ's `dlq-3-4` link opened `/pipeline/?scenario=incident&step=3#dlq-3-4`; "Open this state in HQ" returned to HQ. The page shows its own vendor rows only (the new Access and audit log row is not rendered). |
+| Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42139803473 green. `pipeline-single.html` (138,172 bytes, sha256 4ed6294fbc9bfb286c79d53d0a8e4074057c9fc0590c51f9b47d854794044415) equals the local build and the file served on Pages. |
+
+Live checks run in the built-in browser at 1024 px; every click was a real click.

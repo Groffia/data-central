@@ -38,3 +38,14 @@ Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) agai
 | Diverged `a=` link | Pass | `?scenario=incident&a=r.r.p:dlq-3-2.r#kpi-abnormal-vital-rate` from HQ opens with the tile highlighted; the HQ and Pipeline links back keep the same `a=`. |
 | Console, network, layout | Pass | No console messages; no external requests; no duplicate ids; no horizontal scroll at 1024 px. |
 | Release asset | Pass | Release run 42119360787 green. `value-single.html` (138,462 bytes, sha256 4d99f37d...) equals the local build and the file served on Pages. |
+
+## Live acceptance (GitHub Pages, value-v1.0.1 on commit d94aad3, 2026-11-05)
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42139546465 green on main d94aad3 (all suites and the engine tag check against `engine-v1.9`). |
+| From HQ | Pass | A real click on HQ's "Open Abnormal Vital Rate in Value" opened `/value/?scenario=incident&step=3#kpi-abnormal-vital-rate`. The target highlight was not re-checked this time. |
+| Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42139881461 green. `value-single.html` (153,116 bytes, sha256 fa71fa2c34b543104f76e534a487fdb733d9b61ebd4ee652c7610fe2b165d351) equals the local build and the file served on Pages. |
+
+Live checks run in the built-in browser at 1024 px; every click was a real click.

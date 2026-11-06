@@ -1,6 +1,6 @@
 # Brain page: acceptance record
 
-Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/brain-v1`, served locally with `node hq/scripts/serve.js site` and read in the built-in browser pane at 1024 px over http. Engine `engine-v1.9` (local tag). Spec: Page Spec v1 - Brain (kept outside this repo). This is a local record; live acceptance is added after release.
+Date: 2026-11-05. Build: `node scripts/build-site.js` on branch `feat/brain-v1`, served locally with `node hq/scripts/serve.js site` and read in the built-in browser pane at 1024 px over http. Engine `engine-v1.9` (local tag). Spec: Page Spec v1 - Brain (kept outside this repo). Live acceptance is at the end of this file.
 
 | # | Item (spec section 10) | Result | Observed |
 |---|---|---|---|
@@ -27,3 +27,17 @@ Patient ids may appear in the subject picker, the erasure table, the access log'
 ## Known gaps
 
 - The lineage graph draws edges column to column only; a selected node does not highlight its upstream (the text panel lists it).
+
+## Live acceptance (GitHub Pages, brain-v1.0 on commit d94aad3, 2026-11-05)
+
+URL: https://groffia.github.io/data-central/brain/
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42139546465 green on main d94aad3 (all suites and the engine tag check against `engine-v1.9`). |
+| From HQ | Pass | A real click on HQ's chip 5 link opened `/brain/?scenario=incident&step=3#stage-phi`, with `#stage-phi` as the target. |
+| Erasure of `TMH-P-012004` at incident step 3 | Pass | Subject picked, Erase clicked. Footprint: Bronze 2 to 2 (unreadable), staging 0 to 0, Silver 1 to 0, dead-letter queue 0 to 0, dead-letter queue matched by name, ZIP and birth date 1 to 0, dim_patient 1 to 0. Six checks Pass, none fail. Live line and status "Erased TMH-P-012004"; `dlq-3-4` no longer in the quarantine panel; the access log has `privacy-office ERASE subject TMH-P-012004` with 3 rows. |
+| Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42139982802 green. `brain-single.html` (144,813 bytes, sha256 6f485c20bd83a840ce8dc1119fbc9b3fd1c11b9551a19da144073de2d2a1cf51) equals the local build, the file served on Pages and the file read from `file://` before release. |
+
+Not re-run live: a diverged `a=` link into Brain, the legal hold, and the lineage graph (covered by the local record above).

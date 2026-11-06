@@ -126,3 +126,16 @@ Built-in browser pane at 1024 px (`scrollWidth` equals `clientWidth`, 1009) agai
 | Too-long-state notice | Pass | Starting from a 1,997-character `a=` and running two more batches shows "State too long to link; opens at the nearest step." and the Value link falls back to `&step=4#stage-check`. |
 | Console, network, layout | Pass | No console messages on HQ or on the pages the clicks opened (Value, Pipeline, HQ again); no external requests; no horizontal scroll. |
 | Release asset | Pass | Release run 42119078221 green. `hq-single.html` (123,367 bytes, sha256 88e9e779...) equals the file served on Pages and the local build, byte for byte. |
+
+## Live acceptance (GitHub Pages, hq-v1.3 on commit d94aad3, 2026-11-05)
+
+| Item | Result | Observed |
+|---|---|---|
+| Deploy | Pass | Deploy site run 42139546465 green on main d94aad3 (all suites and the engine tag check against `engine-v1.9`). |
+| HQ chip 5 to Brain | Pass | At `?scenario=incident&step=3` the chip 5 link is `../brain/?scenario=incident&step=3#stage-phi` ("opens in Brain"); a real click opened Brain with `#stage-phi` as the target. Chip 8 carries `#stage-retention` (link href read, not clicked). |
+| HQ to Value | Pass | A real click on "Open Abnormal Vital Rate in Value" opened `/value/?scenario=incident&step=3#kpi-abnormal-vital-rate`. |
+| HQ and Pipeline both ways | Pass | A real click on the `dlq-3-4` link opened `/pipeline/?scenario=incident&step=3#dlq-3-4`; "Open this state in HQ" returned to `/hq/?scenario=incident&step=3`. |
+| Console, network, layout | Pass | No console messages; no external requests; no horizontal scroll at 1024 px. |
+| Release asset | Pass | Release run 42139699488 green. `hq-single.html` (139,511 bytes, sha256 a7d7a9772cb924791dc6ccd39524e41da7093b55bdb9899f528a2ed9fb18a147) equals the local build and the file served on Pages. |
+
+Live checks run in the built-in browser at 1024 px; every click was a real click.
