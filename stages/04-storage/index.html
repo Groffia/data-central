@@ -121,7 +121,7 @@ text{font-family:var(--font-system)}
                 <text class="s-muted" x="576" y="552" font-size="12">$0.002 per GB-month · slower to open</text>
               </g>
               <text id="saved" class="s-acc" x="60" y="614" font-size="15" opacity="0">Illustrative: 78.4% cheaper than keeping everything warm, 93.8% cheaper than keeping everything hot.</text>
-              <text id="rule" class="s-ink" x="60" y="638" font-size="14" opacity="0">Retention rule: warm after 30 days, cold after 180, deleted after 7 years.</text>
+              <text id="rule" class="s-ink" x="60" y="638" font-size="14" opacity="0">Retention rule: warm after 30 days, cold after 180, archived after 7 years.</text>
 
               <g id="next" opacity="0">
                 <path class="s-accl" d="M700 656 H920" stroke-width="2.5"/>
@@ -203,7 +203,7 @@ text{font-family:var(--font-system)}
         <div class="card" id="c0"><p class="k">01 · What</p><h3>Keep the row safe and findable</h3><p>The store must keep data accessible, protected, backed up and organized. Database administrators run it, with IT and security.</p><div class="tl"><p><strong>Tools:</strong> A data lake or a cloud warehouse such as Snowflake.</p></div></div>
         <div class="card" id="c1"><p class="k">02 · How</p><h3>Land, organize, protect, back up</h3><p>The row is written into the store, indexed and split by date so it can be found fast, locked to the right people, and copied to a second place.</p><div class="tl"><p><strong>Tools:</strong> Database indexing and partitioning; access control; a backup in another location.</p></div></div>
         <div class="card" id="c2"><p class="k">03 · Why</p><h3>Not all data needs the fastest shelf</h3><p>Recent data is opened often, so it stays hot. Older data is opened rarely, so it moves to cheaper tiers. In this sample, that costs far less than keeping everything hot or warm.</p><div class="tl"><p><strong>Tools:</strong> Cloud storage tiers in a warehouse or lake.</p></div></div>
-        <div class="card" id="c3"><p class="k">04 · When</p><h3>A retention rule sets the timing</h3><p>As the row ages, a rule moves it from hot to warm to cold, and deletes it when the retention period ends. The people who run storage set the rule.</p><div class="tl"><p><strong>Tools:</strong> Retention policies in the warehouse or lake.</p></div></div>
+        <div class="card" id="c3"><p class="k">04 · When</p><h3>A retention rule sets the timing</h3><p>As the row ages, a rule moves it from hot to warm to cold, and archives it when the retention period ends. The people who run storage set the rule.</p><div class="tl"><p><strong>Tools:</strong> Retention policies in the warehouse or lake.</p></div></div>
         <div class="card" id="c4"><p class="k">05 · Next</p><h3>Management</h3><p>Stage 5 keeps stored data accurate, compliant and private: who may see it, what it means, and when it is archived or deleted.</p><div class="tl"><p><strong>Tools:</strong> Governance, access control and catalog tools.</p></div></div>
       </div>
 
