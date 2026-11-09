@@ -170,6 +170,7 @@ text{font-family:var(--font-system)}
 
             <!-- chips -->
             <g id="chips"></g>
+            <g id="fx"></g>
 
             <!-- AI layer -->
             <rect id="markA1" x="50" y="38" width="900" height="148" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
@@ -293,8 +294,11 @@ text{font-family:var(--font-system)}
   // vector dots
   var DOTP=[[720,262],[745,276],[790,255],[830,278],[870,262],[735,300],[780,304],[850,304],[805,280]];
   DOTP.forEach(function(p,i){$('dots').appendChild(el('circle',{id:'dot'+i,cx:p[0],cy:p[1],r:4,'class':'s-sl',opacity:.6}))});
-  function hiDots(on){[2,8].forEach(function(i){var d=$('dot'+i);d.setAttribute('class',on?'s-acc':'s-sl');d.setAttribute('opacity',on?1:.6);d.setAttribute('r',on?6:4)})}
+  var NN2=[2,8];
+  function hiDots(on){NN2.forEach(function(i){var d=$('dot'+i);d.setAttribute('class',on?'s-acc':'s-sl');d.setAttribute('opacity',on?1:.6);d.setAttribute('r',on?6:4)})}
 
+  var QP=[797,272],RANK=[],NN=[];
+  (function(){var d=DOTP.map(function(p,i){return [Math.hypot(p[0]-QP[0],p[1]-QP[1]),i]}).sort(function(a,b){return a[0]-b[0]});d.forEach(function(x,r){RANK[x[1]]=r});NN=[d[0][1],d[1][1]]})();
   var mode=0,playing=!reduce,elapsed=0,last=null,shown='',dutyShown='';
 
   function setCards(prefix,n,step){for(var i=0;i<n;i++)$(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
@@ -333,6 +337,24 @@ text{font-family:var(--font-system)}
     op($('rule'),step===3?clamp01((u-.5)/.2):(step>3?1:0));
   }
 
+  // ---- effects pools (AI modes) ----
+  var FXC=[],FXL=[],NC=0,NL=0;
+  function fxBegin(){NC=0;NL=0}
+  function fxEnd(){var i;for(i=NC;i<FXC.length;i++)op(FXC[i],0);for(i=NL;i<FXL.length;i++)op(FXL[i],0)}
+  function fc(x,y,r,fill,stroke,sw,o,dash){
+    var e=FXC[NC];if(!e){e=el('circle',{});$('fx').appendChild(e);FXC[NC]=e}NC++;
+    e.setAttribute('cx',x.toFixed(1));e.setAttribute('cy',y.toFixed(1));e.setAttribute('r',Math.max(0,r).toFixed(1));
+    e.setAttribute('fill',fill||'none');e.setAttribute('stroke',stroke||'none');e.setAttribute('stroke-width',sw||0);e.setAttribute('opacity',o);
+    if(dash){e.setAttribute('stroke-dasharray',dash);e.setAttribute('stroke-dashoffset',-(elapsed/12))}else e.removeAttribute('stroke-dasharray');
+  }
+  function fl(x1,y1,x2,y2,stroke,sw,o,dash){
+    var e=FXL[NL];if(!e){e=el('line',{});$('fx').appendChild(e);FXL[NL]=e}NL++;
+    e.setAttribute('x1',x1.toFixed(1));e.setAttribute('y1',y1.toFixed(1));e.setAttribute('x2',x2.toFixed(1));e.setAttribute('y2',y2.toFixed(1));
+    e.setAttribute('stroke',stroke);e.setAttribute('stroke-width',sw);e.setAttribute('opacity',o);
+    if(dash)e.setAttribute('stroke-dasharray',dash);else e.removeAttribute('stroke-dasharray');
+  }
+  var AIC='var(--ai)',ACC='var(--accent)',SL='var(--slate-300)';
+
   function frameBase(s){
     var step=s.step,u=s.u;
     hideAIlayer();
@@ -345,8 +367,8 @@ text{font-family:var(--font-system)}
       put(C,1,840,372,1);
       var x=160;
       if(step===2)x=160;
-      else if(step===3){x=lerp(160,800,clamp01((u-.1)/.7))}
-      else x=800;
+      else if(step===3){x=lerp(160,840,clamp01((u-.1)/.7))}
+      else x=840;
       put(M,1,x,576,.9);
     }
     op($('next'),step===4?1:0);
@@ -359,27 +381,46 @@ text{font-family:var(--font-system)}
     baseCommon(step===0?9:9,1,'var(--tertiary-text)');
     setDuties([true,true,true,true]);
     op($('rawtag'),0);op($('saved'),0);op($('rule'),1);op($('tiers'),1);
-    put(M,1,160,576,.9);put(C,1,840,372,1);op($('cptag'),1);
+    if(step!==3)put(M,1,160,576,.9);put(C,1,840,372,1);op($('cptag'),1);
     showBoxes(function(){return 1},-1,'var(--ai)');
     op($('agentlabel'),1);
     var mb=$('markBox');
     function box(x,y,w,h){mb.setAttribute('x',x);mb.setAttribute('y',y);mb.setAttribute('width',w);mb.setAttribute('height',h);op(mb,.6+.4*Math.abs(Math.sin(elapsed/350)))}
     if(step===0){op($('markA1'),pulse);op($('markA2'),pulse)}
     else if(step===1){
-      box(256,478,312,62);
+      box(52,478,888,62);
       $('readlabel').textContent='AI reads the access log';op($('readlabel'),(u>.1&&u<.9)?1:0);
+      var sx=60+880*((elapsed/2600)%1);
+      fl(60,509,260,509,AIC,46,.5*pulse);fl(262,509,562,509,AIC,46,.18*pulse);fl(564,509,940,509,AIC,46,.05*pulse);
+      fl(sx,468,sx,540,AIC,2.5,.95);
+      for(var k=0;k<24;k++){
+        var tr=k<16?0:(k<21?1:2),px=tr===0?70+(k*37)%170:(tr===1?272+(k*71)%270:574+(k*53)%350),ph=(elapsed/1500+k*.173)%1;
+        fc(px,484-ph*56,4.5,AIC,null,0,1-ph);
+      }
       var n=Math.round(4200*ease((u-.05)/.6));
       $('anote').textContent=u<.7?(n.toLocaleString('en-US')+' reads analyzed · most touch recent data · sample'):'Recent data is opened often; older data rarely.';
       op($('anote'),u>.05?1:0);
     }else if(step===2){
       box(286,247,228,92);
       op($('proposal'),u>.1?1:0);
+      var gp=ease((elapsed/2400)%1),gx=400+360*gp;
+      fl(400,576,760,576,AIC,2,.7,'6 5');
+      fl(gx-28,576,gx+28,576,AIC,20,.55);
+      fc(gx,576,0,null,null,0,0);
+      fc(770,576,6,AIC,null,0,.9);
+      fc(400,576,5,null,AIC,2,.9);
       $('anote').textContent='A suggestion only. A person decides.';op($('anote'),u>.5?1:0);
     }else if(step===3){
       box(50,620,890,26);
-      $('anote').textContent='Agent: checked 1,240 items against the approved rule · 0 outside it · sample';op($('anote'),u>.15?1:0);
+      for(var q=0;q<7;q++){
+        var ph2=((elapsed/9000)+q/7)%1,cx=100+ph2*840,col=cx<262?ACC:(cx<564?SL:'#8a96a8');
+        fc(cx,576,7,col,null,0,1);
+        [262,564].forEach(function(b){var dx=Math.abs(cx-b);if(dx<30)fc(b,576,9+(30-dx)*.6,'none',AIC,2.5,1-dx/30)});
+      }
+      $('anote').textContent='Agent: checked '+Math.round(1240*ease((u-.1)/.6)).toLocaleString('en-US')+' items against the approved rule · 0 outside it · sample';op($('anote'),u>.15?1:0);
     }else{
       op($('dstation'),u>.1?1:0);
+      if(u>.1)for(var j=0;j<3;j++){var ph3=((elapsed/1800)+j/3)%1;fc(908,562,10+ph3*70,'none',AIC,2,(1-ph3)*.8)}
       $('anote').textContent='A person approves each rule. Stored data flows on to Stage 5.';op($('anote'),u>.3?1:0);
       op($('next'),u>.7?1:0);
     }
@@ -394,6 +435,28 @@ text{font-family:var(--font-system)}
     var showTop=step<2;op($('blab'),showTop?1:0);op($('bsent'),showTop?1:0);op($('btag'),showTop?1:0);if(!showTop)op(MB,0);
     op($('bstores'),step===0?0:(step===1?clamp01(u/.3):1));
     hiDots(step===2&&u>.5);
+    if(step<=1)for(var di=0;di<9;di++){var ti=.1+di*.075;$('dot'+di).setAttribute('opacity',step===0?0:.6*clamp01((u-ti)/.05)*(step===1?1:1))}
+    if(step===1)for(var pi=0;pi<9;pi++){
+      var ss=clamp01((u-(.1+pi*.075-.12))/.12);
+      if(ss>0&&ss<1){var ex=lerp(470,DOTP[pi][0],ss),ey=lerp(300,DOTP[pi][1],ss)-Math.sin(ss*Math.PI)*30,s2=Math.max(0,ss-.12),bx=lerp(470,DOTP[pi][0],s2),by=lerp(300,DOTP[pi][1],s2)-Math.sin(s2*Math.PI)*30;
+        fl(bx,by,ex,ey,AIC,2,.6);fc(ex,ey,4.5,AIC,null,0,1)}
+    }
+    if(step===2){
+      var qx=lerp(640,QP[0],clamp01(u/.2)),qy=lerp(330,QP[1],clamp01(u/.2));
+      fc(qx,qy,6,AIC,null,0,1);
+      if(u>.2){
+        var rp=(elapsed/1200)%1;fc(QP[0],QP[1],rp*120,'none',AIC,2,(1-rp)*.7);
+        for(var li=0;li<9;li++){
+          var rk=RANK[li],on=u<.6?(u>.2+rk*.04):(NN.indexOf(li)>=0);
+          if(on)fl(QP[0],QP[1],DOTP[li][0],DOTP[li][1],u<.6?AIC:ACC,u<.6?1.5:2.5,u<.6?.6:1);
+        }
+      }
+    }
+    if(step===3){
+      var pl=.35+.65*Math.abs(Math.sin(elapsed/500));
+      fl(52,250,920,250,AIC,2,.7*pl,'8 6');fl(52,352,920,352,AIC,2,.7*pl,'8 6');fl(52,250,52,352,AIC,2,.7*pl,'8 6');fl(920,250,920,352,AIC,2,.7*pl,'8 6');
+      fc(250,420,16,'none',AIC,4,u>.2?1:0,'30 70');fc(250,420,16,'none',AIC,4,u>.2?1:0,'30 70');
+    }
     op($('bq'),step===2?clamp01((u-.05)/.2):0);
     op($('block'),step===3?clamp01((u-.1)/.2):0);
     var A=$('btxtA'),B=$('btxtB');
@@ -411,7 +474,9 @@ text{font-family:var(--font-system)}
       setCards(['c','a','b'][mode],5,s.step);setBands(BANDS[mode][s.step]);
       if(s.step===0)dutyShown='';
     }
+    fxBegin();
     if(mode===0)frameBase(s);else if(mode===1)frameAI(s);else frameB(s);
+    fxEnd();
   }
   function loop(ts){
     if(last===null)last=ts;
