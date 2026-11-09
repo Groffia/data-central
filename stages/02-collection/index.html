@@ -123,6 +123,7 @@ text{font-family:var(--font-system)}
             <text class="s-ink" x="60" y="298" font-size="19">Extract, then match</text>
             <text class="s-muted" x="60" y="319" font-size="13">on patient and time</text>
             <text id="mtag" class="s-muted" x="568" y="325" font-size="14" opacity="0">one row</text>
+            <text id="mleg" class="s-muted" x="568" y="343" font-size="12" opacity="0">V vitals · L lab results · S survey</text>
             <g id="tiles"></g>
 
             <!-- bronze tray -->
@@ -132,6 +133,7 @@ text{font-family:var(--font-system)}
             <g transform="translate(906,630)"><rect x="-8" y="-6" width="16" height="12" rx="2" fill="var(--accent)" opacity=".8"/><path d="M-5 -6 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
             <text class="s-muted" x="890" y="634" font-size="11" letter-spacing="2" text-anchor="end">RAW · NEVER EDITED</text>
             <text id="count" class="s-acc" x="80" y="630" font-size="14"></text>
+            <text class="s-muted" x="500" y="668" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
             <g id="stack"></g>
             <g id="next" opacity="0">
               <path class="s-accl" d="M780 600 H920" stroke-width="2.5"/>
@@ -272,7 +274,7 @@ text{font-family:var(--font-system)}
   // merged chip fades while it passes behind the four V tiles
   function dropFade(y){return y<330?1:(y<345?1-(y-330)/15:(y<480?0:clamp01((y-480)/15)))}
 
-  var src=[$('src0'),$('src1'),$('src2')],mtag=$('mtag'),stack=$('stack'),count=$('count'),next=$('next');
+  var mleg=$('mleg');var src=[$('src0'),$('src1'),$('src2')],mtag=$('mtag'),stack=$('stack'),count=$('count'),next=$('next');
   var markSrc=$('markSrc'),markMrg=$('markMrg'),agentlabel=$('agentlabel'),readlabel=$('readlabel'),markBox=$('markBox'),funnel=$('funnel'),
       note=$('note'),proposal=$('proposal'),dstation=$('dstation');
   var aiOn=false,rows=0,playing=!reduce,elapsed=0,last=null,counted=-1,shown='';
@@ -289,7 +291,7 @@ text{font-family:var(--font-system)}
   function setCards(prefix,n,step){for(var i=0;i<n;i++)$(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
   function setBands(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('h'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
   function hideAI(){op(markSrc,0);op(markMrg,0);op(agentlabel,0);op(readlabel,0);op(markBox,0);op(note,0);op(proposal,0);op(dstation,0)}
-  function hideBase(){op(next,0);op(mtag,0)}
+  function hideBase(){op(next,0);op(mtag,0);op(mleg,0)}
   function stepOf(T){var cyc=Math.floor(elapsed/T.TOTAL),e=elapsed%T.TOTAL,s=0;while(s<T.N-1&&e>=T.START[s+1])s++;return {cyc:cyc,step:s,u:(e-T.START[s])/T.DUR[s]}}
 
   // three source chips travel to the match point
@@ -304,16 +306,16 @@ text{font-family:var(--font-system)}
     var s=stepOf(BASE),step=s.step,u=s.u,cyc=s.cyc;
     var key='b'+step+'/'+cyc;
     if(shown!==key){shown=key;setCards('c',5,step);setBands(BASEBANDS[step]);}
-    hideAI();hideChips();op(mtag,0);
+    hideAI();hideChips();op(mtag,0);op(mleg,0);
     for(var k=0;k<3;k++)op(src[k],step===0?ease((u-.08-k*.18)/.2):1);
     var gp=step<2?0:(step===2?(u-.1)/.7:1);lightTiles(gp);
     if(step===1){
       if(u<.6){travel(u,.05,.35,false)}
-      else{put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1)}
+      else{put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1)}
     }else if(step===2){
-      put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);
+      put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1);
     }else if(step===3){
-      if(u<.3){put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1)}
+      if(u<.3){put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1)}
       else{var q=clamp01((u-.3)/.5),y=lerp(320,600,q);
         if(q<1)put(C[4],dropFade(y),500,y,lerp(1.2,1,q));
         else if(counted!==cyc){counted=cyc;addRow()}}
@@ -335,13 +337,13 @@ text{font-family:var(--font-system)}
       op(readlabel,(u>.1&&u<.55)?1:0);
       var q=clamp01((u-.2)/.35);
       if(u>.2)put(C[3],1,lerp(540,610,q),lerp(150,305,q),.8+.2*ease(q),'s-acc',u>.62);
-      if(u>=.55)put(C[4],1,500,320,1.2);
+      if(u>=.55){put(C[4],1,500,320,1.2);op(mleg,1)}
       note.textContent='Repeat flagged and kept out of the merge.';op(note,u>.68?1:0);
     }else if(step===2){
       op(agentlabel,1);
       put(C[3],1,610,305,1,'s-acc',true);
       note.textContent='Repeat flagged. Bronze still holds exactly what arrived.';op(note,1);
-      if(u<.2)put(C[4],1,500,320,1.2);
+      if(u<.2){put(C[4],1,500,320,1.2);op(mleg,1)}
       else{var q2=clamp01((u-.2)/.6),y=lerp(320,600,q2);
         if(q2<1)put(C[4],dropFade(y),500,y,lerp(1.2,1,q2));
         else if(counted!==cyc){counted=cyc;addRow()}}
