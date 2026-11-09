@@ -180,9 +180,6 @@ text{font-family:var(--font-system)}
                 <path class="s-accl" d="M608 285 L621 295 L608 305" stroke-width="2.5"/>
                 <text class="s-muted" x="500" y="282" font-size="12" text-anchor="middle">after 7 years</text>
               </g>
-              <g id="p2lock" opacity="0" transform="translate(318,268)"><rect x="-8" y="-2" width="16" height="12" rx="2" fill="var(--accent)" opacity=".85"/><path d="M-5 -2 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
-              <text id="p2hold" class="s-ink" x="60" y="388" font-size="14" opacity="0">Legal hold: a case or audit needs this row, so it stays where it is.</text>
-              <text id="p2hold2" class="s-muted" x="60" y="410" font-size="13" opacity="0">Sample: a second row, on hold, is not archived.</text>
 
               <g id="p2cmp" opacity="0">
                 <rect x="60" y="488" width="400" height="84" rx="10" class="s-fill s-line" stroke-width="2"/>
@@ -304,7 +301,7 @@ text{font-family:var(--font-system)}
 
       <div class="cards" id="stepcards2" aria-live="polite">
         <div class="card" id="d0"><p class="k">01 · What</p><h3>Decide how long data lives</h3><p>Retention sets how long data is kept and where. Archive keeps it for rare use; deletion removes it for good. Compliance and data stewards own the rules.</p><div class="tl"><p><strong>Tools:</strong> Retention policies.</p></div></div>
-        <div class="card" id="d1"><p class="k">02 · How</p><h3>Keep, archive, delete only on cause</h3><p>The row stays in the store for 7 years, then moves to the archive. A legal hold pauses that. Deletion happens only when something triggers it.</p><div class="tl"><p><strong>Tools:</strong> Retention policies and legal holds.</p></div></div>
+        <div class="card" id="d1"><p class="k">02 · How</p><h3>Keep, archive, delete only on cause</h3><p>The row stays in the store for 7 years, then moves to the archive. Deletion happens only when something triggers it.</p><div class="tl"><p><strong>Tools:</strong> Retention policies.</p></div></div>
         <div class="card" id="d2"><p class="k">03 · Why</p><h3>Keeping is cheap; deleting is final</h3><p>Storage costs little, so age alone is no reason to delete. Archive keeps data for audits and the law. Deleting protects people and cuts risk, so it needs a reason.</p><div class="tl"><p><strong>Tools:</strong> An archive store.</p></div></div>
         <div class="card" id="d3"><p class="k">04 · When</p><h3>On a trigger</h3><p>A person asks to be erased, or a security or data-integrity concern is raised. Every copy of the data is found, removed and checked, and the deletion is logged.</p><div class="tl"><p><strong>Tools:</strong> A deletion workflow and the audit log.</p></div></div>
         <div class="card" id="d4"><p class="k">05 · Next</p><h3>Stage 6: Analysis</h3><p>Data that is described, protected and kept on rules flows on to analysis, where it is turned into answers.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
@@ -312,7 +309,7 @@ text{font-family:var(--font-system)}
 
       <div class="cards" id="aicards2" aria-live="polite">
         <div class="card" id="e0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>Inside retention, where AI finds what is due and where every copy lives. Around it, where an agent watches the rules.</p></div>
-        <div class="card" id="e1"><p class="k">02 · What</p><h3>It finds what is due</h3><p>AI scans for rows that have reached 7 years and proposes archiving them. Rows on legal hold are left alone.</p><div class="tl"><p><strong>Tools:</strong> Monitoring and classification.</p></div></div>
+        <div class="card" id="e1"><p class="k">02 · What</p><h3>It finds what is due</h3><p>AI scans for rows that have reached 7 years and proposes archiving them.</p><div class="tl"><p><strong>Tools:</strong> Monitoring and classification.</p></div></div>
         <div class="card" id="e2"><p class="k">03 · Why it matters</p><h3>It finds every copy</h3><p>For an erasure it searches every place the data lives, including backups and the archive. People miss copies; the search does not tire.</p></div>
         <div class="card" id="e3"><p class="k">04 · Why it scales</p><h3>An agent watches retention</h3><p>It checks all day that nothing is kept past its rule or deleted without a trigger, and flags anything that is.</p></div>
         <div class="card" id="e4"><p class="k">05 · Next</p><h3>People approve every deletion</h3><p>Deleting is final, so the agent proposes and a person approves each one. Sources keep humans in control of key decisions.</p></div>
@@ -622,12 +619,10 @@ text{font-family:var(--font-system)}
     op($('p2store'),sv);op($('p2arch'),sv);
     op($('p2arrow'),step===1?ease((u-.2)/.1):(step>1?1:0));
     var hv=0;
-    if(ai||step>1){put(M,1,890,295,.8);put(M2,1,300,295,1);hv=1}
+    if(ai||step>1){put(M,1,890,295,.8);hv=1}
     else if(step===1){
       if(u>=.12){var mx=u<.3?300:lerp(300,890,(u-.3)/.35);put(M,1,mx,295,u<.3?1:lerp(1,.8,(u-.3)/.35))}
-      hv=ease((u-.7)/.1);put(M2,hv,300,295,1);
     }
-    op($('p2lock'),hv);op($('p2hold'),step===1&&!ai?ease((u-.75)/.1):hv);op($('p2hold2'),step===1&&!ai?ease((u-.82)/.1):hv);
     op($('p2cmp'),(!ai&&step===2)?ease(u/.2):0);
     op($('p2trig'),ai?1:(step===3?ease(u/.15):(step>3?1:0)));
     op($('p2foot'),ai?1:(step===3?ease((u-.2)/.15):(step>3?1:0)));
@@ -648,7 +643,7 @@ text{font-family:var(--font-system)}
       fl(sx,70,sx,160,AIC,2.5,.95);
       for(i=0;i<16;i++){var ph=(elapsed/1400+i*.2)%1;fc(70+(i*59)%860,128-ph*34,3.5,AIC,null,0,(1-ph)*.9)}
       box(777,79,168,44);
-      note('AI found '+Math.round(3*ease((u-.1)/.5))+' rows at 7 years · proposed for the archive · 1 on legal hold, left alone · sample',500,166,'middle',u>.1?1:0);
+      note('AI found '+Math.round(3*ease((u-.1)/.5))+' rows at 7 years · proposed for the archive · sample',500,166,'middle',u>.1?1:0);
     }else if(step===2){
       var lines=ease(u/.5);
       var bw=340+590*clamp01(u/.6);
