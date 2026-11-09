@@ -100,6 +100,8 @@ text{font-family:var(--font-system)}
               <text id="d2" class="s-muted" x="440" y="132" font-size="15"></text>
               <text id="d3" class="s-muted" x="440" y="158" font-size="15"></text>
               <text id="rawtag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">from Bronze · raw, one row</text>
+              <text id="legTop" class="s-muted" x="230" y="188" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
+              <text class="s-muted" x="60" y="392" font-size="11">V vitals · L lab results · S survey</text>
               <g transform="translate(110,100)"><rect x="-8" y="-6" width="16" height="12" rx="2" fill="var(--accent)" opacity=".8"/><path d="M-5 -6 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
 
               <g id="bar" opacity="0">
@@ -119,6 +121,7 @@ text{font-family:var(--font-system)}
               <path class="s-line" d="M60 560 V660 H600 V560" stroke-width="2" stroke-linejoin="round"/>
               <text class="s-ink" x="80" y="592" font-size="19">Silver · clean and checked</text>
               <text class="s-muted" x="80" y="614" font-size="13">ready to be stored and used</text>
+              <text class="s-muted" x="80" y="630" font-size="11">V vitals · L lab results · S survey</text>
               <text id="count" class="s-acc" x="80" y="646" font-size="14"></text>
               <g id="stack"></g>
 
@@ -141,6 +144,7 @@ text{font-family:var(--font-system)}
               <text id="blab" class="s-muted" x="450" y="84" font-size="11" letter-spacing="2">ONE SURVEY ANSWER, AS TEXT</text>
               <text id="bsent" class="s-ink" x="450" y="122" font-size="16"></text>
               <text id="btag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">clean Silver row from Stage 3</text>
+              <text id="legB" class="s-muted" x="230" y="188" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
               <g id="bpills" opacity="0">
                 <rect x="60" y="352" width="330" height="34" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
                 <text class="s-ink" x="225" y="374" font-size="14" text-anchor="middle">[removed]: Waited long,</text>
@@ -374,7 +378,7 @@ text{font-family:var(--font-system)}
     var f=step===0?0:(step===1?fixedAt(u):4);
     setDefects(f);
     showBoxes(BB,function(k){return step===0?ease((u-.1-k*.15)/.2):1},step===1?activeAt(u):-1,'var(--accent)');
-    op($('rawtag'),step===0?1:(step===1?clamp01(1-u*8):0));
+    op($('rawtag'),step===0?1:(step===1?clamp01(1-u*8):0));op($('legTop'),step===0?1:(step===1?clamp01(1-u*8):0));
     var dim=.55+.45*f/4;
     if(step===0)put(M,dim,230,125,1.5);
     else if(step===1){var p=wp(u);put(M,dim,p[0],p[1],scale1(u))}
@@ -401,7 +405,7 @@ text{font-family:var(--font-system)}
     $('sceneBase').setAttribute('opacity',1);op($('sceneB'),0);
     hideAIlayer();hideChips();op($('bar'),0);op($('next'),0);
     $('dcount').textContent='';
-    op($('rawtag'),step===0?1:0);
+    op($('rawtag'),step===0?1:0);op($('legTop'),step===0?1:0);
     if(step<=1){}
     op($('agentlabel'),1);
     var f=step===0?0:(step===1?fixedAt(u):4);
@@ -447,7 +451,7 @@ text{font-family:var(--font-system)}
     var sent=$('bsent');
     sent.textContent=(purged?'[removed]':'Jo Ames')+': “Waited long, but the nurse was kind.”';
     sent.setAttribute('class',purged?'s-acc':'s-ink');
-    var showTop=step<3;op($('blab'),showTop?1:0);op(sent,showTop?1:0);op($('btag'),showTop?1:0);if(!showTop)op(MB,0);
+    var showTop=step<3;op($('blab'),showTop?1:0);op(sent,showTop?1:0);op($('btag'),showTop?1:0);op($('legB'),showTop?1:0);if(!showTop)op(MB,0);
     op($('bpills'),step===1?clamp01((u-.5)/.2):(step===2?1:0));
     op($('bvec'),step===2?clamp01((u-.15)/.2):0);
     op($('bdb'),step===2?clamp01((u-.55)/.2):0);
