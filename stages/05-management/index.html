@@ -93,6 +93,7 @@ text{font-family:var(--font-system)}
 
             <!-- ===== base scene ===== -->
             <g id="sceneBase">
+              <text id="leg1" class="s-muted" x="230" y="186" font-size="11" text-anchor="middle">V vitals · L lab results · S survey</text>
               <text id="rawtag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">clean Silver row from Stage 4</text>
               <text id="cathead" class="s-acc" x="440" y="46" font-size="11" letter-spacing="2">THE CATALOG: WHAT EACH FIELD MEANS</text>
               <g id="gcat"></g>
@@ -149,6 +150,7 @@ text{font-family:var(--font-system)}
             <!-- ===== Part 2 scene ===== -->
             <g id="sceneP2" opacity="0">
               <g id="tl0" opacity="0">
+                <text class="s-muted" x="940" y="42" font-size="11" text-anchor="end">V vitals · L lab results · S survey</text>
                 <text class="s-muted" x="60" y="56" font-size="11" letter-spacing="2">ONE ROW, FROM DAY ZERO</text>
                 <rect x="60" y="84" width="140" height="34" rx="4" class="s-acc"/>
                 <rect x="202" y="84" width="218" height="34" rx="4" class="s-sl"/>
@@ -165,6 +167,7 @@ text{font-family:var(--font-system)}
               </g>
               <text id="p2rule" class="s-ink" x="60" y="190" font-size="14" opacity="0">Retention rule: warm after 30 days, cold after 180, archived after 7 years.</text>
 
+              <text id="p2leg" class="s-muted" x="60" y="360" font-size="11" opacity="0">V vitals · L lab results · S survey</text>
               <g id="p2store" opacity="0">
                 <rect x="60" y="258" width="300" height="74" rx="10" class="s-fill s-line" stroke-width="2"/>
                 <text class="s-ink" x="80" y="288" font-size="17">The store</text>
@@ -616,7 +619,7 @@ text{font-family:var(--font-system)}
     op(M,0);op(M2,0);
     if(step===0&&u>.2&&!ai)put(M,1,lerp(110,860,clamp01((u-.2)/.6)),62,.8);
     var sv=step===1?ease(u/.12):(step>1?1:0);
-    op($('p2store'),sv);op($('p2arch'),sv);
+    op($('p2store'),sv);op($('p2leg'),sv);op($('p2arch'),sv);
     op($('p2arrow'),step===1?ease((u-.2)/.1):(step>1?1:0));
     var hv=0;
     if(ai||step>1){put(M,1,890,295,.8);hv=1}
