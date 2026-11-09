@@ -100,6 +100,7 @@ text{font-family:var(--font-system)}
               <text id="d2" class="s-muted" x="440" y="132" font-size="15"></text>
               <text id="d3" class="s-muted" x="440" y="158" font-size="15"></text>
               <text id="rawtag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">clean Silver row from Stage 3</text>
+              <text id="leg0" class="s-muted" x="230" y="190" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
               <g transform="translate(110,100)"><rect x="-8" y="-6" width="16" height="12" rx="2" fill="var(--accent)" opacity=".8"/><path d="M-5 -6 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
 
               <g id="boxesBase"></g>
@@ -120,6 +121,7 @@ text{font-family:var(--font-system)}
                 <text class="s-muted" x="274" y="552" font-size="12">$0.023 per GB-month</text>
                 <text class="s-muted" x="576" y="552" font-size="12">$0.002 per GB-month · slower to open</text>
               </g>
+              <text id="legT" class="s-muted" x="940" y="602" font-size="12" text-anchor="end" opacity="0">V vitals · L lab results · S survey</text>
               <text id="saved" class="s-acc" x="60" y="614" font-size="15" opacity="0">Illustrative: 78.4% cheaper than keeping everything warm, 93.8% cheaper than keeping everything hot.</text>
               <text id="rule" class="s-ink" x="60" y="638" font-size="14" opacity="0">Retention rule: warm after 30 days, cold after 180, archived after 7 years.</text>
 
@@ -135,6 +137,7 @@ text{font-family:var(--font-system)}
               <text id="blab" class="s-muted" x="450" y="84" font-size="11" letter-spacing="2">ONE SURVEY ANSWER, ALREADY CHUNKED AND EMBEDDED</text>
               <text id="bsent" class="s-ink" x="450" y="122" font-size="16">[removed]: “Waited long, but the nurse was kind.”</text>
               <text id="btag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">AI-ready data from Stage 3</text>
+              <text id="bleg" class="s-muted" x="230" y="190" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
 
               <g id="bstores" opacity="0">
                 <rect x="60" y="262" width="400" height="76" rx="10" class="s-fill s-line" stroke-width="2"/>
@@ -331,8 +334,9 @@ text{font-family:var(--font-system)}
     setDuties(dutiesAt(step,u));
     showBoxes(function(k){return step===0?ease((u-.1-k*.15)/.2):1},step===1?activeAt(u):-1,color);
     op($('rawtag'),step===0?1:(step===1?clamp01(1-u*8):0));
+    op($('leg0'),step===0?1:(step===1?clamp01(1-u*8):0));
     var ts=step>=2?ease((u-.05)/.2):0;if(step>2)ts=1;
-    op($('tiers'),ts);
+    op($('tiers'),ts);op($('legT'),ts);
     op($('saved'),step===2?clamp01((u-.55)/.2):(step>2?1:0));
     op($('rule'),step===3?clamp01((u-.5)/.2):(step>3?1:0));
   }
@@ -380,7 +384,7 @@ text{font-family:var(--font-system)}
     // the whole store is already in place so the AI layer reads as an addition
     baseCommon(step===0?9:9,1,'var(--tertiary-text)');
     setDuties([true,true,true,true]);
-    op($('rawtag'),0);op($('saved'),0);op($('rule'),1);op($('tiers'),1);
+    op($('rawtag'),0);op($('leg0'),0);op($('legT'),1);op($('saved'),0);op($('rule'),1);op($('tiers'),1);
     if(step!==3)put(M,1,160,576,.9);put(C,1,840,372,1);op($('cptag'),1);
     showBoxes(function(){return 1},-1,'var(--ai)');
     op($('agentlabel'),1);
@@ -432,7 +436,7 @@ text{font-family:var(--font-system)}
     $('sceneB').setAttribute('opacity',1);
     op($('agentlabel'),0);
     put(MB,1,230,125,1.5);
-    var showTop=step<2;op($('blab'),showTop?1:0);op($('bsent'),showTop?1:0);op($('btag'),showTop?1:0);if(!showTop)op(MB,0);
+    var showTop=step<2;op($('blab'),showTop?1:0);op($('bsent'),showTop?1:0);op($('btag'),showTop?1:0);op($('bleg'),showTop?1:0);if(!showTop)op(MB,0);
     op($('bstores'),step===0?0:(step===1?clamp01(u/.3):1));
     hiDots(step===2&&u>.5);
     if(step<=1)for(var di=0;di<9;di++){var ti=.1+di*.075;$('dot'+di).setAttribute('opacity',step===0?0:.6*clamp01((u-ti)/.05)*(step===1?1:1))}
