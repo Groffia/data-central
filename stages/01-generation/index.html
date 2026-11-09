@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 1: Data Generation</title>
+<style>
+/* Tokens: WARMING STRIPES design system (project/tokens.json) */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:flex;flex-direction:column;gap:.85rem}
+body.ai-on #stepcards{display:none}
+body:not(.ai-on) #aicards{display:none}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+#aicards .card.now .k{color:var(--ai)}
+#aicards .card h3{color:var(--ink)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+#aicards .tl strong{color:var(--ai)}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-ai{fill:var(--ai)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+#aiGen,#agentlabel,#flagnote,#schip,#stag,#stopnote,#safenote,#scalenote{transition:opacity 500ms ease}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag">Stage 1 of 8 · Data generation</p>
+    <h1>Where data is <em class="hl">born</em>.</h1>
+    <p class="lede">Before data can be collected, cleaned or analysed, something has to create it. At Tamsworth Health, that something is a bedside monitor taking a patient's vital signs.</p>
+  </header>
+
+  <section class="scene" aria-label="The birth of one row">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation, top to bottom: a bedside monitor creates a vitals row; the row passes a data contract check; it lands in the EHR export, ready for Stage 2.">
+            <line id="h0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="h1" class="hair" x1="60" y1="245" x2="940" y2="245"/>
+            <line id="h2" class="hair" x1="60" y1="495" x2="940" y2="495"/>
+            <text id="l0" class="bl" x="60" y="24">01 · SOURCE · OWNER: IT</text>
+            <text id="l1" class="bl" x="60" y="266">02 · CHECK · OWNER: DATA ENGINEERS</text>
+            <text id="l2" class="bl" x="60" y="516">03 · EXPORT · OWNER: DATA ENGINEERS</text>
+            <line class="s-line" x1="500" y1="220" x2="500" y2="244" stroke-width="2" stroke-dasharray="3 6"/>
+            <line class="s-line" x1="500" y1="445" x2="500" y2="540" stroke-width="2" stroke-dasharray="3 6"/>
+            <!-- monitor -->
+            <g>
+              <rect class="s-fill s-line" x="340" y="40" width="320" height="150" rx="14" stroke-width="2"/>
+              <rect class="s-line" x="356" y="54" width="288" height="122" rx="8" stroke-width="1"/>
+              <polyline id="ecg" class="s-accl" stroke-width="3" points="" stroke-linejoin="round"/>
+              <rect class="s-line" x="480" y="190" width="40" height="14" stroke-width="2"/>
+              <rect class="s-line" x="450" y="204" width="100" height="9" rx="4" stroke-width="2"/>
+              <text class="s-ink" x="60" y="108" font-size="19">Bedside monitor</text>
+              <text class="s-muted" x="60" y="132" font-size="13">Ward 4 · Bed 12 (sample)</text>
+              <text class="s-muted" x="60" y="151" font-size="13">HR · SpO₂ · Temp · BP</text>
+            </g>
+            <!-- clock -->
+            <g transform="translate(880,112)">
+              <circle class="s-line" r="42" stroke-width="4"/>
+              <circle id="ring" class="s-accl" r="42" stroke-width="6" stroke-linecap="round" transform="rotate(-90)" stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+              <text id="simtime" class="s-ink" y="9" font-size="24" text-anchor="middle">06:00</text>
+              <text class="s-muted" y="-58" font-size="11" text-anchor="middle" letter-spacing="2">NEW READING EVERY 15 MIN</text>
+            </g>
+            <!-- birth pulse -->
+            <g id="pulse" opacity="0">
+              <circle id="p1" class="s-accl" cx="500" cy="115" r="10" stroke-width="3"/>
+              <circle id="p2" class="s-accl" cx="500" cy="115" r="10" stroke-width="2"/>
+            </g>
+            <g id="pulseB" opacity="0"><circle id="pb1" class="s-accl" cx="500" cy="115" r="10" stroke-width="2"/></g>
+            <!-- contract check -->
+            <text class="s-ink" x="60" y="298" font-size="19">Data contract check</text>
+            <text class="s-muted" x="940" y="298" font-size="13" text-anchor="end">5 of 10 fields are private</text>
+            <g id="fields"></g>
+            <!-- export tray -->
+            <path class="s-line" d="M60 540 V650 H940 V540" stroke-width="2" stroke-linejoin="round"/>
+            <text class="s-ink" x="80" y="576" font-size="19">EHR vitals export</text>
+            <text class="s-muted" x="80" y="598" font-size="13">FHIR-style · waiting for Stage 2</text>
+            <text id="count" class="s-acc" x="80" y="630" font-size="14"></text>
+            <g id="stack"></g>
+            <g id="next" opacity="0">
+              <path class="s-accl" d="M780 600 H920" stroke-width="2.5"/>
+              <path class="s-accl" d="M908 590 L921 600 L908 610" stroke-width="2.5"/>
+              <text class="s-ink" x="920" y="578" font-size="16" text-anchor="end">Next: Stage 2 · Collection</text>
+            </g>
+
+            <!-- AI layer -->
+            <g id="aiGen" opacity="0">
+              <rect x="690" y="70" width="100" height="84" rx="10" fill="none" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text class="s-ai" x="740" y="108" font-size="22" font-weight="700" text-anchor="middle">AI</text>
+              <text class="s-muted" x="740" y="130" font-size="11" text-anchor="middle" letter-spacing="1">GENERATOR</text>
+              <text class="s-ai" x="740" y="176" font-size="12" text-anchor="middle">makes synthetic rows</text>
+            </g>
+            <rect id="markGen" x="680" y="60" width="120" height="104" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+            <rect id="markChk" x="50" y="304" width="900" height="140" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <g id="schip" opacity="0">
+              <rect x="-34" y="-17" width="68" height="34" rx="6" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="4 3"/>
+              <line stroke="var(--ai)" x1="-24" y1="-7" x2="24" y2="-7" stroke-width="2"/>
+              <line stroke="var(--ai)" x1="-24" y1="0" x2="24" y2="0" stroke-width="2"/>
+              <line stroke="var(--ai)" x1="-24" y1="7" x2="12" y2="7" stroke-width="2"/>
+            </g>
+            <text id="stag" class="s-ai" font-size="12" x="655" y="262" text-anchor="middle" opacity="0">3 synthetic rows</text>
+            <text id="agentlabel" class="s-ai" x="940" y="266" font-size="11" letter-spacing="3" text-anchor="end" opacity="0">AI AGENT · WATCHING</text>
+            <line id="scan" x1="0" y1="305" x2="0" y2="440" stroke="var(--ai)" stroke-width="2" opacity="0"/>
+            <g id="beamhead" opacity="0"><circle r="14" fill="var(--ai)"/><text y="4" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ground)">AI</text></g>
+            <text id="flagnote" class="s-ai" x="500" y="472" font-size="14" text-anchor="middle" opacity="0">AI agent flagged spo2: value out of range. A data engineer decides what to do.</text>
+            <text id="stopnote" class="s-ai" x="500" y="472" font-size="14" text-anchor="middle" opacity="0">Stopped here, at the source, not found three stages later.</text>
+            <text id="safenote" class="s-ai" x="500" y="676" font-size="13" text-anchor="middle" opacity="0">Safe test row: no real patient data</text>
+            <text id="scalenote" class="s-ai" x="500" y="476" font-size="17" text-anchor="middle" opacity="0"></text>
+
+            <g id="dstation" opacity="0" transform="translate(735,282)">
+              <circle r="26" fill="none" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <circle cy="-8" r="7" fill="var(--ai)"/>
+              <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+            </g>
+            <text id="chiptag" class="s-muted" x="548" y="0" font-size="14" opacity="0"></text>
+            <g id="chip" opacity="0">
+              <rect class="s-acc" x="-34" y="-17" width="68" height="34" rx="6"/>
+              <line stroke="var(--ground)" x1="-24" y1="-7" x2="24" y2="-7" stroke-width="2"/>
+              <line stroke="var(--ground)" x1="-24" y1="0" x2="24" y2="0" stroke-width="2"/>
+              <line stroke="var(--ground)" x1="-24" y1="7" x2="12" y2="7" stroke-width="2"/>
+              <g id="xmark" opacity="0"><line x1="-14" y1="-12" x2="14" y2="12" stroke="var(--ground)" stroke-width="4"/><line x1="14" y1="-12" x2="-14" y2="12" stroke="var(--ground)" stroke-width="4"/></g>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards" id="stepcards" aria-live="polite">
+        <div class="card" id="c0"><p class="k">01 · What</p><h3>A reading is created</h3><p>A monitor measures a patient. One row of data now exists.</p><div class="tl"><p><strong>Tools:</strong> Philips IntelliVue and GE CARESCAPE monitors, into an Epic or Oracle Health EHR.</p></div></div>
+        <div class="card" id="c1"><p class="k">02 · How</p><h3>One row, ten fields</h3><p>The reading is written in an agreed shape: ten fields, the data contract.</p><div class="tl"><p><strong>Tools:</strong> HL7 FHIR (Observation) for the shape; dbt or Great Expectations for the contract rules.</p></div></div>
+        <div class="card" id="c2"><p class="k">03 · Why</p><h3>Everything starts here</h3><p>Every later stage trusts this row, so it is checked now. Five fields are private.</p><div class="tl"><p><strong>Tools:</strong> Great Expectations, Soda or dbt tests; Databricks pipeline expectations.</p></div></div>
+        <div class="card" id="c3"><p class="k">04 · When</p><h3>Every 15 minutes</h3><p>Every patient, around the clock.</p><div class="tl"><p><strong>Tools:</strong> Apache Airflow, Databricks Lakeflow Jobs or Microsoft Fabric Data Factory.</p></div></div>
+        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Collection</h3><p>The row is ready for Stage 2 to pick up.</p><div class="tl"><p><strong>Tools:</strong> Apache Kafka, Azure Event Hubs or Fivetran, into Snowflake, Databricks or Fabric.</p></div></div>
+      </div>
+
+      <div class="cards" id="aicards" aria-live="polite">
+        <div class="card" id="a0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>At the source, where rows are born. At the check, where every row is inspected.</p></div>
+        <div class="card" id="a1"><p class="k">02 · What</p><h3>It makes and it watches</h3><p>A generative model makes synthetic rows. An agent compares each new row to the data contract and flags problems.</p><div class="tl"><p><strong>Tools:</strong> GANs or LLMs for synthetic rows; an LLM-based agent for the watching.</p></div></div>
+        <div class="card" id="a2"><p class="k">03 · Why it matters</p><h3>Caught where it starts</h3><p>A bad row is stopped here, not found three stages later. Test data carries no real patient.</p></div>
+        <div class="card" id="a3"><p class="k">04 · Why it scales</p><h3>Every row, every bed</h3><p>People can review a sample. An agent reviews every row, all day. People only see the few it flags.</p></div>
+        <div class="card" id="a4"><p class="k">05 · Next</p><h3>People review the few</h3><p>Flagged rows go to a data engineer. Clean rows move on to Stage 2.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Two timelines: the five-step story, and the four-step AI story
+  function mk(d){var st=[0];d.forEach(function(x,i){st.push(st[i]+x)});return {DUR:d,START:st,TOTAL:st[d.length],N:d.length}}
+  var BASE=mk([5000,5000,5000,5000,5000]);
+  var AIT=mk([7000,7000,7000,7000,7000]);
+  var BASEBANDS=[[0],[0,1],[1],[0,2],[2]];
+  var AIBANDS=[[0,1],[0,1],[1,2],[1],[1,2]];
+  var FIELDS=[['patient_id',1],['name',1],['birth_date',1],['mrn',1],['address',1],
+              ['bed',0],['timestamp',0],['heart_rate',0],['spo2',0],['temp',0]];  // sample placeholders
+
+  var fieldsG=$('fields'), fieldEls=[];
+  FIELDS.forEach(function(f,i){
+    var col=i%5,row=Math.floor(i/5),x=60+col*180,y=315+row*66;
+    var r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',168);r.setAttribute('height',54);r.setAttribute('rx',8);
+    r.setAttribute('class','s-ink');r.setAttribute('fill-opacity',.05);
+    var t=document.createElementNS(NS,'text');
+    t.setAttribute('x',x+14);t.setAttribute('y',y+25);t.setAttribute('font-size',15);t.setAttribute('class','s-muted');t.textContent=f[0];
+    var tag=document.createElementNS(NS,'text');
+    tag.setAttribute('x',x+14);tag.setAttribute('y',y+42);tag.setAttribute('font-size',10);tag.setAttribute('letter-spacing',2);
+    tag.setAttribute('class',f[1]?'s-acc':'s-muted');tag.textContent=f[1]?'PRIVATE':'OPEN';tag.setAttribute('opacity',.55);
+    fieldsG.appendChild(r);fieldsG.appendChild(t);fieldsG.appendChild(tag);
+    var ck=document.createElementNS(NS,'text');
+    ck.setAttribute('x',x+150);ck.setAttribute('y',y+24);ck.setAttribute('font-size',16);ck.setAttribute('font-weight',700);ck.setAttribute('text-anchor','end');ck.setAttribute('class','s-ai');ck.setAttribute('opacity',0);ck.textContent='✓';
+    fieldsG.appendChild(ck);
+    fieldEls.push({r:r,t:t,tag:tag,s:f[1],ck:ck,cx:x+84});
+  });
+
+  var ecg=$('ecg');
+  function ecgPoints(ph){
+    var pts=[],x0=356,w=288,mid=115;
+    for(var i=0;i<=90;i++){
+      var x=x0+i*w/90,u=((i/90)*2+ph)%1,y=mid;
+      if(u>.40&&u<.44)y=mid+10;else if(u>=.44&&u<.48)y=mid-46;else if(u>=.48&&u<.52)y=mid+18;else if(u>=.70&&u<.78)y=mid-8;
+      pts.push(x.toFixed(1)+','+y);
+    }
+    return pts.join(' ');
+  }
+
+  var chip=$('chip'),chiptag=$('chiptag'),xmark=$('xmark'),pulse=$('pulse'),p1=$('p1'),p2=$('p2'),pulseB=$('pulseB'),pb1=$('pb1'),
+      ring=$('ring'),simtime=$('simtime'),stack=$('stack'),count=$('count'),next=$('next'),
+      aiGen=$('aiGen'),schip=$('schip'),stag=$('stag'),agentlabel=$('agentlabel'),scan=$('scan'),flagnote=$('flagnote'),
+      stopnote=$('stopnote'),safenote=$('safenote'),scalenote=$('scalenote'),beamhead=$('beamhead'),markGen=$('markGen'),markChk=$('markChk');
+  var SCH=[schip];
+  for(var ci=1;ci<3;ci++){var cl=schip.cloneNode(true);cl.removeAttribute('id');schip.parentNode.insertBefore(cl,schip.nextSibling);SCH.push(cl);}
+  var cchip=chip.cloneNode(true);cchip.removeAttribute('id');[].forEach.call(cchip.querySelectorAll('[id]'),function(n){n.removeAttribute('id')});cchip.lastElementChild.setAttribute('opacity',0);chip.parentNode.insertBefore(cchip,chip.nextSibling);op(cchip,0);
+  var dstation=$('dstation'),countedS=-1,countedR=-1;
+  var aiOn=false,rows=0,playing=!reduce,elapsed=0,last=null,counted=-1,shown='',simBase=6*60;
+
+  function fmt(m){m=((m%1440)+1440)%1440;var h=Math.floor(m/60),mm=m%60;return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm}
+  function ease(t){t=Math.max(0,Math.min(1,t));return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function lerp(a,b,t){return a+(b-a)*ease(t)}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function op(el,v){el.setAttribute('opacity',v)}
+
+  function clearTray(){rows=0;counted=-1;countedS=-1;countedR=-1;while(stack.firstChild)stack.removeChild(stack.firstChild);count.textContent=''}
+  function addRow(){
+    rows++;
+    var i=(rows-1)%4;
+    if(i===0)while(stack.firstChild)stack.removeChild(stack.firstChild);
+    var r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',330);r.setAttribute('y',632-i*14);r.setAttribute('width',340);r.setAttribute('height',9);r.setAttribute('rx',3);r.setAttribute('class','s-acc');
+    r.setAttribute('opacity',1-i*0.15);
+    stack.appendChild(r);
+    count.textContent=rows+(rows===1?' row':' rows')+' (sample)';
+  }
+  function addSynth(){
+    var r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',330);r.setAttribute('y',632);r.setAttribute('width',340);r.setAttribute('height',9);r.setAttribute('rx',3);r.setAttribute('class','s-ai');
+    stack.appendChild(r);
+    count.textContent='1 synthetic row';
+  }
+  function setCards(prefix,n,step){
+    for(var i=0;i<n;i++){
+      $(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'');
+    }
+  }
+  function setBands(list){
+    for(var k=0;k<3;k++){
+      var on=list.indexOf(k)>=0;
+      $('h'+k).setAttribute('class','hair'+(on?' on':''));
+      $('l'+k).setAttribute('class','bl'+(on?' on':''));
+    }
+  }
+  function lightFields(gp){
+    fieldEls.forEach(function(f,i){
+      var lit=gp>(i+.5)/(FIELDS.length+1);
+      f.r.setAttribute('class',lit&&f.s?'s-acc':'s-ink');
+      f.r.setAttribute('fill-opacity',lit?(f.s?.22:.12):.05);
+      f.t.setAttribute('class',lit?'s-ink':'s-muted');
+      f.tag.setAttribute('opacity',lit?'1':'.55');
+    });
+  }
+  function flagField(on){
+    var fr=fieldEls[8].r;
+    fr.setAttribute('stroke',on?'var(--ai)':'none');fr.setAttribute('stroke-width',2);fr.setAttribute('stroke-dasharray','4 3');
+    op(flagnote,on?1:0);
+  }
+  // marks tiles the agent has reached: beam position (px) or 'all'; flagged tile gets a flag
+  function ticks(pos,flagOn){
+    fieldEls.forEach(function(f,i){
+      var done=pos==='all'||(pos!==null&&pos>f.cx);
+      f.ck.textContent=(i===8&&flagOn)?'⚑':'✓';
+      f.ck.setAttribute('opacity',done?1:0);
+    });
+  }
+  function hideAI(){
+    ticks(null,false);op(beamhead,0);op(cchip,0);op(dstation,0);op(aiGen,0);SCH.forEach(function(c){op(c,0)});op(stag,0);op(agentlabel,0);op(scan,0);op(flagnote,0);op(stopnote,0);op(safenote,0);op(scalenote,0);op(markGen,0);op(markChk,0);op(xmark,0);
+  }
+  function hideBase(){
+    op(pulse,0);op(pulseB,0);op(next,0);op(chip,0);op(chiptag,0);
+  }
+
+  function frameBase(){
+    var T=BASE,cyc=Math.floor(elapsed/T.TOTAL),e=elapsed%T.TOTAL,step=0;
+    while(step<T.N-1&&e>=T.START[step+1])step++;
+    var u=(e-T.START[step])/T.DUR[step];
+    var key='b'+step+'/'+cyc;
+    if(shown!==key){shown=key;setCards('c',5,step);setBands(BASEBANDS[step]);}
+    hideAI();
+
+    var fill=step<3?0:(step===3?ease((u-.15)/.7):1);
+    ring.setAttribute('stroke-dashoffset',(263.9*(1-fill)).toFixed(1));
+    simtime.textContent=fmt(simBase+cyc*15+Math.round(fill*15));
+
+    if(step===0&&u<.5){
+      var a=u/.5;op(pulse,(1-a).toFixed(2));
+      p1.setAttribute('r',(10+a*160).toFixed(1));p2.setAttribute('r',(10+Math.max(0,a-.25)*160).toFixed(1));
+    }else op(pulse,0);
+    if(step===3&&u>.85){
+      var b=(u-.85)/.15;op(pulseB,(0.7*(1-b)).toFixed(2));pb1.setAttribute('r',(10+b*110).toFixed(1));
+    }else op(pulseB,0);
+
+    var y=115,sc=1.2,show=0,tag='';
+    if(step===0){show=u>.12?1:0;sc=.3+.9*ease((u-.12)/.3);y=lerp(115,232,(u-.55)/.35);}
+    else if(step===1){show=1;y=lerp(232,282,(u-.1)/.4);tag=u>.3?'10 fields':'';}
+    else if(step===2){show=1;y=282;}
+    else if(step===3){show=u>.4?0:1;y=lerp(282,600,u/.38);}
+    op(chip,show);op(xmark,0);
+    chip.setAttribute('transform','translate(500,'+y.toFixed(1)+') scale('+sc.toFixed(2)+')');
+    chiptag.setAttribute('y',(y+5).toFixed(1));chiptag.textContent=tag;op(chiptag,tag?1:0);
+
+    lightFields(step===2?(u-.1)/.7:(step>2?1:0));
+    flagField(false);
+    if(step===3&&u>.38&&counted!==cyc){counted=cyc;addRow();}
+    op(next,step===4?'1':'0');
+  }
+
+  function frameAI(){
+    var T=AIT,cyc=Math.floor(elapsed/T.TOTAL),e=elapsed%T.TOTAL,step=0;
+    while(step<T.N-1&&e>=T.START[step+1])step++;
+    var u=(e-T.START[step])/T.DUR[step];
+    var key='a'+step+'/'+cyc;
+    if(shown!==key){
+      shown=key;setCards('a',5,step);setBands(AIBANDS[step]);
+      if(step===0&&cyc>0||step===0&&rows>0)clearTray();
+    }
+    hideBase();hideAI();
+    ring.setAttribute('stroke-dashoffset','263.9');simtime.textContent='06:00';
+    var pulseV=.35+.65*Math.abs(Math.sin(elapsed/450));
+    op(aiGen,1);
+
+    var chipShow=0,cx=500,cy=115,csc=1.2,flag=false;
+    var SX=[590,655,720],sp=[{o:0,x:740,y:115,s:.3},{o:0,x:740,y:115,s:.3},{o:0,x:740,y:115,s:.3}];
+    var tickPos=null,beamX=null;
+    if(step===0){
+      op(markGen,pulseV);op(markChk,pulseV);op(agentlabel,1);
+    }else if(step===1){
+      op(agentlabel,1);
+      // the generator makes three synthetic rows, one after another
+      for(var k=0;k<3;k++){
+        var t0=.02+k*.13,q=clamp01((u-t0)/.28);
+        if(u>t0){sp[k]={o:1,x:lerp(740,SX[k],q),y:lerp(115,282,q),s:.25+.6*ease(q/.6)};}
+      }
+      op(stag,u>.5?1:0);
+      // the real row arrives from the monitor
+      if(u>.05){chipShow=1;var r=clamp01((u-.05)/.4);cy=lerp(115,282,r);csc=.3+.9*ease(r/.5);}
+      // the agent sweeps the contract fields and ticks each one
+      if(u>.45){var f=clamp01((u-.45)/.45);beamX=60+880*f;tickPos=u>.9?'all':beamX;}
+      flag=u>.88;
+    }else if(step===2){
+      op(agentlabel,1);
+      flag=true;tickPos='all';
+      chipShow=1;cy=282;op(xmark,u>.1?1:0);
+      stopnote.textContent='Stopped here, at the source, not found three stages later.';op(stopnote,u>.15?1:0);
+      // one synthetic row continues to the export; the real flagged row stays stopped
+      sp[0]={o:1,x:lerp(590,500,(u-.2)/.4),y:lerp(282,600,(u-.2)/.4),s:.85};
+      if(u>.6)sp[0].o=0;
+      if(u>.6&&countedS!==cyc){countedS=cyc;addSynth();}
+      op(safenote,u>.65?1:0);
+    }else if(step===3){
+      op(agentlabel,1);
+      beamX=60+880*((u*3)%1);tickPos=beamX;
+      var n=Math.round(7536*ease((u-.1)/.7));
+      var flagged=u>.8?3:(u>.45?1:0);
+      scalenote.textContent=n.toLocaleString('en-US')+' rows checked · '+flagged+' flagged for a person (sample day, 400 beds)';
+      op(scalenote,u>.05?1:0);
+      flag=flagged>0;
+    }else{
+      // Next: people review the few; clean rows move on to Stage 2
+      tickPos='all';flag=true;
+      var m=clamp01((u-.1)/.3);
+      chipShow=1;cx=lerp(500,650,m);cy=282;op(xmark,1);
+      op(dstation,u>.1?1:0);
+      stopnote.textContent='A data engineer reviews the flagged row. Clean rows go on to Stage 2.';op(stopnote,u>.3?1:0);
+      var cc=clamp01((u-.35)/.5);
+      if(u>.35&&cc<.98){op(cchip,1);cchip.setAttribute('transform','translate(500,'+lerp(115,600,cc).toFixed(1)+') scale(1.2)');}
+      if(cc>=.98&&countedR!==cyc){countedR=cyc;addRow();}
+      op(next,u>.88?1:0);
+    }
+    op(chip,chipShow);
+    chip.setAttribute('transform','translate('+cx+','+cy.toFixed(1)+') scale('+csc.toFixed(2)+')');
+    for(var j=0;j<3;j++){
+      op(SCH[j],sp[j].o);
+      SCH[j].setAttribute('transform','translate('+sp[j].x.toFixed(1)+','+sp[j].y.toFixed(1)+') scale('+sp[j].s.toFixed(2)+')');
+    }
+    if(beamX!==null){
+      scan.setAttribute('x1',beamX.toFixed(1));scan.setAttribute('x2',beamX.toFixed(1));op(scan,.9);
+      beamhead.setAttribute('transform','translate('+beamX.toFixed(1)+',300)');op(beamhead,1);
+    }
+    ticks(tickPos,flag);
+    lightFields(0);
+    flagField(false);
+    if(flag&&step===1){fieldEls[8].r.setAttribute('stroke','var(--ai)');fieldEls[8].r.setAttribute('stroke-width',2);fieldEls[8].r.setAttribute('stroke-dasharray','4 3');op(flagnote,1);}
+    if(flag&&(step===2||step===4)){fieldEls[8].r.setAttribute('stroke','var(--ai)');fieldEls[8].r.setAttribute('stroke-width',2);fieldEls[8].r.setAttribute('stroke-dasharray','4 3');}
+  }
+
+  function frame(){
+    ecg.setAttribute('points',ecgPoints((elapsed/1600)%1));
+    if(aiOn)frameAI();else frameBase();
+  }
+
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing)elapsed+=ts-last;
+    last=ts;
+    frame();
+    requestAnimationFrame(loop);
+  }
+
+  function T(){return aiOn?AIT:BASE}
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play';});
+  $('step').addEventListener('click',function(){
+    var t=T(),cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,step=0;
+    while(step<t.N-1&&e>=t.START[step+1])step++;
+    elapsed=step<t.N-1?cyc*t.TOTAL+t.START[step+1]+10:(cyc+1)*t.TOTAL+10;
+  });
+  $('restart').addEventListener('click',function(){
+    elapsed=0;shown='';clearTray();
+    playing=true;$('play').textContent='Pause';
+  });
+  $('ai').addEventListener('click',function(){
+    aiOn=!aiOn;
+    this.textContent='Show AI: '+(aiOn?'On':'Off');
+    this.setAttribute('aria-pressed',aiOn);
+    this.className='btn'+(aiOn?' on':'');
+    document.body.className=aiOn?'ai-on':'';
+    elapsed=0;shown='';clearTray();
+    for(var i=0;i<5;i++)$('c'+i).className='card';
+    for(var j=0;j<5;j++)$('a'+j).className='card';
+  });
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
