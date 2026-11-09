@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 3: Data Processing</title>
+<style>
+/* Tokens: WARMING STRIPES design system (project/tokens.json) */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:flex;flex-direction:column;gap:.85rem}
+body.m0 #aicards,body.m0 #bicards{display:none}
+body.m1 #stepcards,body.m1 #bicards{display:none}
+body.m2 #stepcards,body.m2 #aicards{display:none}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+#aicards .card.now .k,#bicards .card.now .k{color:var(--ai)}
+#aicards .card h3,#bicards .card h3{color:var(--ink)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+#aicards .tl strong,#bicards .tl strong{color:var(--ai)}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-ai{fill:var(--ai)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body class="m0">
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag">Stage 3 of 8 · Data processing</p>
+    <h1>Where data is <em class="hl">prepared</em>.</h1>
+    <p class="lede">Processing makes the raw row trustworthy. At Tamsworth Health, the row from Bronze is cleaned, reshaped, joined and trimmed, then tested. Rows that pass become Silver; rows that fail wait for a person.</p>
+  </header>
+
+  <section class="scene" aria-label="Preparing one raw row">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation, top to bottom: the raw row from Bronze shows four problems; it is cleaned, reshaped, joined and trimmed; a quality gate tests it, passing rows land in Silver and failing rows go to a repair queue for a person.">
+            <line id="h0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="h1" class="hair" x1="60" y1="215" x2="940" y2="215"/>
+            <line id="h2" class="hair" x1="60" y1="445" x2="940" y2="445"/>
+            <text id="l0" class="bl" x="60" y="24"></text>
+            <text id="l1" class="bl" x="60" y="236"></text>
+            <text id="l2" class="bl" x="60" y="466"></text>
+
+            <!-- ===== base scene ===== -->
+            <g id="sceneBase">
+              <text id="dh" class="s-acc" x="440" y="52" font-size="11" letter-spacing="2">FOUND IN THE RAW ROW</text>
+              <text id="d0" class="s-muted" x="440" y="80" font-size="15"></text>
+              <text id="d1" class="s-muted" x="440" y="106" font-size="15"></text>
+              <text id="d2" class="s-muted" x="440" y="132" font-size="15"></text>
+              <text id="d3" class="s-muted" x="440" y="158" font-size="15"></text>
+              <text id="rawtag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">from Bronze · raw, one row</text>
+              <g transform="translate(110,100)"><rect x="-8" y="-6" width="16" height="12" rx="2" fill="var(--accent)" opacity=".8"/><path d="M-5 -6 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
+
+              <g id="bar" opacity="0">
+                <rect x="60" y="398" width="880" height="22" rx="4" fill="none" stroke="var(--tertiary-text)" stroke-width="1.5"/>
+                <rect id="barfill" x="60" y="398" width="0" height="22" rx="4" fill="var(--accent)"/>
+                <text id="bartxt" x="72" y="414" font-size="12" font-weight="700" fill="var(--ground)" opacity="0">preparing data · over 80% of project time</text>
+                <text class="s-muted" x="932" y="414" font-size="12" text-anchor="end">the rest: modeling and analysis</text>
+              </g>
+
+              <!-- quality gate -->
+              <rect class="s-fill s-line" x="640" y="478" width="300" height="56" rx="10" stroke-width="2"/>
+              <path d="M656 506 l8 8 l14 -16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <text class="s-ink" x="690" y="502" font-size="17">Quality gate</text>
+              <text class="s-muted" x="690" y="521" font-size="12">tests every row before it moves on</text>
+
+              <!-- silver tray -->
+              <path class="s-line" d="M60 560 V660 H600 V560" stroke-width="2" stroke-linejoin="round"/>
+              <text class="s-ink" x="80" y="592" font-size="19">Silver · clean and checked</text>
+              <text class="s-muted" x="80" y="614" font-size="13">ready to be stored and used</text>
+              <text id="count" class="s-acc" x="80" y="646" font-size="14"></text>
+              <g id="stack"></g>
+
+              <!-- repair queue -->
+              <path class="s-line" d="M640 590 V660 H940 V590" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 5"/>
+              <text class="s-ink" x="660" y="612" font-size="17">Repair queue</text>
+              <text class="s-muted" x="660" y="632" font-size="12">failing rows wait for a person</text>
+              <text id="dcount" class="s-acc" x="660" y="652" font-size="12"></text>
+
+              <g id="next" opacity="0">
+                <path class="s-accl" d="M380 530 H588" stroke-width="2.5"/>
+                <path class="s-accl" d="M576 520 L589 530 L576 540" stroke-width="2.5"/>
+                <text class="s-ink" x="588" y="516" font-size="16" text-anchor="end">Next: Stage 4 · Storage</text>
+              </g>
+              <g id="boxesBase"></g>
+            </g>
+
+            <!-- ===== AI-data scene ===== -->
+            <g id="sceneB" opacity="0">
+              <text id="blab" class="s-muted" x="450" y="84" font-size="11" letter-spacing="2">ONE SURVEY ANSWER, AS TEXT</text>
+              <text id="bsent" class="s-ink" x="450" y="122" font-size="16"></text>
+              <text id="btag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">clean Silver row from Stage 3</text>
+              <g id="bpills" opacity="0">
+                <rect x="60" y="352" width="330" height="34" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+                <text class="s-ink" x="225" y="374" font-size="14" text-anchor="middle">[removed]: Waited long,</text>
+                <rect x="410" y="352" width="290" height="34" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+                <text class="s-ink" x="555" y="374" font-size="14" text-anchor="middle">but the nurse was kind.</text>
+              </g>
+              <g id="bvec" opacity="0">
+                <text class="s-ai" x="225" y="410" font-size="13" text-anchor="middle">0.12 · −0.48 · 0.91 …</text>
+                <text class="s-ai" x="555" y="410" font-size="13" text-anchor="middle">0.33 · 0.07 · −0.62 …</text>
+                <text class="s-muted" x="390" y="436" font-size="11" letter-spacing="2" text-anchor="middle">NUMBERS THAT CAPTURE MEANING</text>
+              </g>
+              <g id="bdb" opacity="0">
+                <ellipse cx="840" cy="355" rx="90" ry="12" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <path d="M750 355 V415 a90 12 0 0 0 180 0 V355" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <g id="dots"></g>
+                <text class="s-muted" x="840" y="436" font-size="11" letter-spacing="2" text-anchor="middle">VECTOR DATABASE</text>
+              </g>
+              <g id="bsplit" opacity="0">
+                <rect id="sp0" x="60" y="490" width="0" height="42" rx="4" class="s-acc"/>
+                <rect id="sp1" x="676" y="490" width="0" height="42" rx="4" class="s-ink"/>
+                <rect id="sp2" x="808" y="490" width="0" height="42" rx="4" class="s-sl"/>
+                <text id="st0" x="76" y="516" font-size="13" font-weight="700" fill="var(--ground)" opacity="0">TRAIN 70%</text>
+                <text id="st1" x="688" y="516" font-size="12" font-weight="700" fill="var(--ground)" opacity="0">TUNE 15%</text>
+                <text id="st2" x="820" y="516" font-size="12" font-weight="700" fill="var(--ground)" opacity="0">TEST 15%</text>
+              </g>
+              <text id="btxtA" class="s-muted" x="60" y="566" font-size="14"></text>
+              <text id="btxtB" class="s-ink" x="60" y="604" font-size="16"></text>
+              <g id="bnext" opacity="0">
+                <path class="s-accl" d="M700 648 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 638 L921 648 L908 658" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="634" font-size="16" text-anchor="end">Next: Stage 4 · Storage</text>
+              </g>
+              <g id="boxesB"></g>
+            </g>
+
+            <!-- chips -->
+            <g id="chips"></g>
+
+            <!-- AI layer -->
+            <rect id="markA1" x="50" y="38" width="900" height="148" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <rect id="markA2" x="50" y="247" width="890" height="92" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <text id="agentlabel" class="s-ai" x="940" y="236" font-size="11" letter-spacing="3" text-anchor="end" opacity="0">AI AGENT · WATCHING</text>
+            <text id="readlabel" class="s-ai" x="930" y="352" font-size="12" text-anchor="end" opacity="0"></text>
+            <rect id="markBox" x="0" y="0" width="0" height="0" rx="13" fill="none" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+            <text id="anote" class="s-ai" x="500" y="436" font-size="14" text-anchor="middle" opacity="0"></text>
+            <g id="proposal" opacity="0">
+              <rect x="430" y="172" width="510" height="34" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text class="s-ai" x="685" y="194" font-size="14" text-anchor="middle">Agent proposes: one date format on the failed rows</text>
+            </g>
+            <g id="dstation" opacity="0" transform="translate(908,562) scale(.55)">
+              <circle r="26" fill="none" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <circle cy="-8" r="7" fill="var(--ai)"/>
+              <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards" id="stepcards" aria-live="polite">
+        <div class="card" id="c0"><p class="k">01 · What</p><h3>Make the raw row trustworthy</h3><p>Four steps change the row, then a fifth tests it. Data engineers build the pipeline; data scientists explore the raw data first to decide what to keep.</p><div class="tl"><p><strong>Tools:</strong> Apache Spark for the pipeline; Jupyter notebooks for exploring.</p></div></div>
+        <div class="card" id="c1"><p class="k">02 · How</p><h3>Clean, reshape, join, trim</h3><p>Remove repeats and errors, put dates and units in one form, line up patient IDs across sources, and drop fields nobody uses.</p><div class="tl"><p><strong>Tools:</strong> Apache Spark jobs, scheduled and monitored by Apache Airflow.</p></div></div>
+        <div class="card" id="c2"><p class="k">03 · Why</p><h3>Preparation is most of the work</h3><p>It takes over 80% of the time on AI projects. Bad data in means bad answers out, however good the analysis looks.</p><div class="tl"><p><strong>Tools:</strong> Apache Airflow to orchestrate and watch the pipelines.</p></div></div>
+        <div class="card" id="c3"><p class="k">04 · When</p><h3>Last, a quality gate</h3><p>Every row is tested before it moves on. Passing rows become Silver. A failing row goes to a repair queue for a person. Nothing is silently dropped.</p><div class="tl"><p><strong>Tools:</strong> Validation rules in Spark jobs, run by Apache Airflow or Databricks Jobs.</p></div></div>
+        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Storage</h3><p>Stage 4 keeps the Silver row safe, organized and easy to find. Bronze still holds the raw copy.</p><div class="tl"><p><strong>Tools:</strong> A data lake or a cloud warehouse such as Snowflake.</p></div></div>
+      </div>
+
+      <div class="cards" id="aicards" aria-live="polite">
+        <div class="card" id="a0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>Inside the steps, where AI cleans, finds repeats and spots odd values. Around the pipeline, where an agent watches it.</p></div>
+        <div class="card" id="a1"><p class="k">02 · What</p><h3>It cleans and flags</h3><p>AI finds repeats, fixes formats and spots a value that cannot be right. It flags the odd value for a person; it does not delete it.</p><div class="tl"><p><strong>Tools:</strong> Anomaly-detection models; Apache Spark for deduplication.</p></div></div>
+        <div class="card" id="a2"><p class="k">03 · Why it matters</p><h3>Caught before it spreads</h3><p>A bad value caught here never reaches a report. A flagged row waits in the repair queue instead.</p></div>
+        <div class="card" id="a3"><p class="k">04 · Why it scales</p><h3>An agent watches all day</h3><p>It watches for duplicate spikes, schema changes and failed tests, and reruns or retries another way. People see only what it flags.</p></div>
+        <div class="card" id="a4"><p class="k">05 · Next</p><h3>People approve repairs</h3><p>The agent proposes a repair; a person approves it. Sources keep humans in the loop where accuracy matters. Clean rows flow on to Stage 4.</p></div>
+      </div>
+
+      <div class="cards" id="bicards" aria-live="polite">
+        <div class="card" id="b0"><p class="k">01 · Where</p><h3>The same row, ready for AI</h3><p>A model needs data prepared in extra ways. The pipeline starts from the clean Silver row and adds steps for AI use.</p></div>
+        <div class="card" id="b1"><p class="k">02 · Purge and chunk</p><h3>Remove names, cut into pieces</h3><p>Personal details are removed. Text is stripped of markup and cut into chunks, so a model can retrieve just the piece it needs.</p><div class="tl"><p><strong>Tools:</strong> Apache Spark for the purge and cleanup.</p></div></div>
+        <div class="card" id="b2"><p class="k">03 · Embed and index</p><h3>Turn meaning into numbers</h3><p>Each chunk becomes numbers that capture its meaning, stored in a vector database. A model searches it to answer from your own data (RAG).</p><div class="tl"><p><strong>Tools:</strong> An embedding model; a vector database.</p></div></div>
+        <div class="card" id="b3"><p class="k">04 · Split</p><h3>Hold some rows back</h3><p>About 70% of rows train the model, 15% tune it and 15% test it. A model is judged on rows it has never seen.</p><div class="tl"><p><strong>Tools:</strong> Apache Spark for a random split.</p></div></div>
+        <div class="card" id="b4"><p class="k">05 · Over time</p><h3>Keep watching</h3><p>Real data drifts and a model's accuracy can decay. A faulty pipeline can look like a failing model, so the pipeline is watched too. Next: Stage 4.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function mk(d){var st=[0];d.forEach(function(x,i){st.push(st[i]+x)});return {DUR:d,START:st,TOTAL:st[d.length],N:d.length}}
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  function readDur(prefix){var d=[];for(var i=0;i<5;i++){var w=$(prefix+i).textContent.trim().split(/\s+/).length;d.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}return d}
+  var T=[mk(readDur('c')),mk(readDur('a')),mk(readDur('b'))];
+  var BANDS=[[[0,1],[1],[1],[2],[2]],[[0,1],[1],[2],[1,2],[0,2]],[[0],[1],[1],[2],[2]]];
+  var LABELS=[
+    ['01 · RAW ROW IN · OWNERS: DATA ENGINEERS, DATA SCIENTISTS','02 · CLEAN, RESHAPE, JOIN, TRIM · OWNER: DATA ENGINEERS','03 · VALIDATE · OWNERS: DATA ENGINEERS, A PERSON REPAIRS'],
+    ['01 · RAW ROW IN · OWNERS: DATA ENGINEERS, DATA SCIENTISTS','02 · CLEAN, RESHAPE, JOIN, TRIM · OWNER: DATA ENGINEERS','03 · VALIDATE · OWNERS: DATA ENGINEERS, A PERSON REPAIRS'],
+    ['01 · START FROM SILVER · OWNER: DATA ENGINEERS','02 · PREPARE FOR AI · OWNERS: DATA ENGINEERS, DATA SCIENTISTS','03 · SPLIT AND WATCH · OWNERS: DATA SCIENTISTS, DATA ENGINEERS']
+  ];
+  var BX=[60,286.67,513.33,740],BW=200,BY=252,BH=80,CX=[160,386.67,613.33,840];
+  var DEF=[['a repeated survey answer','repeat removed'],['dates in two formats','one date format'],['patient ID written two ways','one patient ID'],['fields nobody uses','unused fields dropped']];
+
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function ease(t){t=Math.max(0,Math.min(1,t));return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function lerp(a,b,t){return a+(b-a)*ease(t)}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // ---- the four boxes of each scene ----
+  var BOXDEF=[
+    [['Clean','fix errors,','remove repeats'],['Transform','same formats,','same units'],['Integrate','line up patient','IDs across sources'],['Reduce','keep only what','is needed']],
+    [['Purge','remove personal','details'],['Chunk','cut text into','retrievable pieces'],['Embed','turn each piece','into numbers'],['Index','store for fast','search']]
+  ];
+  function icon(k,s,x,y){
+    var g=el('g',{transform:'translate('+x+','+y+')',fill:'none',stroke:'var(--accent)','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'});
+    var P=function(d){g.appendChild(el('path',{d:d}))};
+    if(s===0){
+      if(k===0){P('M18 4 v8 M18 24 v8 M4 18 h8 M24 18 h8 M9 9 l5 5 M22 22 l5 5 M27 9 l-5 5 M14 22 l-5 5')}
+      else if(k===1){P('M4 12 h24 M22 6 l6 6 l-6 6 M32 26 h-24 M14 20 l-6 6 l6 6')}
+      else if(k===2){g.appendChild(el('circle',{cx:11,cy:18,r:8}));g.appendChild(el('circle',{cx:25,cy:18,r:8}))}
+      else{P('M3 6 h30 l-11 13 v11 l-8 -4 v-7 z')}
+    }else{
+      if(k===0){g.appendChild(el('rect',{x:4,y:10,width:28,height:16,rx:3}));P('M10 30 L26 6')}
+      else if(k===1){g.appendChild(el('rect',{x:3,y:8,width:13,height:20,rx:3}));g.appendChild(el('rect',{x:20,y:8,width:13,height:20,rx:3}))}
+      else if(k===2){P('M4 8 h10 M4 18 h10 M4 28 h10 M20 8 h12 M20 18 h12 M20 28 h12')}
+      else{g.appendChild(el('ellipse',{cx:18,cy:8,rx:14,ry:5}));P('M4 8 v20 a14 5 0 0 0 28 0 V8')}
+    }
+    return g;
+  }
+  function mkBoxes(host,s){
+    var out=[];
+    BOXDEF[s].forEach(function(b,k){
+      var x=BX[k],g=el('g',{opacity:0});
+      var r=el('rect',{x:x,y:BY,width:BW,height:BH,rx:10,'class':'s-fill s-line','stroke-width':2});
+      g.appendChild(r);g.appendChild(icon(k,s,x+14,BY+22));
+      var t=el('text',{x:x+60,y:BY+28,'font-size':17,'class':'s-ink'});t.textContent=b[0];g.appendChild(t);
+      var a=el('text',{x:x+60,y:BY+48,'font-size':12,'class':'s-muted'});a.textContent=b[1];g.appendChild(a);
+      var c=el('text',{x:x+60,y:BY+64,'font-size':12,'class':'s-muted'});c.textContent=b[2];g.appendChild(c);
+      host.appendChild(g);out.push({g:g,r:r});
+    });
+    return out;
+  }
+  var BB=mkBoxes($('boxesBase'),0),BBB=mkBoxes($('boxesB'),1);
+  function showBoxes(list,fn,active,color){
+    list.forEach(function(b,k){
+      op(b.g,fn(k));
+      b.r.style.stroke=k===active?color:'var(--tertiary-text)';
+    });
+  }
+
+  // ---- chips: M merged row (V vitals, L lab, S survey), D a failing row ----
+  function mkMerged(){
+    var g=el('g',{opacity:0});
+    [['s-acc','V',-46],['s-ink','L',-15],['s-sl','S',16]].forEach(function(s){
+      g.appendChild(el('rect',{x:s[2],y:-17,width:30,height:34,rx:4,'class':s[0]}));
+      var t=el('text',{x:s[2]+15,y:5,'font-size':13,'font-weight':700,'text-anchor':'middle',fill:'var(--ground)'});t.textContent=s[1];g.appendChild(t);
+    });
+    $('chips').appendChild(g);
+    return g;
+  }
+  function mkBad(){
+    var g=el('g',{opacity:0});
+    g.appendChild(el('rect',{x:-34,y:-17,width:68,height:34,rx:6,'class':'s-acc'}));
+    [[-7,24],[0,24],[7,12]].forEach(function(l){g.appendChild(el('line',{x1:-24,y1:l[0]+0,x2:l[1],y2:l[0]+0,stroke:'var(--ground)','stroke-width':2}))});
+    g.appendChild(el('line',{x1:-14,y1:-12,x2:14,y2:12,stroke:'var(--ground)','stroke-width':4}));
+    g.appendChild(el('line',{x1:14,y1:-12,x2:-14,y2:12,stroke:'var(--ground)','stroke-width':4}));
+    $('chips').appendChild(g);
+    return g;
+  }
+  var M=mkMerged(),D=mkBad(),MB=mkMerged();
+  function put(c,o,x,y,s){op(c,o);c.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') scale('+s.toFixed(2)+')')}
+  function hideChips(){op(M,0);op(D,0);op(MB,0)}
+
+  // vector dots
+  (function(){var P=[[800,380],[825,395],[850,372],[880,390],[905,376],[815,408],[860,410],[895,408],[838,388]];
+    P.forEach(function(p,i){$('dots').appendChild(el('circle',{cx:p[0],cy:p[1],r:4,'class':(i===2||i===8)?'s-acc':'s-sl',opacity:(i===2||i===8)?1:.6}))})})();
+
+  var mode=0,rows=0,playing=!reduce,elapsed=0,last=null,counted=-1,shown='';
+  var defShown='';
+
+  function clearTray(){rows=0;counted=-1;var s=$('stack');while(s.firstChild)s.removeChild(s.firstChild);$('count').textContent=''}
+  function addRow(){
+    rows++;var i=(rows-1)%4,s=$('stack');
+    if(i===0)while(s.firstChild)s.removeChild(s.firstChild);
+    ['s-acc','s-ink','s-sl'].forEach(function(cl,k){
+      s.appendChild(el('rect',{x:330+k*85,y:640-i*14,width:80,height:9,rx:3,'class':cl,opacity:1-i*.15}));
+    });
+    $('count').textContent=rows+(rows===1?' row':' rows')+' landed (sample)';
+  }
+  function setCards(prefix,n,step){for(var i=0;i<n;i++)$(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBands(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('h'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function setLabels(m){for(var k=0;k<3;k++)$('l'+k).textContent=LABELS[m][k]}
+  function stepOf(t){var cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,s=0;while(s<t.N-1&&e>=t.START[s+1])s++;return {cyc:cyc,step:s,u:(e-t.START[s])/t.DUR[s]}}
+
+  function setDefects(n){
+    var key=String(n);if(defShown===key)return;defShown=key;
+    for(var i=0;i<4;i++){var e=$('d'+i),done=i<n;e.textContent=(done?'✓ ':'• ')+DEF[i][done?1:0];e.setAttribute('class',done?'s-ink':'s-muted')}
+  }
+  function hideAIlayer(){['markA1','markA2','agentlabel','readlabel','markBox','anote','proposal','dstation'].forEach(function(id){op($(id),0)})}
+
+  // chip path through the four boxes
+  var WP=[[0,230,125],[.12,160,372],[.30,160,372],[.42,386.67,372],[.55,386.67,372],[.67,613.33,372],[.78,613.33,372],[.88,840,372],[1,840,372]];
+  function wp(u){for(var i=0;i<WP.length-1;i++)if(u<=WP[i+1][0]){var t=(u-WP[i][0])/(WP[i+1][0]-WP[i][0]);return [lerp(WP[i][1],WP[i+1][1],t),lerp(WP[i][2],WP[i+1][2],t)]}return [WP[8][1],WP[8][2]]}
+  function fixedAt(u){return (u>.2?1:0)+(u>.48?1:0)+(u>.72?1:0)+(u>.92?1:0)}
+  function activeAt(u){return u<.12?-1:(u<.36?0:(u<.61?1:(u<.83?2:3)))}
+  function scale1(u){return u<.12?lerp(1.5,1,u/.12):1}
+
+  // chip goes from the Reduce box to the gate and on to Silver
+  function gateRun(u,t0,t1,t2){
+    // t0 start, t1 at gate, t2 in Silver
+    if(u<t0){put(M,.6+.4,840,372,1);return}
+    if(u<t1){var q=(u-t0)/(t1-t0);put(M,1,lerp(840,790,q),lerp(372,506,q),1);return}
+    if(u<t2){var q2=(u-t1)/(t2-t1);put(M,1,lerp(790,470,q2),lerp(506,630,q2),lerp(1,.9,q2));return}
+    if(counted!==Math.floor(elapsed/T[mode].TOTAL)){counted=Math.floor(elapsed/T[mode].TOTAL);addRow()}
+  }
+
+  function frameBase(s){
+    var step=s.step,u=s.u;
+    $('sceneBase').setAttribute('opacity',1);op($('sceneB'),0);
+    hideAIlayer();hideChips();op($('bar'),0);op($('next'),0);
+    $('dcount').textContent='';
+    var f=step===0?0:(step===1?fixedAt(u):4);
+    setDefects(f);
+    showBoxes(BB,function(k){return step===0?ease((u-.1-k*.15)/.2):1},step===1?activeAt(u):-1,'var(--accent)');
+    op($('rawtag'),step===0?1:(step===1?clamp01(1-u*8):0));
+    var dim=.55+.45*f/4;
+    if(step===0)put(M,dim,230,125,1.5);
+    else if(step===1){var p=wp(u);put(M,dim,p[0],p[1],scale1(u))}
+    else if(step===2){put(M,1,840,372,1);var q=ease((u-.1)/.6);op($('bar'),1);$('barfill').setAttribute('width',(880*.8*q).toFixed(1));op($('bartxt'),q>.5?1:0)}
+    else if(step===3){
+      // failing row first, then the good row
+      if(u<.45){
+        if(u<.25)put(D,1,lerp(900,870,u/.25),lerp(372,506,u/.25),1);
+        else put(D,1,lerp(870,900,(u-.25)/.2),lerp(506,624,(u-.25)/.2),1);
+        put(M,1,840,372,1);
+      }else{
+        put(D,1,900,624,1);$('dcount').textContent='1 row waiting (sample)';
+        gateRun(u,.5,.65,.9);
+      }
+    }else{
+      put(D,1,900,624,1);$('dcount').textContent='1 row waiting (sample)';
+      op($('next'),1);
+    }
+  }
+
+  var NOTEA=['','Repeat removed. Odd value flagged, not deleted.','Caught here, so no report ever sees it.'];
+  function frameAI(s){
+    var step=s.step,u=s.u,pulse=.35+.65*Math.abs(Math.sin(elapsed/450));
+    $('sceneBase').setAttribute('opacity',1);op($('sceneB'),0);
+    hideAIlayer();hideChips();op($('bar'),0);op($('next'),0);
+    $('dcount').textContent='';
+    op($('rawtag'),step===0?1:0);
+    if(step<=1){}
+    op($('agentlabel'),1);
+    var f=step===0?0:(step===1?fixedAt(u):4);
+    setDefects(f);
+    showBoxes(BB,function(){return 1},step===1?activeAt(u):-1,'var(--ai)');
+    if(step===0){op($('markA1'),pulse);op($('markA2'),pulse);put(M,.55,230,125,1.5)}
+    else if(step===1){
+      var p=wp(u);put(M,.55+.45*f/4,p[0],p[1],scale1(u));
+      var a=activeAt(u);
+      if(a>=0){var mb=$('markBox');mb.setAttribute('x',BX[a]-5);mb.setAttribute('y',BY-5);mb.setAttribute('width',BW+10);mb.setAttribute('height',BH+10);op(mb,.6+.4*Math.abs(Math.sin(elapsed/350)))}
+      $('readlabel').textContent='AI finds repeats and fixes formats';op($('readlabel'),(u>.1&&u<.9)?1:0);
+      $('anote').textContent=NOTEA[1];op($('anote'),u>.8?1:0);
+    }else if(step===2){
+      put(D,u>.1?1:0,900,624,1);if(u>.1)$('dcount').textContent='1 row waiting (sample)';
+      gateRun(u,.05,.3,.75);
+      $('anote').textContent=NOTEA[2];op($('anote'),u>.15?1:0);
+    }else if(step===3){
+      put(D,1,900,624,1);$('dcount').textContent='1 row waiting (sample)';
+      var bi=Math.min(4,Math.floor(u*5)),mb2=$('markBox');
+      if(bi<4){mb2.setAttribute('x',BX[bi]-5);mb2.setAttribute('y',BY-5);mb2.setAttribute('width',BW+10);mb2.setAttribute('height',BH+10)}
+      else{mb2.setAttribute('x',635);mb2.setAttribute('y',473);mb2.setAttribute('width',310);mb2.setAttribute('height',66)}
+      op(mb2,.6+.4*Math.abs(Math.sin(elapsed/350)));
+      var n=Math.round(7536*ease((u-.05)/.6)),fl=u>.65?9:Math.round(9*ease((u-.05)/.6));
+      $('anote').textContent=u<.7?(n.toLocaleString('en-US')+' rows checked · '+fl+' failed tests · sample day'):'Schema change spotted: pipeline paused, a person told.';
+      op($('anote'),u>.05?1:0);
+    }else{
+      put(D,1,900,624,1);$('dcount').textContent='1 row waiting (sample)';
+      op($('proposal'),u>.1?1:0);op($('dstation'),u>.4?1:0);
+      $('anote').textContent='A person approves each repair. Clean rows flow on to Stage 4.';op($('anote'),u>.5?1:0);
+      op($('next'),u>.88?1:0);
+    }
+  }
+
+  function frameB(s){
+    var step=s.step,u=s.u;
+    op($('sceneBase'),0);hideAIlayer();hideChips();
+    $('sceneB').setAttribute('opacity',1);
+    op($('agentlabel'),1);
+    showBoxes(BBB,function(k){return step===0?ease((u-.1-k*.15)/.2):(step>=3?.45:1)},
+      step===1?(u<.5?0:1):(step===2?(u<.55?2:3):-1),'var(--ai)');
+    put(MB,1,230,125,1.5);
+    var purged=(step===1&&u>.2)||step>1;
+    var sent=$('bsent');
+    sent.textContent=(purged?'[removed]':'Jo Ames')+': “Waited long, but the nurse was kind.”';
+    sent.setAttribute('class',purged?'s-acc':'s-ink');
+    var showTop=step<3;op($('blab'),showTop?1:0);op(sent,showTop?1:0);op($('btag'),showTop?1:0);if(!showTop)op(MB,0);
+    op($('bpills'),step===1?clamp01((u-.5)/.2):(step===2?1:0));
+    op($('bvec'),step===2?clamp01((u-.15)/.2):0);
+    op($('bdb'),step===2?clamp01((u-.55)/.2):0);
+    var sp=step===3?ease((u-.1)/.5):(step===4?1:0);
+    op($('bsplit'),step>=3?(step===4?.5:1):0);
+    var w0=616*sp,w1=132*sp,w2=132*sp;
+    $('sp0').setAttribute('width',w0.toFixed(1));$('sp1').setAttribute('width',w1.toFixed(1));$('sp2').setAttribute('width',w2.toFixed(1));
+    op($('st0'),sp>.9?1:0);op($('st1'),sp>.9?1:0);op($('st2'),sp>.9?1:0);
+    var A=$('btxtA'),B=$('btxtB');
+    if(step===3){A.textContent='Train: the model learns here · Tune: settings are adjusted · Test: held back, never trained on';B.textContent='A model is judged on rows it has never seen.';op(A,u>.55?1:0);op(B,u>.7?1:0)}
+    else if(step===4){A.textContent='Real data drifts, and a model can slowly get worse.';B.textContent='A faulty pipeline can look like a failing model, so the pipeline is watched too.';op(A,1);op(B,u>.2?1:0)}
+    else{op(A,0);op(B,0)}
+    op($('bnext'),step===4&&u>.8?1:0);
+  }
+
+  function frame(){
+    var t=T[mode],s=stepOf(t),key=mode+':'+s.step+'/'+s.cyc;
+    if(shown!==key){
+      shown=key;
+      setCards(['c','a','b'][mode],5,s.step);setBands(BANDS[mode][s.step]);
+      if(s.step===0){clearTray();defShown=''}
+    }
+    if(mode===0)frameBase(s);else if(mode===1)frameAI(s);else frameB(s);
+  }
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var t=T[mode],cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,step=0;
+    while(step<t.N-1&&e>=t.START[step+1])step++;
+    elapsed=step<t.N-1?cyc*t.TOTAL+t.START[step+1]+10:(cyc+1)*t.TOTAL+10;
+  });
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';defShown='';clearTray();playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    mode=(mode+1)%3;
+    this.textContent='Show AI: '+['Off','Pipeline','AI data'][mode];
+    this.setAttribute('aria-pressed',mode!==0);
+    this.className='btn'+(mode?' on':'');
+    document.body.className='m'+mode;
+    setLabels(mode);
+    elapsed=0;shown='';defShown='';clearTray();
+    ['c','a','b'].forEach(function(p){for(var i=0;i<5;i++)$(p+i).className='card'});
+  });
+  setLabels(0);
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
