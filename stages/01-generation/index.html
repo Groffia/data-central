@@ -208,8 +208,8 @@ text{font-family:var(--font-system)}
 
   // Two timelines: the five-step story, and the four-step AI story
   function mk(d){var st=[0];d.forEach(function(x,i){st.push(st[i]+x)});return {DUR:d,START:st,TOTAL:st[d.length],N:d.length}}
-  var BASE=mk([5000,5000,5000,5000,5000]);
-  var AIT=mk([7000,7000,7000,7000,7000]);
+  var BASE=mk([12000,12500,11000,8000,9500]);
+  var AIT=mk([8500,13500,11500,10000,11500]);
   var BASEBANDS=[[0],[0,1],[1],[0,2],[2]];
   var AIBANDS=[[0,1],[0,1],[1,2],[1],[1,2]];
   var FIELDS=[['patient_id',1],['name',1],['birth_date',1],['mrn',1],['address',1],
