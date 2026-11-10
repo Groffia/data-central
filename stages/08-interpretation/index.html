@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 8: Data Interpretation</title>
+<style>
+/* Tokens: WARMING STRIPES design system, same as Stages 2 to 6 */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:none;flex-direction:column;gap:.85rem}
+.cards.act{display:flex}
+header.top,.stage,.cards{transition:opacity 700ms ease}
+body.out header.top,body.out .stage,body.out .cards{opacity:0}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+.cards.ai .card.now .k{color:var(--ai)}
+.cards.ai .tl strong{color:var(--ai)}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.s-ai{fill:var(--ai)}
+nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding:.35rem 0 .6rem;font-family:var(--font-system)}
+.secs button{min-height:32px;padding:0 .75rem;border:1px solid var(--tertiary-text);border-radius:999px;background:transparent;color:var(--muted);font:400 .8125rem var(--font-system);cursor:pointer;transition:border-color 150ms ease,color 150ms ease}
+.secs button:hover{border-color:var(--accent);color:var(--accent)}
+.secs button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.secs button[aria-current="true"]{border-color:var(--accent);background:var(--accent);color:var(--ground);font-weight:700}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag" id="eyebrow"></p>
+    <h1 id="h1"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+  <nav class="secs" id="secs" aria-label="Sections of this stage"></nav>
+
+  <section class="scene" aria-label="Visualization of Stage 6's answers">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation of data visualization at Tamsworth Health, one section at a time.">
+            <line id="hr0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="hr1" class="hair" x1="60" y1="215" x2="940" y2="215"/>
+            <line id="hr2" class="hair" x1="60" y1="445" x2="940" y2="445"/>
+            <text id="l0" class="bl" x="60" y="24"></text>
+            <text id="l1" class="bl" x="60" y="236"></text>
+            <text id="l2" class="bl" x="60" y="466"></text>
+
+            <!-- ===== section 1: say what it means ===== -->
+            <g id="s0" display="none">
+              <g id="a0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">WAIT, NOVEMBER</text>
+                <text class="s-acc" x="76" y="122" font-size="26">34 min</text>
+                <text class="s-muted" x="76" y="142" font-size="12">above range 24 to 32</text>
+              </g>
+              <g id="a1" opacity="0">
+                <rect x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">WORST CLINIC</text>
+                <text class="s-acc" x="301" y="122" font-size="26">B · 45 min</text>
+                <text class="s-muted" x="301" y="142" font-size="12">others about 28</text>
+              </g>
+              <g id="a2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">DECEMBER FORECAST</text>
+                <text class="s-ink" x="526" y="122" font-size="26">41 min</text>
+                <text class="s-muted" x="526" y="142" font-size="12">if nothing changes</text>
+              </g>
+              <g id="a3" opacity="0">
+                <rect id="a3box" x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">THE READERS</text>
+                <text class="s-ink" x="751" y="118" font-size="16">Executives, analysts</text>
+                <text class="s-muted" x="751" y="140" font-size="12">must decide (sample)</text>
+              </g>
+              <text id="a4" class="s-muted" x="60" y="184" font-size="12" opacity="0">The Stage 7 dashboard. The numbers are right. Someone must now say what they mean.</text>
+              <text id="atrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: a dashboard is ready and a decision is waiting.</text>
+
+              <g id="n0" opacity="0">
+                <rect x="60" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="278" font-size="11" letter-spacing="2">NOTICE</text>
+                <text class="s-ink" x="76" y="306" font-size="15">34 minutes is above</text>
+                <text class="s-ink" x="76" y="326" font-size="15">the 24 to 32 range</text>
+              </g>
+              <g id="n1" opacity="0">
+                <rect x="360" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="376" y="278" font-size="11" letter-spacing="2">COMPARE</text>
+                <text class="s-ink" x="376" y="306" font-size="15">Clinic B is at 45,</text>
+                <text class="s-ink" x="376" y="326" font-size="15">the others at about 28</text>
+              </g>
+              <g id="n2" opacity="0">
+                <rect x="660" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="676" y="278" font-size="11" letter-spacing="2">LOOK AHEAD</text>
+                <text class="s-ink" x="676" y="306" font-size="15">December is forecast at 41</text>
+                <text class="s-ink" x="676" y="326" font-size="15">if nothing changes</text>
+              </g>
+              <g id="cn" opacity="0">
+                <rect x="60" y="372" width="880" height="58" rx="10" class="s-fill" stroke="var(--accent)" stroke-width="2.5"/>
+                <text class="s-acc" x="76" y="393" font-size="11" letter-spacing="2">CONCLUSION (SAMPLE)</text>
+                <text class="s-ink" x="76" y="418" font-size="15">Clinic B’s wait is rising and will miss the goal in December unless something changes.</text>
+              </g>
+
+              <text id="w1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A conclusion is a sentence, not a chart.</text>
+              <text id="w2" class="s-muted" x="60" y="546" font-size="13" opacity="0">It says what the numbers mean, so someone can act on it.</text>
+              <text id="w3" class="s-ink" x="60" y="592" font-size="14" opacity="0">The charts came from Stage 7. The judgment about them belongs to the people who decide.</text>
+              <g id="next0" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Weigh the options · what could we do?</text>
+              </g>
+            </g>
+
+            <!-- ===== section 2: weigh the options ===== -->
+            <g id="s1" display="none">
+              <g id="o0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">THE GOAL</text>
+                <text class="s-ink" x="76" y="118" font-size="16">24 to 32 minutes</text>
+                <text class="s-muted" x="76" y="140" font-size="12">for December</text>
+              </g>
+              <g id="o1" opacity="0">
+                <rect id="o1box" x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">OPTION 1</text>
+                <text class="s-ink" x="301" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="301" y="140" font-size="12">about $6k a month (sample)</text>
+              </g>
+              <g id="o2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">OPTION 2</text>
+                <text class="s-ink" x="526" y="118" font-size="16">Extra front-desk staff</text>
+                <text class="s-muted" x="526" y="140" font-size="12">about $9k a month (sample)</text>
+              </g>
+              <g id="o3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">OPTION 3</text>
+                <text class="s-ink" x="751" y="118" font-size="16">Do nothing</text>
+                <text class="s-muted" x="751" y="140" font-size="12">no cost</text>
+              </g>
+              <text id="o4" class="s-muted" x="60" y="184" font-size="12" opacity="0">Stage 6 recommended option 1. Interpretation weighs all three before anyone commits money.</text>
+              <text id="otrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: a conclusion says something must change.</text>
+
+              <g id="obars" opacity="0">
+                <rect id="ogoal" x="0" y="272" width="0" height="122" rx="6" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <text id="ogoalt" class="s-acc" x="0" y="266" font-size="11" letter-spacing="2">GOAL 24 TO 32</text>
+              </g>
+              <g id="obg"></g>
+              <text id="ofoot" class="s-muted" x="60" y="416" font-size="13" opacity="0">Simulated December wait (sample). None reaches the goal. Option 1 comes closest.</text>
+
+              <text id="x1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A recommendation is not a decision.</text>
+              <text id="x2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Each option costs something and changes something. People weigh both.</text>
+              <text id="x3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Without action: 41 minutes. With option 1: 33. The 8-minute gap is what the money buys.</text>
+              <g id="next1" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Tell the story · who signs off?</text>
+              </g>
+            </g>
+
+            <!-- ===== section 3: tell the story and decide ===== -->
+            <g id="s2" display="none">
+              <g id="t0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">WHAT WE SAW</text>
+                <text class="s-ink" x="76" y="118" font-size="16">Clinic B at 45 min</text>
+                <text class="s-muted" x="76" y="140" font-size="12">rising since October</text>
+              </g>
+              <g id="t1" opacity="0">
+                <rect x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">WHAT WE RECOMMEND</text>
+                <text class="s-acc" x="301" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="301" y="140" font-size="12">option 1</text>
+              </g>
+              <g id="t2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">WHAT TO EXPECT</text>
+                <text class="s-ink" x="526" y="118" font-size="16">About 33 in December</text>
+                <text class="s-muted" x="526" y="140" font-size="12">down from 41 (sample)</text>
+              </g>
+              <g id="t3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">WHAT IT COSTS</text>
+                <text class="s-ink" x="751" y="118" font-size="16">About $6k a month</text>
+                <text class="s-muted" x="751" y="140" font-size="12">sample</text>
+              </g>
+              <text id="t4" class="s-muted" x="60" y="184" font-size="12" opacity="0">One page for the people who approve: what we saw, what we recommend, what to expect, what it costs.</text>
+              <text id="ttrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: an option is ready to put in front of the people who approve.</text>
+
+              <g id="d0" opacity="0">
+                <rect x="60" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="288" font-size="11" letter-spacing="2">BUSINESS ANALYST</text>
+                <text class="s-ink" x="76" y="316" font-size="15">Drafts the story</text>
+                <text class="s-muted" x="76" y="338" font-size="12">and answers questions</text>
+              </g>
+              <g id="d1" opacity="0">
+                <path class="s-accl" d="M316 310 H366" stroke-width="2.5"/>
+                <path class="s-accl" d="M354 300 L367 310 L354 320" stroke-width="2.5"/>
+                <rect id="d1box" x="375" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="391" y="288" font-size="11" letter-spacing="2">EXECUTIVE</text>
+                <text class="s-ink" x="391" y="316" font-size="15">Decides</text>
+                <text class="s-muted" x="391" y="338" font-size="12">approve, change or decline</text>
+              </g>
+              <g id="d2" opacity="0">
+                <path class="s-accl" d="M631 310 H681" stroke-width="2.5"/>
+                <path class="s-accl" d="M669 300 L682 310 L669 320" stroke-width="2.5"/>
+                <rect id="d2box" x="690" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="706" y="288" font-size="11" letter-spacing="2">DECISION RECORDED</text>
+                <text class="s-ink" x="706" y="316" font-size="15">Approve option 1</text>
+                <text class="s-muted" x="706" y="338" font-size="12">by the operations director (sample)</text>
+              </g>
+              <text id="dfoot" class="s-muted" x="60" y="400" font-size="13" opacity="0">The decision and who made it are written down, so anyone can trace it later.</text>
+
+              <text id="y1" class="s-ink" x="60" y="520" font-size="15" opacity="0">People decide on a story they can follow.</text>
+              <text id="y2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Plain words, the evidence beside them, one clear ask.</text>
+              <text id="y3" class="s-ink" x="60" y="592" font-size="14" opacity="0">A person approves. A model can write the story, but it cannot own the decision.</text>
+              <g id="next2" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Act and close the loop · after yes</text>
+              </g>
+            </g>
+
+            <!-- ===== section 4: act and close the loop ===== -->
+            <g id="s3" display="none">
+              <g id="f0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">THE DECISION</text>
+                <text class="s-acc" x="76" y="118" font-size="16">Approve option 1</text>
+                <text class="s-muted" x="76" y="140" font-size="12">signed by the director</text>
+              </g>
+              <g id="f1" opacity="0">
+                <rect x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">THE WORKFLOW</text>
+                <text class="s-ink" x="301" y="118" font-size="16">Pre-approved steps</text>
+                <text class="s-muted" x="301" y="140" font-size="12">ask the lab for faster turnaround</text>
+              </g>
+              <g id="f2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">THE ACTION</text>
+                <text class="s-ink" x="526" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="526" y="140" font-size="12">starts December 1 (sample)</text>
+              </g>
+              <g id="f3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">THE OWNER</text>
+                <text class="s-ink" x="751" y="118" font-size="16">Clinic B lead</text>
+                <text class="s-muted" x="751" y="140" font-size="12">watches the result</text>
+              </g>
+              <text id="f4" class="s-muted" x="60" y="184" font-size="12" opacity="0">The decision becomes action. Every step was approved in advance.</text>
+              <text id="ftrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: a person has approved an option.</text>
+
+              <g id="e0" opacity="0">
+                <rect x="60" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="278" font-size="11" letter-spacing="2">RESULT</text>
+                <text class="s-ink" x="76" y="306" font-size="15">Clinic B wait: 45 to 33 min</text>
+                <text class="s-muted" x="76" y="328" font-size="12">after a month (sample)</text>
+              </g>
+              <g id="e1" opacity="0">
+                <rect x="360" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="376" y="278" font-size="11" letter-spacing="2">WATCH</text>
+                <text class="s-ink" x="376" y="306" font-size="15">The dashboard keeps alerting</text>
+                <text class="s-muted" x="376" y="328" font-size="12">if the wait drifts back</text>
+              </g>
+              <g id="e2" opacity="0">
+                <rect x="660" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="676" y="278" font-size="11" letter-spacing="2">ASK AGAIN</text>
+                <text class="s-ink" x="676" y="306" font-size="15">Is the goal met?</text>
+                <text class="s-muted" x="676" y="328" font-size="12">if not, back to the options</text>
+              </g>
+              <g id="eloop" opacity="0">
+                <path class="s-accl" d="M800 360 V392 H200 V364" stroke-width="2.5"/>
+                <path class="s-accl" d="M190 374 L200 361 L210 374" stroke-width="2.5"/>
+                <text class="s-ink" x="500" y="414" font-size="13" text-anchor="middle">Next month’s rows are generated at Stage 1. The lifecycle never ends.</text>
+              </g>
+
+              <text id="z1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A decision only counts when it changes something.</text>
+              <text id="z2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Then the data shows whether it worked, and the cycle begins again.</text>
+              <text id="z3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Agents may start steps that were approved in advance. A person approves anything new.</text>
+              <g id="next3" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Back to Stage 1 · Data generation</text>
+              </g>
+            </g>
+
+            <!-- ===== AI layer ===== -->
+            <g id="aiL" opacity="0">
+              <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
+              <line id="ai_scan" x1="0" y1="0" x2="0" y2="0" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+              <text id="ai_lab" class="s-ai" x="940" y="24" font-size="11" letter-spacing="3" text-anchor="end"></text>
+              <text id="ai_note" class="s-ai" x="60" y="654" font-size="13" opacity="0"></text>
+              <g id="ai_prop" opacity="0">
+                <rect x="60" y="642" width="400" height="26" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <text id="ai_proptxt" class="s-ai" x="260" y="660" font-size="13" text-anchor="middle"></text>
+              </g>
+              <circle id="ai_ring" cx="0" cy="0" r="0" fill="none" stroke="var(--ai)" stroke-width="2" opacity="0"/>
+              <g id="ai_stn" opacity="0" transform="translate(0,0) scale(.55)">
+                <circle r="26" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <circle cy="-8" r="7" fill="var(--ai)"/>
+                <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="sect" type="button">Next section</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards act" id="cards0" aria-live="polite">
+        <div class="card" id="c0_0"><p class="k">01 · What</p><h3>Turn the dashboard into a decision</h3><p>Interpretation turns analysis and visuals into business decisions: reviewing dashboards, drawing conclusions, recommending actions and telling the story. Business analysts and executives own it.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_1"><p class="k">02 · How</p><h3>Notice, compare, look ahead</h3><p>The reader notices what is off, compares it with the rest, and checks the forecast. Then they write one conclusion. Sample: Clinic B’s wait is 45 minutes and rising.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_2"><p class="k">03 · Why</p><h3>A number alone decides nothing</h3><p>Charts show what is true. A decision needs someone to say what it means and what to do. Without this step, the work of Stages 1 to 7 changes nothing.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_3"><p class="k">04 · When</p><h3>When a decision is waiting</h3><p>Whenever a dashboard shows something that needs a response, such as a number outside its range or a forecast that misses the goal.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_4"><p class="k">05 · Next</p><h3>Weigh the options</h3><p>A conclusion says what is wrong. Next: what could be done about it, and what each option would likely change.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards1" aria-live="polite">
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>Compare what each action would change</h3><p>Before any money is spent, the options are put side by side: what each would do to the problem, and what it would cost. Business analysts and executives weigh them.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Simulate each option, then weigh the cost</h3><p>Each option gets an estimate of the result. Then people set that against the cost. Sample: three options for Clinic B, each with a December wait and a monthly cost.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>Money and staff are limited</h3><p>The best-looking number may not be worth its cost. Comparing with and without an action shows what each one buys.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_3"><p class="k">04 · When</p><h3>Before anyone commits resources</h3><p>After a conclusion says something must change, and before an option is chosen.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Tell the story</h3><p>Options are weighed. Next: how the choice is explained to the people who must approve it, and who signs off.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards2" aria-live="polite">
+        <div class="card" id="c2_0"><p class="k">01 · What</p><h3>Explain it, then decide</h3><p>The recommended option is told as a short story for the people who approve it, and one of them makes the call. Business analysts tell it. Executives decide.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Draft the story, then an executive decides</h3><p>The story covers what we saw, what we recommend, what to expect and what it costs. The executive approves, changes or declines, and the choice is recorded.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>Every decision needs an owner</h3><p>Where accuracy must be total, a person has to stand behind the choice. A recorded decision can be traced and questioned later.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When an option is ready for approval</h3><p>After the options are weighed, and before any money or staff are committed.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Act and close the loop</h3><p>Once a person says yes, the action has to happen, and the next month’s data shows whether it worked.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards3" aria-live="polite">
+        <div class="card" id="c3_0"><p class="k">01 · What</p><h3>Act, then learn</h3><p>An approved decision is carried out, and the result is watched. The result becomes new data, so the lifecycle starts again. Executives and business analysts own it.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_1"><p class="k">02 · How</p><h3>Run the approved steps, then watch</h3><p>Steps that were approved in advance are started, such as asking the lab for faster results. The dashboard keeps watching the wait, and a miss reopens the options.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_2"><p class="k">03 · Why</p><h3>The lifecycle never ends</h3><p>Data keeps changing and results can drift. Watching the outcome and feeding it back is how the next decision gets better.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_3"><p class="k">04 · When</p><h3>After a yes, and every month after</h3><p>The action starts when a person approves. The check repeats each time new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_4"><p class="k">05 · Next</p><h3>Back to Stage 1</h3><p>The new rows start the cycle again, from data generation.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+      </div>
+
+      <div class="cards ai" id="cardsAI" aria-live="polite">
+        <div class="card" id="aic0"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic1"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic2"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function tx(x,y,size,cls,txt,anchor){var e=el('text',{x:x,y:y,'font-size':size,'class':cls});if(anchor)e.setAttribute('text-anchor',anchor);e.textContent=txt;return e}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function ease(t){t=clamp01(t);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // ---------- section 1: say what it means ----------
+  function draw0(step,u){
+    op($('a0'),step===0?ease(u/.18):1);
+    op($('a1'),step===0?ease((u-.15)/.18):1);
+    op($('a2'),step===0?ease((u-.3)/.18):1);
+    op($('a3'),step===0?ease((u-.5)/.2):1);
+    op($('a4'),step===0?ease((u-.75)/.15):1);
+    $('a3box').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('atrig'),step<3?0:(step===3?ease(u/.2):1));
+    var nb=['n0','n1','n2'];
+    for(var i=0;i<3;i++)op($(nb[i]),step<1?0:(step===1?ease((u-.05-i*.2)/.15):1));
+    op($('cn'),step<1?0:(step===1?ease((u-.7)/.2):1));
+    op($('w1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('w2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('w3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next0'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 2: weigh the options ----------
+  var OBV=[['Faster lab results',33],['Extra front-desk staff',38],['Do nothing',41]],obR=[];
+  function MX(m){return 330+(m-20)*(610/25)}
+  $('ogoal').setAttribute('x',MX(24).toFixed(1));$('ogoal').setAttribute('width',(MX(32)-MX(24)).toFixed(1));
+  $('ogoalt').setAttribute('x',(MX(24)+4).toFixed(1));
+  OBV.forEach(function(o,i){
+    var y=290+i*38,g=el('g',{opacity:0}),best=(i===0);
+    g.appendChild(tx(60,y+17,13,'s-muted',o[0]));
+    var r=el('rect',{x:330,y:y,width:0,height:24,rx:3,'class':best?'s-acc':'s-sl'});
+    g.appendChild(r);
+    var t=tx(MX(o[1])+10,y+18,14,best?'s-acc':'s-ink',o[1]+' min');
+    g.appendChild(t);
+    $('obg').appendChild(g);obR.push({g:g,r:r,t:t,w:MX(o[1])-330,x:MX(o[1])+10});
+  });
+  function draw1(step,u){
+    var i;
+    op($('o0'),step===0?ease(u/.18):1);
+    op($('o1'),step===0?ease((u-.15)/.18):1);
+    op($('o2'),step===0?ease((u-.3)/.18):1);
+    op($('o3'),step===0?ease((u-.45)/.18):1);
+    op($('o4'),step===0?ease((u-.75)/.15):1);
+    $('o1box').style.stroke=(step===3||step===2)?'var(--accent)':'var(--tertiary-text)';
+    op($('otrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('obars'),ease(bu/.1));
+    for(i=0;i<3;i++){
+      var f=ease((bu-.1-i*.2)/.25);
+      op(obR[i].g,f>0?1:0);
+      obR[i].r.setAttribute('width',(obR[i].w*f).toFixed(1));
+      op(obR[i].t,f>.9?1:0);
+    }
+    op($('ofoot'),ease((bu-.8)/.12));
+    op($('x1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('x2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('x3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next1'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 3: tell the story and decide ----------
+  function draw2(step,u){
+    var i,ids=['t0','t1','t2','t3'];
+    for(i=0;i<4;i++)op($(ids[i]),step===0?ease((u-i*.15)/.18):1);
+    op($('t4'),step===0?ease((u-.75)/.15):1);
+    op($('ttrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('d0'),ease((bu-.05)/.18));
+    op($('d1'),ease((bu-.3)/.18));
+    op($('d2'),ease((bu-.6)/.18));
+    op($('dfoot'),ease((bu-.85)/.1));
+    $('d1box').style.stroke=(step>=2)?'var(--accent)':'var(--tertiary-text)';
+    op($('y1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('y2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('y3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next2'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 4: act and close the loop ----------
+  function draw3(step,u){
+    var i,ids=['f0','f1','f2','f3'];
+    for(i=0;i<4;i++)op($(ids[i]),step===0?ease((u-i*.15)/.18):1);
+    op($('f4'),step===0?ease((u-.75)/.15):1);
+    op($('ftrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('e0'),ease((bu-.05)/.18));
+    op($('e1'),ease((bu-.3)/.18));
+    op($('e2'),ease((bu-.55)/.18));
+    op($('eloop'),ease((bu-.8)/.15));
+    op($('z1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('z2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('z3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next3'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- scene table ----------
+  var SCENES=[
+    {head:['Stage 8 of 8 · Data interpretation','Say what it <em class="hl">means</em>.','Interpretation turns analysis and visuals into business decisions. At Tamsworth Health, the Stage 7 dashboard is open on an executive’s screen. The numbers are right. Someone must say what they mean.'],
+     g:'s0',cards:'c0_',box:'cards0',draw:draw0,
+     labels:['01 · A DASHBOARD IS OPEN · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','02 · NOTICE, COMPARE, LOOK AHEAD · OWNERS: BUSINESS ANALYSTS','03 · A CONCLUSION A PERSON CAN ACT ON · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Weigh the <em class="hl">options</em>.','A conclusion says what is wrong. At Tamsworth Health, three actions could bring Clinic B’s December wait back toward its goal. Each is compared on what it would change and what it would cost.'],
+     g:'s1',cards:'c1_',box:'cards1',draw:draw1,
+     labels:['01 · THE GOAL AND THE OPTIONS · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','02 · SIMULATE EACH OPTION · OWNERS: BUSINESS ANALYSTS','03 · WHAT THE MONEY BUYS · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Tell the story, then <em class="hl">decide</em>.','Numbers rarely move people. A short story does. At Tamsworth Health, the analyst tells the executive team what was seen, what is recommended and what it costs. Then a person decides.'],
+     g:'s2',cards:'c2_',box:'cards2',draw:draw2,
+     labels:['01 · ONE PAGE FOR THE PEOPLE WHO APPROVE · OWNERS: BUSINESS ANALYSTS','02 · FROM STORY TO DECISION · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','03 · A PERSON OWNS THE DECISION · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Act, then <em class="hl">learn</em>.','A decision only counts when it changes something. At Tamsworth Health, the approved option is carried out, the result is watched, and the new data starts the lifecycle again.'],
+     g:'s3',cards:'c3_',box:'cards3',draw:draw3,
+     labels:['01 · FROM DECISION TO ACTION · OWNERS: EXECUTIVES, BUSINESS ANALYSTS','02 · WATCH THE RESULT, ASK AGAIN · OWNERS: BUSINESS ANALYSTS','03 · THE LIFECYCLE NEVER ENDS · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]}
+  ];
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  SCENES.forEach(function(S){
+    S.dur=[];for(var d=0;d<5;d++){var w=$(S.cards+d).textContent.trim().split(/\s+/).length;S.dur.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}
+    S.start=[0];S.dur.forEach(function(x,i){S.start.push(S.start[i]+x)});S.total=S.start[5];
+  });
+
+  // ---------- AI layer: data (assist, agent) per section ----------
+  var TA='Machine learning and language models.',TG='Agentic AI within set rules and approvals.';
+  function C(k,h,p){return [k,h,p]}
+  var AIDATA=[
+    [{box:[50,366,900,70],note:'AI: drafted the conclusion from the 3 dashboard numbers · sample',tools:TA,
+      cards:[C('01 · AI assists','AI drafts the conclusion','Given the dashboard, AI writes a plain-language summary of what changed and why it matters.'),C('02 · Why it helps','Busy readers get the point','A written summary lets an executive see the point without reading every chart, and ask follow-up questions.'),C('03 · A person','An analyst checks it','The analyst confirms the summary matches the numbers. AI output is probabilistic and can be wrong.')]},
+     {box:[725,52,225,112],note:'Agent: wrote the summary and sent it to the 2 readers who own Clinic B · sample',chip:'Agent proposes: send to the operations director',tools:TG,
+      cards:[C('01 · The agent','An agent delivers the reading','It writes the summary and sends it to the people who need it, by email or chat.'),C('02 · Within set rules','It follows rules people set','People decide who receives what. The agent does not widen the list.'),C('03 · A person decides','A person decides','The agent informs. A person decides what the conclusion means and what to do.')]}],
+    [{box:[50,252,890,170],note:'AI: simulated December wait for 3 options from past rows · sample',tools:TA,
+      cards:[C('01 · AI assists','AI simulates the outcomes','Given past rows and each option’s assumptions, AI estimates what December’s wait would be.'),C('02 · Why it helps','Options compared before money is spent','Several what-if cases can be tried quickly, and shown beside each other.'),C('03 · A person','An analyst checks the assumptions','A simulation is only as good as its assumptions, and its output is probabilistic.')]},
+     {box:[50,52,890,112],note:'Agent: re-ran the comparison when week 6 arrived · ranking unchanged · sample',chip:'Agent proposes: keep option 1 on top',tools:TG,
+      cards:[C('01 · The agent','An agent keeps the comparison fresh','It re-runs the simulation as new data arrives and flags when the ranking changes.'),C('02 · Within set rules','It recommends, it does not commit','It may refresh and recommend. Spending money or changing staffing needs approval.'),C('03 · A person decides','A person chooses','People weigh the cost and choose which option to try.')]}],
+    [{box:[50,52,890,112],note:'AI: drafted the one-page story from the numbers and option 1 · sample',tools:TA,
+      cards:[C('01 · AI assists','AI drafts the story','It turns the numbers and the chosen option into plain narrative: what we saw, what we recommend, what to expect.'),C('02 · Why it helps','The analyst starts from a draft','Less time writing, more time checking and answering questions.'),C('03 · A person','A person checks every claim','AI output is probabilistic and can be wrong. Where accuracy must be total, a person signs off.')]},
+     {box:[50,252,890,110],note:'Agent: sent the story to the approver and asked for a decision · sample',chip:'Agent proposes: ask the operations director',tools:TG,
+      cards:[C('01 · The agent','An agent prepares and routes it','It assembles the story and sends it to the approver, with the evidence beside it.'),C('02 · Within set rules','It routes, it does not approve','People set who must approve what. The agent never approves for them.'),C('03 · A person decides','Only a person says yes','The executive approves, changes or declines. The decision is recorded.')]}],
+    [{box:[50,244,890,184],note:'AI: compared the new month with the forecast · within range · sample',tools:TA,
+      cards:[C('01 · AI assists','AI checks the result','It compares the new month with the forecast and explains any gap in plain words.'),C('02 · Why it helps','Drift is caught early','A result that slips back is noticed before the next review.'),C('03 · A person','An analyst judges the gap','The analyst decides whether a miss matters. AI output is probabilistic.')]},
+     {box:[275,52,225,112],note:'Agent: started the pre-approved lab-turnaround workflow · sample',chip:'Agent proposes: re-open the options',tools:TG,
+      cards:[C('01 · The agent','An agent starts approved steps','It triggers the workflow a person approved in advance and logs what it did.'),C('02 · Within set rules','Only steps approved in advance','It cannot add steps, spend more or change the plan.'),C('03 · A person decides','A person handles anything new','If the result misses, the agent proposes. A person decides what happens next.')]}]
+  ];
+  SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
+    a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
+    a.start=[0];a.dur.forEach(function(x,k){a.start.push(a.start[k]+x)});a.total=a.start[a.dur.length];
+  })});
+
+  var cur=0,mode=0,elapsed=0,last=null,playing=!reduce,shown='',xfading=false;
+  function curAI(){var S=SCENES[cur];return (mode&&S.ai)?S.ai[mode-1]:null}
+  function curTL(){var a=curAI();return a||SCENES[cur]}
+  function stepOf(T){var n=T.dur.length,e=Math.min(elapsed,T.total-1),s=0;while(s<n-1&&e>=T.start[s+1])s++;return {step:s,u:(e-T.start[s])/T.dur[s]}}
+  function setCards(S,step){for(var i=0;i<5;i++)$(S.cards+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setAICards(step){for(var i=0;i<3;i++)$('aic'+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBandList(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('hr'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function fillAI(a){
+    for(var i=0;i<3;i++){var c=$('aic'+i);c.querySelector('.k').textContent=a.cards[i][0];c.querySelector('h3').textContent=a.cards[i][1];c.querySelector('.bd').textContent=a.cards[i][2];c.querySelector('.tl p').innerHTML='<strong>Tools:</strong> '+a.tools}
+  }
+  function updateView(){
+    var a=curAI(),S=SCENES[cur];
+    SCENES.forEach(function(x,i){$(x.g).setAttribute('display',i===cur?'inline':'none');$(x.box).className='cards'+(i===cur&&!a?' act':'');for(var j=0;j<5;j++)$(x.cards+j).className='card'});
+    $('cardsAI').className='cards ai'+(a?' act':'');
+    for(var q=0;q<3;q++)$('aic'+q).className='card';
+    if(a)fillAI(a);
+    elapsed=0;shown='';
+  }
+  var NAMES=['Say what it means','Weigh the options','Tell the story','Act and close the loop'];
+  (function(){
+    var nav=$('secs');
+    SCENES.forEach(function(S,i){
+      var b=document.createElement('button');b.type='button';b.id='sec'+i;b.textContent=(i+1)+' · '+NAMES[i];
+      b.addEventListener('click',function(){if(i!==cur)crossTo(i)});nav.appendChild(b);
+    });
+  })();
+  function showScene(n){
+    cur=n;var S=SCENES[n];
+    for(var q=0;q<SCENES.length;q++)$('sec'+q).setAttribute('aria-current',q===n?'true':'false');
+    $('eyebrow').textContent=S.head[0]+' · Section '+(n+1)+' of '+SCENES.length;$('h1').innerHTML=S.head[1];$('lede').textContent=S.head[2];
+    for(var k=0;k<3;k++)$('l'+k).textContent=S.labels[k];
+    updateView();
+  }
+  function crossTo(n){
+    if(xfading)return;
+    xfading=true;document.body.classList.add('out');
+    setTimeout(function(){showScene(n);document.body.classList.add('out');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){document.body.classList.remove('out');xfading=false})})},700);
+  }
+
+  // ---------- AI layer: drawing ----------
+  function aiHide(){op($('aiL'),0)}
+  function aiDraw(a,step,u){
+    op($('aiL'),1);
+    var bx=a.box,box=$('ai_box'),agent=(mode===2);
+    box.setAttribute('x',bx[0]);box.setAttribute('y',bx[1]);box.setAttribute('width',bx[2]);box.setAttribute('height',bx[3]);
+    op(box,.55+.45*Math.abs(Math.sin(elapsed/450)));
+    $('ai_lab').textContent=agent?'AI AGENT · WATCHING':'AI · ASSISTING';
+    // a scan line sweeps the marked area while the AI works
+    var sc=$('ai_scan'),sy=bx[1]+bx[3]*((elapsed/2200)%1);
+    if(step<2){sc.setAttribute('x1',bx[0]+4);sc.setAttribute('x2',bx[0]+bx[2]-4);sc.setAttribute('y1',sy);sc.setAttribute('y2',sy);op(sc,.8)}else op(sc,0);
+    var note=$('ai_note');note.textContent=a.note;
+    note.setAttribute('y',agent?632:654);
+    op(note,step===0?ease((u-.3)/.3):1);
+    // the checkpoint: a person icon, with the agent's proposal beside it
+    var stn=$('ai_stn'),ring=$('ai_ring'),prop=$('ai_prop');
+    var sx,sy2;
+    if(agent){sx=486;sy2=655;$('ai_proptxt').textContent=a.chip}else{sx=bx[0]+bx[2]-24;sy2=bx[1]+24}
+    op(prop,agent&&step>=2?ease(u/.25):0);
+    if(step>=2){
+      stn.setAttribute('transform','translate('+sx+','+sy2+') scale(.55)');op(stn,ease(u/.25));
+      var rp=(elapsed/1500)%1;ring.setAttribute('cx',sx);ring.setAttribute('cy',sy2);ring.setAttribute('r',(10+rp*34).toFixed(1));op(ring,(1-rp)*.8);
+    }else{op(stn,0);op(ring,0)}
+  }
+
+  function frame(){
+    var S=SCENES[cur],a=curAI(),T=curTL(),nxt=(cur+1)%SCENES.length;
+    if(!xfading){
+      if(elapsed>=T.total){elapsed=T.total-1;crossTo(nxt)}
+      else if(elapsed>T.total-800&&SCENES.length>1)crossTo(nxt);
+    }
+    var s=stepOf(T),key=cur+':'+mode+':'+s.step;
+    if(shown!==key){shown=key;if(a){setAICards(s.step);setBandList([])}else{setCards(S,s.step);setBandList(S.bands[s.step])}}
+    if(a){S.draw(3,1);aiDraw(a,s.step,s.u)}else{S.draw(s.step,s.u);aiHide()}
+  }
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing&&!xfading)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var T=curTL(),s=stepOf(T),n=T.dur.length;
+    if(s.step<n-1)elapsed=T.start[s.step+1]+10;else if(!xfading)crossTo((cur+1)%SCENES.length);
+  });
+  $('sect').addEventListener('click',function(){crossTo((cur+1)%SCENES.length)});
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    mode=(mode+1)%3;
+    this.textContent='Show AI: '+['Off','AI assists','Agent'][mode];
+    this.setAttribute('aria-pressed',mode!==0);
+    this.className='btn'+(mode?' on':'');
+    updateView();
+  });
+  showScene(0);
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
