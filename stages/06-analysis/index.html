@@ -138,10 +138,14 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
               <g id="dsum" opacity="0">
                 <path class="s-accl" d="M400 108 H530" stroke-width="2.5"/>
                 <path class="s-accl" d="M518 98 L531 108 L518 118" stroke-width="2.5"/>
-                <rect x="560" y="62" width="380" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
-                <text class="s-muted" x="580" y="90" font-size="11" letter-spacing="2">THE SUMMARY</text>
-                <text class="s-ink" x="580" y="118" font-size="16">Average wait, by month</text>
-                <text class="s-muted" x="580" y="140" font-size="12">count · average · compare (sample)</text>
+                <text class="s-muted" x="465" y="96" font-size="11" letter-spacing="2" text-anchor="middle">BUILD</text>
+                <rect x="560" y="52" width="380" height="118" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="580" y="76" font-size="11" letter-spacing="2">GOLD &#183; WAIT BY CLINIC BY MONTH</text>
+                <text class="s-ink" x="580" y="102" font-size="13">Nov &#183; Clinic A &#183; 28 min</text>
+                <text class="s-ink" x="580" y="124" font-size="13">Nov &#183; Clinic B &#183; 45 min</text>
+                <text class="s-ink" x="580" y="146" font-size="13">Nov &#183; Clinic C &#183; 29 min</text>
+                <text class="s-muted" x="560" y="190" font-size="12">Gold: a business-ready table made from Silver for one question.</text>
+                <text class="s-muted" x="560" y="208" font-size="12">Stage 7 reads from Gold.</text>
               </g>
 
               <rect id="dband" x="60" y="292" width="560" height="32" fill="var(--slate-500)" opacity="0"/>
@@ -356,8 +360,8 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
       </div>
 
       <div class="cards" id="cards1" aria-live="polite">
-        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>Summarize the past</h3><p>Totals, averages and counts say what happened. Analysts own this question.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
-        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Count, average, compare</h3><p>Analysts average the Silver rows by month and compare. Sample: wait was 34 minutes this month against 28 last month. The shaded band marks the normal range.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>Summarize the past</h3><p>First, the Silver rows are shaped into a Gold table, a business-ready table made for one question. Totals, averages and counts then say what happened. Analysts own it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Count, average, compare</h3><p>Analysts average the Gold table by month and compare. Sample: wait was 34 minutes this month against 28 last month. The shaded band marks the normal range.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
         <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>Agree on what happened first</h3><p>Nobody can ask why, or what next, until the past is clear. A plain summary gives every later question something to stand on.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
         <div class="card" id="c1_3"><p class="k">04 · When</p><h3>Every reporting cycle</h3><p>Each month an analyst reads the data for the report. Stage 5's audit log already records that read.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
         <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Diagnostic: why it happened</h3><p>November's wait is above the normal range. The next question is why.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
@@ -615,9 +619,9 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
      g:'s0',cards:'c0_',box:'cards0',draw:draw0,
      labels:['01 · SET THE GOAL · OWNER: BUSINESS STAKEHOLDERS','02 · ASK THE FOUR QUESTIONS · OWNERS: ANALYSTS, DATA SCIENTISTS','03 · TRACE THE ANSWER BACK · OWNERS: ANALYSTS, DATA STEWARDS'],
      bands:[[0],[1],[2],[0,1],[1]]},
-    {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','What <em class="hl">happened</em>.','Descriptive analysis is the simplest question: what happened? At Tamsworth Health, analysts summarize the survey data in the Silver rows, such as how long patients waited, by month.'],
+    {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','What <em class="hl">happened</em>.','Descriptive analysis is the simplest question: what happened? At Tamsworth Health, analysts first shape the Silver rows into a Gold table for one question, how long patients waited, then summarize it by month.'],
      g:'s1',cards:'c1_',box:'cards1',draw:draw1,
-     labels:['01 · GATHER THE ROWS · OWNER: ANALYSTS','02 · SUMMARIZE BY MONTH · OWNER: ANALYSTS','03 · SAY WHAT HAPPENED · OWNER: ANALYSTS'],
+     labels:['01 · BUILD THE GOLD TABLE · OWNER: ANALYSTS','02 · SUMMARIZE BY MONTH · OWNER: ANALYSTS','03 · SAY WHAT HAPPENED · OWNER: ANALYSTS'],
      bands:[[0],[1],[2],[2],[2]]}
 ,
     {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','<em class="hl">Why</em> it happened.','Diagnostic analysis asks why. At Tamsworth Health, November’s wait is above the normal range, so analysts look for the cause in the Silver rows.'],
@@ -654,7 +658,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
       cards:[C('01 · AI assists','AI finds patterns','Machine learning, language models and generative models find patterns in the data at scale, faster than an analyst could.'),C('02 · Why it helps','Analysts stay in charge','AI suggests. Analysts and data scientists check each result before it counts.'),C('03 · A person','A person sets the goal','Only people know what the business needs, so stakeholders still supply the goal.')]},
      {box:[50,250,890,130],note:'Agent: explored the Silver rows and ranked where to look first · sample',chip:'Agent proposes: look at Clinic B first',tools:TG,
       cards:[C('01 · The agent','An agent explores','Agentic AI explores the data on its own and recommends what to look at next.'),C('02 · Within set rules','It follows rules people set','Which data it may read and what it may do are set by people.'),C('03 · A person decides','A person approves','The agent proposes. A person approves before anything is acted on.')]}],
-    [{box:[550,52,400,112],note:'AI: wrote the summary and explained the metric in plain words · sample',tools:TA,
+    [{box:[550,46,400,130],note:'AI: wrote the summary from the Gold table and explained the metric · sample',tools:TA,
       cards:[C('01 · AI assists','AI writes the summary','It summarizes the numbers and explains a metric in plain words, so more people can follow.'),C('02 · Why it helps','Follow-up questions work','A reader can ask a follow-up and get an answer from the same governed data.'),C('03 · A person','An analyst checks it','The analyst confirms the summary matches the data.')]},
      {box:[550,262,76,182],note:'Agent: checked 6 months of waits · 1 outside the expected range · sample',chip:'Agent flags: November is above the range',tools:TG,
       cards:[C('01 · The agent','An agent watches','It checks each month’s wait against the expected range and flags what falls outside.'),C('02 · Why it scales','It does not tire','It checks every clinic all month, not only when someone looks.'),C('03 · A person decides','An analyst decides','It flags November. The analyst decides whether it matters.')]}],
