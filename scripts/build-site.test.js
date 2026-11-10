@@ -240,3 +240,25 @@ test('integration: site/value/ and value-single.html are built, engine identical
     }
   });
 });
+
+test('writeStages copies each stage page and writes a landing page linking them in order', () => {
+  const src = tmp(), out = tmp();
+  ['02-b', '01-a'].forEach((n) => {
+    fs.mkdirSync(path.join(src, n));
+    fs.writeFileSync(path.join(src, n, 'index.html'), '<title>Stage ' + n + '</title>');
+  });
+  assert.strictEqual(b.writeStages(out, src), 2);
+  assert.ok(fs.existsSync(path.join(out, 'stages', '01-a', 'index.html')));
+  const land = fs.readFileSync(path.join(out, 'stages', 'index.html'), 'utf8');
+  assert.ok(land.indexOf('01-a/') < land.indexOf('02-b/'));
+});
+
+test('writeStages does nothing without a stages folder, and rejects external resources', () => {
+  assert.strictEqual(b.writeStages(tmp(), path.join(tmp(), 'none')), 0);
+  const src = tmp();
+  fs.mkdirSync(path.join(src, '01-a'));
+  fs.writeFileSync(path.join(src, '01-a', 'index.html'), '<script src="https://x.test/a.js"></script>');
+  assert.throws(() => b.listStages(src), /external/);
+  fs.writeFileSync(path.join(src, '01-a', 'index.html'), '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+  assert.strictEqual(b.listStages(src).length, 1);
+});

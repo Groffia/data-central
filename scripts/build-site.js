@@ -113,6 +113,52 @@ function writeRoot(out) {
   fs.writeFileSync(path.join(out, '.nojekyll'), '');
 }
 
+// Stage pages (stages/NN-name/index.html) are self-contained: no engine, no shared scripts. Copy each one and write a landing page.
+function listStages(stagesDir) {
+  let names;
+  try {
+    names = fs.readdirSync(stagesDir, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }).sort();
+  } catch (e) {
+    return [];
+  }
+  return names.map(function (n) {
+    const file = path.join(stagesDir, n, 'index.html');
+    if (!fs.existsSync(file)) throw new BuildError('stage "' + n + '": index.html is missing');
+    const html = fs.readFileSync(file, 'utf8');
+    if (/(?:src|href)s*=s*["']https?:/i.test(html)) throw new BuildError('stage "' + n + '": index.html loads an external resource');
+    const m = /<title>([^<]*)<\/title>/.exec(html);
+    return { dir: n, title: m ? m[1].trim() : n };
+  });
+}
+
+function writeStages(out, stagesDir) {
+  const stages = listStages(stagesDir);
+  if (stages.length === 0) return 0;
+  const dest = path.join(out, 'stages');
+  stages.forEach(function (s) {
+    fs.mkdirSync(path.join(dest, s.dir), { recursive: true });
+    fs.copyFileSync(path.join(stagesDir, s.dir, 'index.html'), path.join(dest, s.dir, 'index.html'));
+  });
+  const esc = function (t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  const page = [
+    '<!doctype html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>Data Central: the eight stages</title>',
+    '<style>body{margin:0 auto;background:#0d1117;color:#d8dee9;font:16px/1.5 Georgia,serif;padding:2rem;max-width:40rem}a{color:#ff8a5c}h1{font-weight:400}li{margin:.4rem 0}</style>',
+    '</head>',
+    '<body>',
+    '<h1>Data Central: the eight stages</h1>',
+    '<p>One data story, Tamsworth Health, followed from creation to decision. Open them in order.</p>',
+    '<ol>'
+  ].concat(stages.map(function (s) { return '<li><a href="' + s.dir + '/">' + esc(s.title) + '</a></li>'; }),
+    ['</ol>', '<p><a href="../hq/">Original demo (HQ)</a></p>', '</body>', '</html>', '']).join('\n');
+  fs.writeFileSync(path.join(dest, 'index.html'), page);
+  return stages.length;
+}
+
 function buildPage(page, out) {
   execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), page.dir, '--out', path.join(page.dir, 'dist')],
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -144,6 +190,8 @@ function main(argv) {
       }
     });
     writeRoot(out);
+    const n = writeStages(out, path.join(ROOT, 'stages'));
+    if (n) process.stdout.write(n + ' stage pages built\n');
     process.stdout.write('site built in ' + out + '\n');
   } catch (e) {
     if (!(e instanceof BuildError)) throw e;
@@ -152,6 +200,6 @@ function main(argv) {
   }
 }
 
-module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSharedCopies, checkSingleFile, checkEngineTag, writeRoot };
+module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSharedCopies, checkSingleFile, checkEngineTag, writeRoot, listStages, writeStages };
 
 if (require.main === module) main(process.argv.slice(2));
