@@ -135,6 +135,7 @@ text{font-family:var(--font-system)}
                 <path class="s-accl" d="M380 530 H588" stroke-width="2.5"/>
                 <path class="s-accl" d="M576 520 L589 530 L576 540" stroke-width="2.5"/>
                 <text class="s-ink" x="588" y="516" font-size="16" text-anchor="end">Next: Stage 4 · Storage</text>
+                <text class="s-muted" x="60" y="552" font-size="12">Silver → Gold: built later, in Stage 6</text>
               </g>
               <g id="boxesBase"></g>
             </g>
@@ -215,7 +216,7 @@ text{font-family:var(--font-system)}
         <div class="card" id="c1"><p class="k">02 · How</p><h3>Clean, reshape, join, trim</h3><p>Remove repeats and errors, put dates and units in one form, line up patient IDs across sources, and drop fields nobody uses.</p><div class="tl"><p><strong>Tools:</strong> Apache Spark jobs, scheduled and monitored by Apache Airflow.</p></div></div>
         <div class="card" id="c2"><p class="k">03 · Why</p><h3>Preparation is most of the work</h3><p>It takes over 80% of the time on AI projects. Bad data in means bad answers out, however good the analysis looks.</p><div class="tl"><p><strong>Tools:</strong> Apache Airflow to orchestrate and watch the pipelines.</p></div></div>
         <div class="card" id="c3"><p class="k">04 · When</p><h3>Last, a quality gate</h3><p>Every row is tested before it moves on. Passing rows become Silver. A failing row goes to a repair queue for a person. Nothing is silently dropped.</p><div class="tl"><p><strong>Tools:</strong> Validation rules in Spark jobs, run by Apache Airflow or Databricks Jobs.</p></div></div>
-        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Storage</h3><p>Stage 4 keeps the Silver row safe, organized and easy to find. Bronze still holds the raw copy.</p><div class="tl"><p><strong>Tools:</strong> A data lake or a cloud warehouse such as Snowflake.</p></div></div>
+        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Storage</h3><p>Stage 4 stores the Silver row beside Bronze. Gold, a business-ready table built for one question, is made from Silver later, in Stage 6.</p><div class="tl"><p><strong>Tools:</strong> A data lake or a cloud warehouse such as Snowflake.</p></div></div>
       </div>
 
       <div class="cards" id="aicards" aria-live="polite">
