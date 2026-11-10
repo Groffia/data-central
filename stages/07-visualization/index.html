@@ -125,7 +125,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
                 <text class="s-ink" x="726" y="118" font-size="16">Operations director</text>
                 <text class="s-muted" x="726" y="140" font-size="12">decides where to act (sample)</text>
               </g>
-              <text id="a4" class="s-muted" x="60" y="184" font-size="12" opacity="0">Answers from Stage 6, as numbers in a report. The reader has no time to dig.</text>
+              <text id="a4" class="s-muted" x="60" y="184" font-size="12" opacity="0">Read from Stage 6's Gold table: a business-ready table made from Silver for one question.</text>
               <text id="atrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: Stage 6 has an answer that a person must act on.</text>
 
               <g id="qc"></g>
@@ -339,7 +339,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
       </div>
 
       <div class="cards" id="cards1" aria-live="polite">
-        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>One view for the reader</h3><p>A dashboard brings the key numbers and charts together in one place, built for the person who decides. It refreshes as new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>One view for the reader</h3><p>A dashboard brings the key numbers and charts together in one place, built for the person who decides. It reads from Gold, a business-ready table made from Silver for one question, and refreshes as new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Tiles first, then the detail</h3><p>Tiles show the key numbers at a glance. Below them, a trend line shows whether it is getting worse and bars show which clinic. Sample: Clinic B is the one over the limit.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>So one look is enough</h3><p>A reader should not have to dig. Every tile and chart answers one question for one reader, and anything that does not is left out.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c1_3"><p class="k">04 · When</p><h3>When the reader opens it, or data changes</h3><p>A dashboard is read on demand and refreshed as new data arrives. A real-time view updates continuously.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
@@ -348,7 +348,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
 
       <div class="cards" id="cards2" aria-live="polite">
         <div class="card" id="c2_0"><p class="k">01 · What</p><h3>Follow a number back</h3><p>Traceability lets a reader follow any number on a dashboard back through the stages to the row it began as. Data stewards keep that record.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
-        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Click, then walk back</h3><p>Click a tile and see its path: the definition that calculates it, the governed Silver rows, and the source the rows were collected from. Sample: 34 minutes traces to survey rows from Stages 1 and 2.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Click, then walk back</h3><p>Click a tile and see its path: the Gold table it reads from (a business-ready table made from Silver for one question), the governed Silver rows, and the source. Sample: 34 minutes traces to survey rows from Stages 1 and 2.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
         <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>Trust needs a trail</h3><p>An answer nobody can trace back cannot be trusted. A trail also lets anyone check how a number was calculated before they act on it.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
         <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When a reader doubts a number</h3><p>The trail is there whenever someone questions a figure, and every look is written to the audit log.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
         <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Gate vs no gate</h3><p>A trail shows where a number came from. Next: what a quality check does to the number a dashboard shows.</p><div class="tl"><p><strong>Tools:</strong> Data quality and dashboard tools.</p></div></div>
@@ -498,7 +498,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     parent.appendChild(g);return g;
   }
   var HOPS=[['THE TILE','34 min','Stage 7 · the dashboard'],
-            ['THE DEFINITION','Wait = check-in to','seeing a clinician','Stage 6 · set by stewards'],
+            ['THE GOLD TABLE','Wait by clinic','and month','Stage 6 · made from Silver'],
             ['THE SILVER ROWS','','','Stages 3 to 5 · cleaned, stored, governed'],
             ['THE SOURCE','Survey, vitals, labs','','Stages 1 and 2 · generated, collected']],hopR=[],hopBox=[];
   HOPS.forEach(function(h,i){
