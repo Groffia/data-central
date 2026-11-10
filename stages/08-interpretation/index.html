@@ -160,6 +160,52 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
               </g>
             </g>
 
+            <!-- ===== section 2: weigh the options ===== -->
+            <g id="s1" display="none">
+              <g id="o0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">THE GOAL</text>
+                <text class="s-ink" x="76" y="118" font-size="16">24 to 32 minutes</text>
+                <text class="s-muted" x="76" y="140" font-size="12">for December</text>
+              </g>
+              <g id="o1" opacity="0">
+                <rect id="o1box" x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">OPTION 1</text>
+                <text class="s-ink" x="301" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="301" y="140" font-size="12">about $6k a month (sample)</text>
+              </g>
+              <g id="o2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">OPTION 2</text>
+                <text class="s-ink" x="526" y="118" font-size="16">Extra front-desk staff</text>
+                <text class="s-muted" x="526" y="140" font-size="12">about $9k a month (sample)</text>
+              </g>
+              <g id="o3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">OPTION 3</text>
+                <text class="s-ink" x="751" y="118" font-size="16">Do nothing</text>
+                <text class="s-muted" x="751" y="140" font-size="12">no cost</text>
+              </g>
+              <text id="o4" class="s-muted" x="60" y="184" font-size="12" opacity="0">Stage 6 recommended option 1. Interpretation weighs all three before anyone commits money.</text>
+              <text id="otrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: a conclusion says something must change.</text>
+
+              <g id="obars" opacity="0">
+                <rect id="ogoal" x="0" y="272" width="0" height="122" rx="6" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <text id="ogoalt" class="s-acc" x="0" y="266" font-size="11" letter-spacing="2">GOAL 24 TO 32</text>
+              </g>
+              <g id="obg"></g>
+              <text id="ofoot" class="s-muted" x="60" y="416" font-size="13" opacity="0">Simulated December wait (sample). None reaches the goal. Option 1 comes closest.</text>
+
+              <text id="x1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A recommendation is not a decision.</text>
+              <text id="x2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Each option costs something and changes something. People weigh both.</text>
+              <text id="x3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Without action: 41 minutes. With option 1: 33. The 8-minute gap is what the money buys.</text>
+              <g id="next1" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Tell the story · who signs off?</text>
+              </g>
+            </g>
+
             <!-- ===== AI layer ===== -->
             <g id="aiL" opacity="0">
               <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
@@ -195,6 +241,14 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
         <div class="card" id="c0_2"><p class="k">03 · Why</p><h3>A number alone decides nothing</h3><p>Charts show what is true. A decision needs someone to say what it means and what to do. Without this step, the work of Stages 1 to 7 changes nothing.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c0_3"><p class="k">04 · When</p><h3>When a decision is waiting</h3><p>Whenever a dashboard shows something that needs a response, such as a number outside its range or a forecast that misses the goal.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c0_4"><p class="k">05 · Next</p><h3>Weigh the options</h3><p>A conclusion says what is wrong. Next: what could be done about it, and what each option would likely change.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards1" aria-live="polite">
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>Compare what each action would change</h3><p>Before any money is spent, the options are put side by side: what each would do to the problem, and what it would cost. Business analysts and executives weigh them.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Simulate each option, then weigh the cost</h3><p>Each option gets an estimate of the result. Then people set that against the cost. Sample: three options for Clinic B, each with a December wait and a monthly cost.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>Money and staff are limited</h3><p>The best-looking number may not be worth its cost. Comparing with and without an action shows what each one buys.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_3"><p class="k">04 · When</p><h3>Before anyone commits resources</h3><p>After a conclusion says something must change, and before an option is chosen.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+        <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Tell the story</h3><p>Options are weighed. Next: how the choice is explained to the people who must approve it, and who signs off.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
       </div>
 
       <div class="cards ai" id="cardsAI" aria-live="polite">
@@ -235,11 +289,53 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     op($('next0'),step===4?ease((u-.4)/.2):0);
   }
 
+  // ---------- section 2: weigh the options ----------
+  var OBV=[['Faster lab results',33],['Extra front-desk staff',38],['Do nothing',41]],obR=[];
+  function MX(m){return 330+(m-20)*(610/25)}
+  $('ogoal').setAttribute('x',MX(24).toFixed(1));$('ogoal').setAttribute('width',(MX(32)-MX(24)).toFixed(1));
+  $('ogoalt').setAttribute('x',(MX(24)+4).toFixed(1));
+  OBV.forEach(function(o,i){
+    var y=290+i*38,g=el('g',{opacity:0}),best=(i===0);
+    g.appendChild(tx(60,y+17,13,'s-muted',o[0]));
+    var r=el('rect',{x:330,y:y,width:0,height:24,rx:3,'class':best?'s-acc':'s-sl'});
+    g.appendChild(r);
+    var t=tx(MX(o[1])+10,y+18,14,best?'s-acc':'s-ink',o[1]+' min');
+    g.appendChild(t);
+    $('obg').appendChild(g);obR.push({g:g,r:r,t:t,w:MX(o[1])-330,x:MX(o[1])+10});
+  });
+  function draw1(step,u){
+    var i;
+    op($('o0'),step===0?ease(u/.18):1);
+    op($('o1'),step===0?ease((u-.15)/.18):1);
+    op($('o2'),step===0?ease((u-.3)/.18):1);
+    op($('o3'),step===0?ease((u-.45)/.18):1);
+    op($('o4'),step===0?ease((u-.75)/.15):1);
+    $('o1box').style.stroke=(step===3||step===2)?'var(--accent)':'var(--tertiary-text)';
+    op($('otrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('obars'),ease(bu/.1));
+    for(i=0;i<3;i++){
+      var f=ease((bu-.1-i*.2)/.25);
+      op(obR[i].g,f>0?1:0);
+      obR[i].r.setAttribute('width',(obR[i].w*f).toFixed(1));
+      op(obR[i].t,f>.9?1:0);
+    }
+    op($('ofoot'),ease((bu-.8)/.12));
+    op($('x1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('x2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('x3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next1'),step===4?ease((u-.4)/.2):0);
+  }
+
   // ---------- scene table ----------
   var SCENES=[
     {head:['Stage 8 of 8 · Data interpretation','Say what it <em class="hl">means</em>.','Interpretation turns analysis and visuals into business decisions. At Tamsworth Health, the Stage 7 dashboard is open on an executive’s screen. The numbers are right. Someone must say what they mean.'],
      g:'s0',cards:'c0_',box:'cards0',draw:draw0,
      labels:['01 · A DASHBOARD IS OPEN · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','02 · NOTICE, COMPARE, LOOK AHEAD · OWNERS: BUSINESS ANALYSTS','03 · A CONCLUSION A PERSON CAN ACT ON · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Weigh the <em class="hl">options</em>.','A conclusion says what is wrong. At Tamsworth Health, three actions could bring Clinic B’s December wait back toward its goal. Each is compared on what it would change and what it would cost.'],
+     g:'s1',cards:'c1_',box:'cards1',draw:draw1,
+     labels:['01 · THE GOAL AND THE OPTIONS · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','02 · SIMULATE EACH OPTION · OWNERS: BUSINESS ANALYSTS','03 · WHAT THE MONEY BUYS · OWNERS: EXECUTIVES'],
      bands:[[0],[1],[2],[0],[2]]}
   ];
   // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
@@ -255,7 +351,11 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     [{box:[50,366,900,70],note:'AI: drafted the conclusion from the 3 dashboard numbers · sample',tools:TA,
       cards:[C('01 · AI assists','AI drafts the conclusion','Given the dashboard, AI writes a plain-language summary of what changed and why it matters.'),C('02 · Why it helps','Busy readers get the point','A written summary lets an executive see the point without reading every chart, and ask follow-up questions.'),C('03 · A person','An analyst checks it','The analyst confirms the summary matches the numbers. AI output is probabilistic and can be wrong.')]},
      {box:[725,52,225,112],note:'Agent: wrote the summary and sent it to the 2 readers who own Clinic B · sample',chip:'Agent proposes: send to the operations director',tools:TG,
-      cards:[C('01 · The agent','An agent delivers the reading','It writes the summary and sends it to the people who need it, by email or chat.'),C('02 · Within set rules','It follows rules people set','People decide who receives what. The agent does not widen the list.'),C('03 · A person decides','A person decides','The agent informs. A person decides what the conclusion means and what to do.')]}]
+      cards:[C('01 · The agent','An agent delivers the reading','It writes the summary and sends it to the people who need it, by email or chat.'),C('02 · Within set rules','It follows rules people set','People decide who receives what. The agent does not widen the list.'),C('03 · A person decides','A person decides','The agent informs. A person decides what the conclusion means and what to do.')]}],
+    [{box:[50,252,890,170],note:'AI: simulated December wait for 3 options from past rows · sample',tools:TA,
+      cards:[C('01 · AI assists','AI simulates the outcomes','Given past rows and each option’s assumptions, AI estimates what December’s wait would be.'),C('02 · Why it helps','Options compared before money is spent','Several what-if cases can be tried quickly, and shown beside each other.'),C('03 · A person','An analyst checks the assumptions','A simulation is only as good as its assumptions, and its output is probabilistic.')]},
+     {box:[50,52,890,112],note:'Agent: re-ran the comparison when week 6 arrived · ranking unchanged · sample',chip:'Agent proposes: keep option 1 on top',tools:TG,
+      cards:[C('01 · The agent','An agent keeps the comparison fresh','It re-runs the simulation as new data arrives and flags when the ranking changes.'),C('02 · Within set rules','It recommends, it does not commit','It may refresh and recommend. Spending money or changing staffing needs approval.'),C('03 · A person decides','A person chooses','People weigh the cost and choose which option to try.')]}]
   ];
   SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
     a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
@@ -280,7 +380,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     if(a)fillAI(a);
     elapsed=0;shown='';
   }
-  var NAMES=['Say what it means'];
+  var NAMES=['Say what it means','Weigh the options'];
   (function(){
     var nav=$('secs');
     SCENES.forEach(function(S,i){
