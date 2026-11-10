@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 6: Data Analysis</title>
+<style>
+/* Tokens: WARMING STRIPES design system, same as Stages 2 to 5 */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:none;flex-direction:column;gap:.85rem}
+.cards.act{display:flex}
+header.top,.stage,.cards{transition:opacity 700ms ease}
+body.out header.top,body.out .stage,body.out .cards{opacity:0}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+.cards.ai .card.now .k{color:var(--ai)}
+.cards.ai .tl strong{color:var(--ai)}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.s-ai{fill:var(--ai)}
+nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding:.35rem 0 .6rem;font-family:var(--font-system)}
+.secs .pt{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);margin:0 .25rem 0 .5rem}
+.secs .pt:first-child{margin-left:0}
+.secs button{min-height:32px;padding:0 .75rem;border:1px solid var(--tertiary-text);border-radius:999px;background:transparent;color:var(--muted);font:400 .8125rem var(--font-system);cursor:pointer;transition:border-color 150ms ease,color 150ms ease}
+.secs button:hover{border-color:var(--accent);color:var(--accent)}
+.secs button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.secs button[aria-current="true"]{border-color:var(--accent);background:var(--accent);color:var(--ground);font-weight:700}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag" id="eyebrow"></p>
+    <h1 id="h1"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+  <nav class="secs" id="secs" aria-label="Sections of this stage"></nav>
+
+  <section class="scene" aria-label="Analysis of one governed row">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation of data analysis at Tamsworth Health, one section at a time.">
+            <line id="hr0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="hr1" class="hair" x1="60" y1="215" x2="940" y2="215"/>
+            <line id="hr2" class="hair" x1="60" y1="445" x2="940" y2="445"/>
+            <text id="l0" class="bl" x="60" y="24"></text>
+            <text id="l1" class="bl" x="60" y="236"></text>
+            <text id="l2" class="bl" x="60" y="466"></text>
+
+            <!-- ===== section 1: the frame ===== -->
+            <g id="s0" display="none">
+              <g id="goal" opacity="0">
+                <rect id="goalbox" x="60" y="62" width="400" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="80" y="90" font-size="11" letter-spacing="2">THE GOAL, FROM THE BUSINESS</text>
+                <text class="s-ink" x="80" y="118" font-size="16">Are patients waiting too long,</text>
+                <text class="s-ink" x="80" y="140" font-size="16">and what should we do?</text>
+              </g>
+              <g id="goalarrow" opacity="0">
+                <path class="s-accl" d="M480 108 H610" stroke-width="2.5"/>
+                <path class="s-accl" d="M598 98 L611 108 L598 118" stroke-width="2.5"/>
+              </g>
+              <text id="rowtag" class="s-muted" x="790" y="172" font-size="12" text-anchor="middle" opacity="0">clean, governed Silver row from Stage 5</text>
+              <g id="chip0"></g>
+              <text id="rowleg" class="s-muted" x="790" y="192" font-size="12" text-anchor="middle" opacity="0">V vitals · L lab results · S survey</text>
+
+              <g id="gq"></g>
+              <text id="qfoot" class="s-ink" x="60" y="410" font-size="14" opacity="0">Analysts do most of the work. Data scientists take on predicting and recommending.</text>
+
+              <text id="tracehead" class="s-muted" x="60" y="492" font-size="11" letter-spacing="2" opacity="0">THE TRACE: WHERE AN ANSWER CAME FROM</text>
+              <g id="gtrace"></g>
+              <text id="tracenote" class="s-ink" x="520" y="560" font-size="14" opacity="0">An answer nobody can trace back</text>
+              <text id="tracenote2" class="s-ink" x="520" y="582" font-size="14" opacity="0">to its row cannot be trusted.</text>
+
+              <g id="next0" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Descriptive · what happened</text>
+              </g>
+            </g>
+
+            <!-- ===== section 2: descriptive ===== -->
+            <g id="s1" display="none">
+              <text class="s-muted" x="60" y="56" font-size="11" letter-spacing="2" id="dsrcl" opacity="0">SILVER ROWS FROM THE SURVEY</text>
+              <g id="chip1"></g>
+              <text id="rowleg1" class="s-muted" x="60" y="156" font-size="12" opacity="0">V vitals · L lab results · S survey</text>
+              <g id="dsum" opacity="0">
+                <path class="s-accl" d="M400 108 H530" stroke-width="2.5"/>
+                <path class="s-accl" d="M518 98 L531 108 L518 118" stroke-width="2.5"/>
+                <text class="s-muted" x="465" y="96" font-size="11" letter-spacing="2" text-anchor="middle">BUILD</text>
+                <rect x="560" y="52" width="380" height="118" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="580" y="76" font-size="11" letter-spacing="2">GOLD &#183; WAIT BY CLINIC BY MONTH</text>
+                <text class="s-ink" x="580" y="102" font-size="13">Nov &#183; Clinic A &#183; 28 min</text>
+                <text class="s-ink" x="580" y="124" font-size="13">Nov &#183; Clinic B &#183; 45 min</text>
+                <text class="s-ink" x="580" y="146" font-size="13">Nov &#183; Clinic C &#183; 29 min</text>
+                <text class="s-muted" x="560" y="190" font-size="12">Gold: a business-ready table made from Silver for one question.</text>
+                <text class="s-muted" x="560" y="208" font-size="12">Stage 7 reads from Gold.</text>
+              </g>
+
+              <rect id="dband" x="60" y="292" width="560" height="32" fill="var(--slate-500)" opacity="0"/>
+              <text id="dbandl" class="s-muted" x="630" y="312" font-size="11" opacity="0">expected range</text>
+              <line id="dbase" x1="60" y1="420" x2="640" y2="420" stroke="var(--tertiary-text)" stroke-width="1" opacity="0"/>
+              <g id="dbars"></g>
+              <text id="dnote1" class="s-ink" x="730" y="360" font-size="13" opacity="0">Expected range: 24 to 32 minutes.</text>
+              <text id="dnote2" class="s-acc" x="730" y="386" font-size="13" opacity="0">November is above it, at 34.</text>
+              <text id="dnote3" class="s-muted" x="730" y="408" font-size="12" opacity="0">The band shows at a glance what is normal.</text>
+
+              <text id="dres1" class="s-ink" x="60" y="520" font-size="15" opacity="0">What happened: average wait rose from 28 to 34 minutes in November (sample).</text>
+              <text id="dres2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Descriptive analysis says what happened. It does not say why.</text>
+              <g id="dlog" opacity="0">
+                <text class="s-muted" x="60" y="590" font-size="11" letter-spacing="2">FROM STAGE 5'S AUDIT LOG</text>
+                <text class="s-muted" x="60" y="614" font-size="12">5</text>
+                <text class="s-ink" x="80" y="614" font-size="12">Analyst</text>
+                <text class="s-ink" x="190" y="614" font-size="12">READ, sensitive fields hidden</text>
+                <text class="s-muted" x="400" y="614" font-size="12">Monthly report</text>
+              </g>
+              <g id="next1" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Diagnostic · why it happened</text>
+              </g>
+            </g>
+
+            <!-- ===== section 3: diagnostic ===== -->
+            <g id="s2" display="none">
+              <g id="gsur" opacity="0">
+                <rect x="60" y="62" width="400" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="80" y="90" font-size="11" letter-spacing="2">THE SURPRISE</text>
+                <text class="s-ink" x="80" y="118" font-size="16">November wait: 34 minutes</text>
+                <text class="s-muted" x="80" y="140" font-size="12">expected 24 to 32 minutes (sample)</text>
+              </g>
+              <g id="garr2" opacity="0">
+                <path class="s-accl" d="M480 108 H610" stroke-width="2.5"/>
+                <path class="s-accl" d="M598 98 L611 108 L598 118" stroke-width="2.5"/>
+                <text class="s-acc" x="650" y="124" font-size="40">Why?</text>
+              </g>
+              <text id="gtrig" class="s-ink" x="60" y="184" font-size="13" opacity="0">Trigger: a result outside its expected range.</text>
+
+              <text id="gch" class="s-muted" x="60" y="262" font-size="11" letter-spacing="2" opacity="0">NOVEMBER WAIT, BY CLINIC (SAMPLE)</text>
+              <g id="gcl"></g>
+              <text id="gcm" class="s-muted" x="520" y="262" font-size="11" letter-spacing="2" opacity="0">CLINIC B SURVEY COMMENTS (SAMPLE)</text>
+              <g id="gcom"></g>
+              <text id="gsfoot" class="s-muted" x="60" y="410" font-size="12" opacity="0">Each row also holds the patient’s own survey answer.</text>
+
+              <text id="gwhy1" class="s-ink" x="60" y="520" font-size="15" opacity="0">Likely cause: slow lab results at Clinic B (sample).</text>
+              <text id="gwhy2" class="s-muted" x="60" y="546" font-size="13" opacity="0">A diagnostic answer is a cause to confirm, not a fact. An analyst checks it.</text>
+              <g id="next2" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Trusted definitions · one definition of “wait”</text>
+              </g>
+            </g>
+
+            <!-- ===== section 4: trusted definitions ===== -->
+            <g id="s3" display="none">
+              <g id="g3a" opacity="0">
+                <rect x="60" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="80" y="90" font-size="11" letter-spacing="2">WAY A</text>
+                <text class="s-ink" x="80" y="118" font-size="16">Check-in to seeing a clinician</text>
+                <text class="s-muted" x="80" y="140" font-size="12">how long the patient waited to be seen</text>
+              </g>
+              <g id="g3b" opacity="0">
+                <rect x="520" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="540" y="90" font-size="11" letter-spacing="2">WAY B</text>
+                <text class="s-ink" x="540" y="118" font-size="16">Check-in to leaving</text>
+                <text class="s-muted" x="540" y="140" font-size="12">how long the whole visit took</text>
+              </g>
+              <text id="g3trig" class="s-ink" x="60" y="184" font-size="13" opacity="0">Trigger: a metric is created or changed, or two reports disagree.</text>
+
+              <g id="g3r1" opacity="0">
+                <rect x="60" y="262" width="420" height="80" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="80" y="288" font-size="11" letter-spacing="2">MONTHLY REPORT (USES WAY A)</text>
+                <text class="s-ink" x="80" y="326" font-size="26">34 minutes</text>
+              </g>
+              <g id="g3r2" opacity="0">
+                <rect id="g3r2box" x="520" y="262" width="420" height="80" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text id="g3r2l" class="s-muted" x="540" y="288" font-size="11" letter-spacing="2">DASHBOARD (USES WAY B)</text>
+                <text id="g3r2v" class="s-acc" x="540" y="326" font-size="26">52 minutes</text>
+                <text id="g3r2ok" class="s-acc" x="760" y="326" font-size="22" opacity="0">&#10003; agrees</text>
+              </g>
+              <g id="g3ban" opacity="0">
+                <rect x="60" y="360" width="880" height="38" rx="8" fill="var(--ground)" stroke="var(--accent)" stroke-width="2"/>
+                <text class="s-acc" x="500" y="384" font-size="14" text-anchor="middle">Definition conflict: 1 report disagrees</text>
+              </g>
+
+              <g id="g3def" opacity="0">
+                <rect x="60" y="492" width="500" height="88" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="80" y="518" font-size="11" letter-spacing="2">GOVERNED DEFINITION &#183; VERSION 1</text>
+                <text class="s-ink" x="80" y="546" font-size="16">Wait time = check-in to seeing a clinician</text>
+                <text class="s-muted" x="80" y="568" font-size="12">Published by data stewards (sample)</text>
+              </g>
+              <text id="g3t1" class="s-ink" x="600" y="520" font-size="14" opacity="0">Both reports now show 34 minutes.</text>
+              <text id="g3t2" class="s-muted" x="600" y="546" font-size="13" opacity="0">Any answer can explain how it was calculated.</text>
+              <g id="next3" opacity="0">
+                <path class="s-accl" d="M560 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Part 2 &#183; Predictive &#183; what will happen</text>
+              </g>
+            </g>
+
+            <!-- ===== section 5: predictive ===== -->
+            <g id="s4" display="none">
+              <g id="chip4"></g>
+              <text id="g4leg" class="s-muted" x="60" y="156" font-size="11" opacity="0">V vitals &#183; L lab results &#183; S survey</text>
+              <g id="g4arr" opacity="0">
+                <path class="s-accl" d="M200 108 H270" stroke-width="2.5"/>
+                <path class="s-accl" d="M258 98 L271 108 L258 118" stroke-width="2.5"/>
+              </g>
+              <g id="g4bar" opacity="0">
+                <rect id="g4l" x="300" y="88" width="448" height="40" class="s-sl"/>
+                <rect id="g4t" x="748" y="88" width="96" height="40" fill="var(--slate-500)"/>
+                <rect id="g4x" x="844" y="88" width="96" height="40" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4"/>
+                <text x="316" y="113" font-size="13" font-weight="700" fill="var(--ground)">Learn from these (about 70%)</text>
+                <text x="760" y="113" font-size="12" font-weight="700" fill="var(--ink)">Tune (~15%)</text>
+                <text x="856" y="113" font-size="12" font-weight="700" class="s-acc">Test (~15%)</text>
+              </g>
+              <text id="g4n" class="s-muted" x="300" y="158" font-size="12" opacity="0">Rows held back for testing are never shown to the model while it learns.</text>
+
+              <line id="g4base" x1="60" y1="420" x2="660" y2="420" stroke="var(--tertiary-text)" stroke-width="1" opacity="0"/>
+              <g id="g4pts"></g>
+              <path id="g4line" d="" fill="none" stroke="var(--slate-300)" stroke-width="2" opacity="0"/>
+              <path id="g4fc" d="" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+              <g id="g4dec" opacity="0">
+                <rect x="594" y="267" width="20" height="27" rx="10" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>
+                <circle cx="604" cy="280.6" r="6" class="s-acc"/>
+                <text class="s-acc" x="604" y="258" font-size="13" text-anchor="middle">41</text>
+              </g>
+              <text id="g4t1" class="s-ink" x="700" y="320" font-size="14" opacity="0">December: about 41 minutes</text>
+              <text id="g4t2" class="s-muted" x="700" y="344" font-size="12" opacity="0">give or take 4 (sample)</text>
+              <text id="g4t3" class="s-muted" x="700" y="368" font-size="12" opacity="0">if nothing else changes</text>
+
+              <text id="g4c1" class="s-ink" x="60" y="518" font-size="15" opacity="0">Tested on rows it never saw: forecasts within 3 minutes (sample).</text>
+              <text id="g4c2" class="s-muted" x="60" y="544" font-size="13" opacity="0">A forecast is a likely outcome, not a promise.</text>
+              <text id="g4c3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Checked every month. When the world changes, accuracy drops (drift) and the model is retrained.</text>
+              <g id="next4" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Prescriptive &#183; what to do</text>
+              </g>
+            </g>
+
+            <!-- ===== section 6: prescriptive ===== -->
+            <g id="s5" display="none">
+              <g id="g5a" opacity="0">
+                <rect x="60" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="80" y="90" font-size="11" letter-spacing="2">THE GOAL</text>
+                <text class="s-ink" x="80" y="118" font-size="16">Keep the wait in the 24 to 32</text>
+                <text class="s-ink" x="80" y="140" font-size="16">minute range</text>
+              </g>
+              <g id="g5arr" opacity="0">
+                <path class="s-accl" d="M490 108 H510" stroke-width="2.5"/>
+              </g>
+              <g id="g5b" opacity="0">
+                <rect x="520" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="540" y="90" font-size="11" letter-spacing="2">THE FORECAST</text>
+                <text class="s-acc" x="540" y="118" font-size="16">December: about 41 minutes</text>
+                <text class="s-muted" x="540" y="140" font-size="12">if nothing changes (sample)</text>
+              </g>
+              <text id="g5trig" class="s-ink" x="60" y="184" font-size="13" opacity="0">Trigger: a forecast misses the goal.</text>
+
+              <g id="g5opts"></g>
+              <text id="g5n" class="s-muted" x="60" y="402" font-size="12" opacity="0">The model weighs each option against the goal (sample).</text>
+
+              <text id="g5r1" class="s-ink" x="60" y="520" font-size="15" opacity="0">Recommendation: faster lab results at Clinic B (closest to the goal).</text>
+              <text id="g5r2" class="s-muted" x="60" y="546" font-size="13" opacity="0">A person decides. The model only recommends.</text>
+              <g id="next5" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Stage 7 &#183; Visualization</text>
+              </g>
+            </g>
+
+            <!-- ===== AI layer ===== -->
+            <g id="aiL" opacity="0">
+              <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
+              <line id="ai_scan" x1="0" y1="0" x2="0" y2="0" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+              <text id="ai_lab" class="s-ai" x="940" y="24" font-size="11" letter-spacing="3" text-anchor="end"></text>
+              <text id="ai_note" class="s-ai" x="60" y="654" font-size="13" opacity="0"></text>
+              <g id="ai_prop" opacity="0">
+                <rect x="60" y="642" width="400" height="26" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <text id="ai_proptxt" class="s-ai" x="260" y="660" font-size="13" text-anchor="middle"></text>
+              </g>
+              <circle id="ai_ring" cx="0" cy="0" r="0" fill="none" stroke="var(--ai)" stroke-width="2" opacity="0"/>
+              <g id="ai_stn" opacity="0" transform="translate(0,0) scale(.55)">
+                <circle r="26" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <circle cy="-8" r="7" fill="var(--ai)"/>
+                <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="sect" type="button">Next section</button>
+          <button class="btn" id="part" type="button">Part 1 of 2: show Part 2</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards act" id="cards0" aria-live="polite">
+        <div class="card" id="c0_0"><p class="k">01 · What</p><h3>Turn governed data into answers</h3><p>Analysis is where the value in data is found. Analysts do most of it, data scientists take on predicting and recommending, and business stakeholders supply the goal.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c0_1"><p class="k">02 · How</p><h3>Ask four questions</h3><p>What happened, why, what will happen, and what to do. These are four kinds of analysis: descriptive, diagnostic, predictive and prescriptive.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c0_2"><p class="k">03 · Why</p><h3>So the answer can be trusted</h3><p>A goal keeps the work on a real question. A trace lets anyone follow an answer back through the stages to the row it began as.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c0_3"><p class="k">04 · When</p><h3>When someone has a question</h3><p>A stakeholder brings a goal, such as whether patients wait too long. The data is already described and protected from Stage 5, so analysts can start at once.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c0_4"><p class="k">05 · Next</p><h3>Descriptive: what happened</h3><p>The first question is the simplest. Analysts summarize what the Silver row says happened.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards1" aria-live="polite">
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>Summarize the past</h3><p>First, the Silver rows are shaped into a Gold table, a business-ready table made for one question. Totals, averages and counts then say what happened. Analysts own it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Count, average, compare</h3><p>Analysts average the Gold table by month and compare. Sample: wait was 34 minutes this month against 28 last month. The shaded band marks the normal range.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>Agree on what happened first</h3><p>Nobody can ask why, or what next, until the past is clear. A plain summary gives every later question something to stand on.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_3"><p class="k">04 · When</p><h3>Every reporting cycle</h3><p>Each month an analyst reads the data for the report. Stage 5's audit log already records that read.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Diagnostic: why it happened</h3><p>November's wait is above the normal range. The next question is why.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards2" aria-live="polite">
+        <div class="card" id="c2_0"><p class="k">01 · What</p><h3>Find the cause</h3><p>A diagnostic question looks behind a result to what drove it. Analysts own it. November's wait is above the normal range, so the question is why.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Split it, then read what patients said</h3><p>Analysts split the wait by clinic, then read what patients wrote in their survey. Sample: Clinic B waited 45 minutes, the others about 28, and its comments mention lab results.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>A cause points to a fix</h3><p>Knowing what happened is not enough to act. A cause points to a fix instead of a guess, and an analyst confirms it before anyone relies on it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When a result is out of range</h3><p>The trigger is a descriptive result outside its expected range, like November. Normal results do not need a diagnosis.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Trusted definitions</h3><p>A number is only useful if every report calculates it the same way. Next: how “wait time” is defined once, in one place, and checked.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards3" aria-live="polite">
+        <div class="card" id="c3_0"><p class="k">01 &middot; What</p><h3>Define a number once</h3><p>A governed definition says exactly how a metric is calculated, written in one place. Data stewards own it and analysts use it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c3_1"><p class="k">02 &middot; How</p><h3>Spot the conflict, publish one</h3><p>&ldquo;Wait&rdquo; can be counted two ways. Sample: the monthly report says 34 minutes and a dashboard says 52. A banner flags the conflict, a steward publishes one definition, and both reports then agree.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c3_2"><p class="k">03 &middot; Why</p><h3>So people keep trusting the numbers</h3><p>When two reports disagree on the same thing, people stop trusting both. One definition also stops AI from reading the same term two ways.</p><div class="tl"><p><strong>Tools:</strong> Governance and catalog tools.</p></div></div>
+        <div class="card" id="c3_3"><p class="k">04 &middot; When</p><h3>When a metric changes or reports disagree</h3><p>A definition is written when a metric is created, and revisited whenever it changes or two reports show different numbers.</p><div class="tl"><p><strong>Tools:</strong> Governance and catalog tools.</p></div></div>
+        <div class="card" id="c3_4"><p class="k">05 &middot; Next</p><h3>Part 2: predictive</h3><p>With trusted data, a clear past, a cause and one definition, analysts and data scientists can look ahead: what will happen next.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards4" aria-live="polite">
+        <div class="card" id="c4_0"><p class="k">01 &middot; What</p><h3>Look ahead</h3><p>Predictive analysis says what will likely happen. Data scientists own it, and the model learns patterns from past rows.</p><div class="tl"><p><strong>Tools:</strong> Machine learning.</p></div></div>
+        <div class="card" id="c4_1"><p class="k">02 &middot; How</p><h3>Learn, tune, test, forecast</h3><p>Most past rows teach the model, some tune it, and some are held back to test it. Sample: it forecasts December at about 41 minutes, give or take 4.</p><div class="tl"><p><strong>Tools:</strong> Machine learning.</p></div></div>
+        <div class="card" id="c4_2"><p class="k">03 &middot; Why</p><h3>Act before patients wait</h3><p>A forecast lets the hospital act early. Testing on rows the model never saw shows whether to trust it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning.</p></div></div>
+        <div class="card" id="c4_3"><p class="k">04 &middot; When</p><h3>After the past is clear, then every cycle</h3><p>When the world changes, a model&rsquo;s accuracy drops. This is called drift. The model is checked often and retrained.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and model monitoring.</p></div></div>
+        <div class="card" id="c4_4"><p class="k">05 &middot; Next</p><h3>Prescriptive: what to do</h3><p>A forecast says what is coming. The last question is what to do about it.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards5" aria-live="polite">
+        <div class="card" id="c5_0"><p class="k">01 &middot; What</p><h3>Recommend an action</h3><p>Prescriptive analysis weighs the options and says which best serves the goal. Data scientists own it, and business stakeholders set the goal.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c5_1"><p class="k">02 &middot; How</p><h3>Compare the options</h3><p>The model compares each option with the goal of cutting the wait. Sample: faster lab results bring December to 33 minutes, extra front-desk staff to 38, and doing nothing leaves it at 41.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c5_2"><p class="k">03 &middot; Why</p><h3>It tells people what to do</h3><p>The first three answers describe, explain and forecast. This one recommends an action, which is why a person decides.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c5_3"><p class="k">04 &middot; When</p><h3>When a forecast misses the goal</h3><p>It starts when a forecast shows a problem and the business has a goal to meet, such as a December wait inside the expected range.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+        <div class="card" id="c5_4"><p class="k">05 &middot; Next</p><h3>Stage 7: Visualization</h3><p>The answers now need to be shown clearly, so the people who decide can see them and act.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards ai" id="cardsAI" aria-live="polite">
+        <div class="card" id="aic0"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic1"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic2"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function tx(x,y,size,cls,txt,anchor){var e=el('text',{x:x,y:y,'font-size':size,'class':cls});if(anchor)e.setAttribute('text-anchor',anchor);e.textContent=txt;return e}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function ease(t){t=clamp01(t);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function lerp(a,b,t){return a+(b-a)*ease(t)}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // a Silver row chip: V vitals, L lab, S survey
+  function mkChip(parent){
+    var g=el('g',{opacity:0});
+    [['s-acc','V',-46],['s-ink','L',-15],['s-sl','S',16]].forEach(function(s){
+      g.appendChild(el('rect',{x:s[2],y:-17,width:30,height:34,rx:4,'class':s[0]}));
+      var t=el('text',{x:s[2]+15,y:5,'font-size':13,'font-weight':700,'text-anchor':'middle',fill:'var(--ground)'});t.textContent=s[1];g.appendChild(t);
+    });
+    parent.appendChild(g);return g;
+  }
+  function put(c,o,x,y,s){op(c,o);c.setAttribute('transform','translate('+x+','+y+') scale('+s+')')}
+
+  // ---------- section 1: the frame ----------
+  var M0=mkChip($('chip0'));
+  var Q=[['What happened?','DESCRIPTIVE','Owner: analysts'],['Why did it happen?','DIAGNOSTIC','Owner: analysts'],['What will happen?','PREDICTIVE','Owner: data scientists'],['What should we do?','PRESCRIPTIVE','Owner: data scientists']];
+  var QX=[60,285,510,735],qR=[];
+  Q.forEach(function(q,i){
+    var g=el('g',{opacity:0});
+    g.appendChild(el('rect',{x:QX[i],y:262,width:205,height:110,rx:10,'class':'s-fill s-line','stroke-width':2}));
+    g.appendChild(tx(QX[i]+16,290,11,'s-acc',q[1])).setAttribute('letter-spacing','2');
+    g.appendChild(tx(QX[i]+16,324,17,'s-ink',q[0]));
+    g.appendChild(tx(QX[i]+16,352,12,'s-muted',q[2]));
+    $('gq').appendChild(g);qR.push(g);
+  });
+  var TR=['An answer (Stage 6)','← analyzed from the governed Silver row','← managed in Stage 5','← stored in Stage 4','← cleaned in Stage 3'],trR=[];
+  TR.forEach(function(t,i){var e=tx(60,516+i*24,13,i?'s-muted':'s-ink',t);op(e,0);$('gtrace').appendChild(e);trR.push(e)});
+
+  function draw0(step,u){
+    var i;
+    op($('goal'),step===0?ease(u/.25):1);
+    $('goalbox').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('goalarrow'),step===0?ease((u-.35)/.15):1);
+    put(M0,step===0?ease((u-.5)/.2):1,790,112,1.5);
+    op($('rowtag'),step===0?ease((u-.65)/.2):1);op($('rowleg'),step===0?ease((u-.65)/.2):1);
+    for(i=0;i<4;i++)op(qR[i],step<1?0:(step===1?ease((u-.05-i*.15)/.15):1));
+    op($('qfoot'),step<1?0:(step===1?ease((u-.75)/.12):1));
+    op($('tracehead'),step<2?0:(step===2?ease(u/.1):1));
+    for(i=0;i<5;i++)op(trR[i],step<2?0:(step===2?ease((u-.1-i*.12)/.12):1));
+    op($('tracenote'),step<2?0:(step===2?ease((u-.75)/.1):1));
+    op($('tracenote2'),step<2?0:(step===2?ease((u-.8)/.1):1));
+    op($('next0'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 2: descriptive ----------
+  var MON=['Jun','Jul','Aug','Sep','Oct','Nov'],VAL=[27,29,28,30,28,34],BASE=420,PX=4,BW=56,BX0=100,BSTEP=92,barR=[];
+  MON.forEach(function(m,i){
+    var x=BX0+i*BSTEP,h=VAL[i]*PX,hot=VAL[i]>32,g=el('g',{opacity:0});
+    var r=el('rect',{x:x,y:BASE-h,width:BW,height:h,rx:3,'class':hot?'s-acc':'s-sl'});g.appendChild(r);
+    g.appendChild(tx(x+BW/2,BASE-h-8,13,hot?'s-acc':'s-ink',String(VAL[i]),'middle'));
+    g.appendChild(tx(x+BW/2,BASE+16,12,'s-muted',m,'middle'));
+    $('dbars').appendChild(g);barR.push({g:g,r:r,h:h});
+  });
+  var CH=[];for(var ci=0;ci<3;ci++)CH.push(mkChip($('chip1')));
+
+  function draw1(step,u){
+    var i;
+    // band 1: the rows flow into a summary
+    op($('dsrcl'),step===0?ease(u/.15):1);op($('rowleg1'),step===0?ease(u/.15):1);
+    for(i=0;i<3;i++){
+      var cx=110+i*100;
+      put(CH[i],step===0?ease((u-.05-i*.1)/.15):1,cx,108,1);
+    }
+    op($('dsum'),step===0?ease((u-.5)/.2):1);
+    // band 2: bars build one by one
+    var bu=step<1?0:(step===1?u:1);
+    op($('dband'),ease(bu/.12)*.35);op($('dbandl'),ease(bu/.12));op($('dbase'),ease(bu/.1));
+    for(i=0;i<6;i++){
+      var t=ease((bu-.12-i*.1)/.14);
+      op(barR[i].g,t);
+      barR[i].r.setAttribute('y',(BASE-barR[i].h*t).toFixed(1));barR[i].r.setAttribute('height',(barR[i].h*t).toFixed(1));
+    }
+    op($('dnote1'),step<1?0:(step===1?ease((bu-.7)/.1):1));
+    op($('dnote2'),step<1?0:(step===1?ease((bu-.8)/.1):1));
+    op($('dnote3'),step<1?0:(step===1?ease((bu-.9)/.08):1));
+    // band 3: what happened, and where it was read
+    op($('dres1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('dres2'),step<2?0:(step===2?ease((u-.35)/.2):1));
+    op($('dlog'),step<3?0:(step===3?ease(u/.2):1));
+    op($('next1'),step===4?ease((u-.4)/.2):0);
+  }
+
+
+  // ---------- section 3: diagnostic ----------
+  var CL=[['Clinic A',28],['Clinic B',45],['Clinic C',29]],clR=[];
+  CL.forEach(function(c,i){
+    var y=276+i*32,w=c[1]*6,hot=c[1]>32,g=el('g',{opacity:0});
+    g.appendChild(tx(60,y+16,13,'s-muted',c[0]));
+    g.appendChild(el('rect',{x:140,y:y,width:w,height:22,rx:3,'class':hot?'s-acc':'s-sl'}));
+    g.appendChild(tx(140+w+8,y+16,13,hot?'s-acc':'s-ink',c[1]+' min'));
+    $('gcl').appendChild(g);clR.push(g);
+  });
+  var COM=['“Waited a long time for my lab results.”','“The visit was fine, but results took hours.”','“Staff were kind. The lab line was long.”'],comR=[];
+  COM.forEach(function(t,i){var e=tx(520,296+i*32,13,'s-ink',t);op(e,0);$('gcom').appendChild(e);comR.push(e)});
+
+  function draw2(step,u){
+    var i;
+    op($('gsur'),step===0?ease(u/.25):1);
+    op($('garr2'),step===0?ease((u-.4)/.2):1);
+    op($('gtrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('gch'),ease(bu/.1));
+    for(i=0;i<3;i++)op(clR[i],ease((bu-.1-i*.12)/.14));
+    op($('gcm'),ease((bu-.5)/.1));
+    for(i=0;i<3;i++)op(comR[i],ease((bu-.6-i*.1)/.12));
+    op($('gsfoot'),ease((bu-.9)/.08));
+    op($('gwhy1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('gwhy2'),step<2?0:(step===2?ease((u-.35)/.2):1));
+    op($('next2'),step===4?ease((u-.4)/.2):0);
+  }
+
+
+  // ---------- section 4: trusted definitions ----------
+  function draw3(step,u){
+    op($('g3a'),step===0?ease(u/.25):1);
+    op($('g3b'),step===0?ease((u-.3)/.25):1);
+    op($('g3trig'),step<3?0:(step===3?ease(u/.2):1));
+    op($('g3r1'),step<1?0:(step===1?ease(u/.2):1));
+    op($('g3r2'),step<1?0:(step===1?ease((u-.2)/.2):1));
+    // the banner shows while the reports disagree, and goes once one definition is published
+    var ban=step===1?ease((u-.5)/.15):(step===2?1-ease((u-.45)/.15):0);
+    op($('g3ban'),ban);
+    var flip=step<2?0:(step===2?ease((u-.5)/.2):1);
+    $('g3r2v').textContent=flip>.5?'34 minutes':'52 minutes';
+    $('g3r2l').textContent=flip>.5?'DASHBOARD (NOW USES THE GOVERNED DEFINITION)':'DASHBOARD (USES WAY B)';
+    $('g3r2v').setAttribute('class',flip>.5?'s-ink':'s-acc');
+    $('g3r2box').style.stroke=flip>.5?'var(--tertiary-text)':'var(--accent)';
+    op($('g3r2ok'),flip>.5?1:0);
+    op($('g3def'),step<2?0:(step===2?ease(u/.25):1));
+    op($('g3t1'),step<2?0:(step===2?ease((u-.65)/.15):1));
+    op($('g3t2'),step<2?0:(step===2?ease((u-.8)/.15):1));
+    op($('next3'),step===4?ease((u-.4)/.2):0);
+  }
+
+
+  // ---------- section 5: predictive ----------
+  var M4=mkChip($('chip4'));
+  var PV=[27,29,28,30,28,34],PXS=[100,184,268,352,436,520],PY=function(v){return 420-v*3.4},ptR=[];
+  ['Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach(function(m,i){
+    var x=i<6?PXS[i]:604;
+    $('g4pts').appendChild(tx(x,436,12,i===6?'s-acc':'s-muted',m,'middle'));
+    if(i<6){var c=el('circle',{cx:x,cy:PY(PV[i]).toFixed(1),r:5,'class':'s-sl',opacity:0});$('g4pts').appendChild(c);ptR.push(c)}
+  });
+  var LINE='M'+PXS.map(function(x,i){return x+' '+PY(PV[i]).toFixed(1)}).join(' L');
+  $('g4line').setAttribute('d',LINE);
+  $('g4fc').setAttribute('d','M520 '+PY(34).toFixed(1)+' L604 280.6');
+
+  function draw4(step,u){
+    var i;
+    put(M4,step===0?ease(u/.2):1,130,108,1);
+    op($('g4leg'),step===0?ease(u/.2):1);
+    op($('g4arr'),step===0?ease((u-.2)/.15):1);
+    op($('g4bar'),step===0?ease((u-.35)/.2):1);
+    op($('g4n'),step===0?ease((u-.75)/.15):1);
+    var bu=step<1?0:(step===1?u:1);
+    op($('g4base'),ease(bu/.1));
+    for(i=0;i<6;i++)op(ptR[i],ease((bu-.1-i*.08)/.1));
+    op($('g4line'),ease((bu-.15)/.4));
+    op($('g4fc'),ease((bu-.6)/.15));
+    op($('g4dec'),ease((bu-.7)/.15));
+    op($('g4t1'),ease((bu-.75)/.1));op($('g4t2'),ease((bu-.82)/.1));op($('g4t3'),ease((bu-.89)/.1));
+    op($('g4c1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('g4c2'),step<2?0:(step===2?ease((u-.35)/.2):1));
+    op($('g4c3'),step<3?0:(step===3?ease(u/.2):1));
+    op($('next4'),step===4?ease((u-.4)/.2):0);
+  }
+
+
+  // ---------- section 6: prescriptive ----------
+  var OPT=[['OPTION 1','Faster lab results',33],['OPTION 2','Extra front-desk staff',38],['OPTION 3','Do nothing',41]],optR=[],OX=[60,360,660];
+  OPT.forEach(function(o,i){
+    var g=el('g',{opacity:0}),box=el('rect',{x:OX[i],y:262,width:280,height:116,rx:10,'class':'s-fill s-line','stroke-width':2});
+    g.appendChild(box);
+    g.appendChild(tx(OX[i]+16,290,11,'s-muted',o[0])).setAttribute('letter-spacing','2');
+    g.appendChild(tx(OX[i]+16,320,16,'s-ink',o[1]));
+    g.appendChild(tx(OX[i]+16,358,26,i===0?'s-acc':'s-ink',o[2]+' min'));
+    g.appendChild(tx(OX[i]+120,358,12,'s-muted','December wait'));
+    $('g5opts').appendChild(g);optR.push({g:g,box:box});
+  });
+  function draw5(step,u){
+    var i;
+    op($('g5a'),step===0?ease(u/.25):1);
+    op($('g5arr'),step===0?ease((u-.3)/.1):1);
+    op($('g5b'),step===0?ease((u-.4)/.25):1);
+    op($('g5trig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    for(i=0;i<3;i++)op(optR[i].g,ease((bu-.05-i*.18)/.18));
+    op($('g5n'),ease((bu-.7)/.12));
+    var best=step>=2||(step===1&&u>.85);
+    optR[0].box.style.stroke=best?'var(--accent)':'var(--tertiary-text)';
+    op($('g5r1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('g5r2'),step<2?0:(step===2?ease((u-.35)/.2):1));
+    op($('next5'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- scene table ----------
+  var SCENES=[
+    {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','Where the data starts to <em class="hl">answer</em>.','Analysis is where the value in data is found. At Tamsworth Health, the clean, governed Silver row from Stage 5 is asked four questions: what happened, why, what will happen, and what to do.'],
+     g:'s0',cards:'c0_',box:'cards0',draw:draw0,
+     labels:['01 · SET THE GOAL · OWNER: BUSINESS STAKEHOLDERS','02 · ASK THE FOUR QUESTIONS · OWNERS: ANALYSTS, DATA SCIENTISTS','03 · TRACE THE ANSWER BACK · OWNERS: ANALYSTS, DATA STEWARDS'],
+     bands:[[0],[1],[2],[0,1],[1]]},
+    {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','What <em class="hl">happened</em>.','Descriptive analysis is the simplest question: what happened? At Tamsworth Health, analysts first shape the Silver rows into a Gold table for one question, how long patients waited, then summarize it by month.'],
+     g:'s1',cards:'c1_',box:'cards1',draw:draw1,
+     labels:['01 · BUILD THE GOLD TABLE · OWNER: ANALYSTS','02 · SUMMARIZE BY MONTH · OWNER: ANALYSTS','03 · SAY WHAT HAPPENED · OWNER: ANALYSTS'],
+     bands:[[0],[1],[2],[2],[2]]}
+,
+    {part:0,head:['Stage 6 of 8 · Data analysis · Part 1 of 2','<em class="hl">Why</em> it happened.','Diagnostic analysis asks why. At Tamsworth Health, November’s wait is above the normal range, so analysts look for the cause in the Silver rows.'],
+     g:'s2',cards:'c2_',box:'cards2',draw:draw2,
+     labels:['01 · START FROM THE SURPRISE · OWNER: ANALYSTS','02 · SPLIT AND READ · OWNER: ANALYSTS','03 · SAY WHY · OWNER: ANALYSTS'],
+     bands:[[0],[1],[2],[0],[2]]}
+,
+    {part:0,head:['Stage 6 of 8 \u00b7 Data analysis \u00b7 Part 1 of 2','One <em class="hl">definition</em> of every number.','The same number can mean different things in different reports unless its definition is governed. At Tamsworth Health, \u201cwait time\u201d can be counted two ways, and two reports disagree.'],
+     g:'s3',cards:'c3_',box:'cards3',draw:draw3,
+     labels:['01 \u00b7 TWO WAYS TO COUNT \u201cWAIT\u201d \u00b7 OWNERS: DATA STEWARDS','02 \u00b7 TWO REPORTS DISAGREE \u00b7 OWNERS: ANALYSTS','03 \u00b7 PUBLISH ONE DEFINITION \u00b7 OWNERS: DATA STEWARDS'],
+     bands:[[0],[1],[2],[0],[2]]}
+,
+    {part:1,head:['Stage 6 of 8 \u00b7 Data analysis \u00b7 Part 2 of 2','What will <em class="hl">happen</em>.','Predictive analysis looks ahead. At Tamsworth Health, a model learns from past rows to forecast December\u2019s wait.'],
+     g:'s4',cards:'c4_',box:'cards4',draw:draw4,
+     labels:['01 \u00b7 TEACH THE MODEL \u00b7 OWNERS: DATA SCIENTISTS','02 \u00b7 FORECAST THE NEXT MONTH \u00b7 OWNERS: DATA SCIENTISTS','03 \u00b7 CHECK, THEN KEEP CHECKING \u00b7 OWNERS: DATA SCIENTISTS'],
+     bands:[[0],[0,1],[2],[2],[2]]}
+,
+    {part:1,head:['Stage 6 of 8 \u00b7 Data analysis \u00b7 Part 2 of 2','What to <em class="hl">do</em>.','Prescriptive analysis recommends an action. At Tamsworth Health, the forecast says Clinic B\u2019s wait will keep rising, so the question is what to do about it.'],
+     g:'s5',cards:'c5_',box:'cards5',draw:draw5,
+     labels:['01 \u00b7 START FROM THE GOAL \u00b7 OWNERS: BUSINESS STAKEHOLDERS, DATA SCIENTISTS','02 \u00b7 COMPARE THE OPTIONS \u00b7 OWNERS: DATA SCIENTISTS','03 \u00b7 RECOMMEND \u00b7 A PERSON DECIDES'],
+     bands:[[0],[1],[2],[0],[2]]}
+  ];
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  SCENES.forEach(function(S){
+    S.dur=[];for(var d=0;d<5;d++){var w=$(S.cards+d).textContent.trim().split(/\s+/).length;S.dur.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}
+    S.start=[0];S.dur.forEach(function(x,i){S.start.push(S.start[i]+x)});S.total=S.start[5];
+  });
+
+  // ---------- AI layer: data (assist, agent) per section ----------
+  var TA='Machine learning and language models.',TG='Agentic AI within set rules and approvals.';
+  function C(k,h,p){return [k,h,p]}
+  var AIDATA=[
+    [{box:[50,250,890,130],note:'AI: models find patterns in the data at scale · sample',tools:TA,
+      cards:[C('01 · AI assists','AI finds patterns','Machine learning, language models and generative models find patterns in the data at scale, faster than an analyst could.'),C('02 · Why it helps','Analysts stay in charge','AI suggests. Analysts and data scientists check each result before it counts.'),C('03 · A person','A person sets the goal','Only people know what the business needs, so stakeholders still supply the goal.')]},
+     {box:[50,250,890,130],note:'Agent: explored the Silver rows and ranked where to look first · sample',chip:'Agent proposes: look at Clinic B first',tools:TG,
+      cards:[C('01 · The agent','An agent explores','Agentic AI explores the data on its own and recommends what to look at next.'),C('02 · Within set rules','It follows rules people set','Which data it may read and what it may do are set by people.'),C('03 · A person decides','A person approves','The agent proposes. A person approves before anything is acted on.')]}],
+    [{box:[550,46,400,130],note:'AI: wrote the summary from the Gold table and explained the metric · sample',tools:TA,
+      cards:[C('01 · AI assists','AI writes the summary','It summarizes the numbers and explains a metric in plain words, so more people can follow.'),C('02 · Why it helps','Follow-up questions work','A reader can ask a follow-up and get an answer from the same governed data.'),C('03 · A person','An analyst checks it','The analyst confirms the summary matches the data.')]},
+     {box:[550,262,76,182],note:'Agent: checked 6 months of waits · 1 outside the expected range · sample',chip:'Agent flags: November is above the range',tools:TG,
+      cards:[C('01 · The agent','An agent watches','It checks each month’s wait against the expected range and flags what falls outside.'),C('02 · Why it scales','It does not tire','It checks every clinic all month, not only when someone looks.'),C('03 · A person decides','An analyst decides','It flags November. The analyst decides whether it matters.')]}],
+    [{box:[510,250,440,130],note:'AI: a language model read 212 comments and grouped them into 3 themes · sample',tools:TA,
+      cards:[C('01 · AI assists','AI reads every comment','A language model reads all the survey comments and groups them into themes, which is slow work by hand.'),C('02 · Why it helps','A pattern, not a verdict','The themes point to lab results. They do not prove the cause.'),C('03 · A person','An analyst confirms','The analyst checks the finding against the data.')]},
+     {box:[50,250,430,130],note:'Agent: split by clinic and checked 4 other causes · 1 stands out · sample',chip:'Agent proposes: slow lab results at Clinic B',tools:TG,
+      cards:[C('01 · The agent','An agent investigates','It splits the wait by clinic and checks other possible causes, one after another.'),C('02 · Within set rules','It shows its steps','Each step is logged, so the analyst can see how it got there.'),C('03 · A person decides','An analyst confirms','It proposes a cause. The analyst confirms it before anyone acts.')]}],
+    [{box:[50,484,520,104],note:'AI: explained how “wait time” is calculated and where it comes from · sample',tools:TA,
+      cards:[C('01 · AI assists','AI explains the number','Ask where “wait time” comes from and AI explains its calculation, rules and lineage, which builds trust.'),C('02 · Why it helps','It reads the governed one','It answers from the published definition, not a guess.'),C('03 · A person','A steward owns it','Data stewards keep the definition correct.')]},
+     {box:[50,254,890,150],note:'Agent: compared 2 reports with the governed definition · 1 disagrees · sample',chip:'Agent proposes: use Way A for the dashboard',tools:TG,
+      cards:[C('01 · The agent','An agent compares reports','It checks every report against the governed definition and flags any that differ.'),C('02 · Within set rules','It proposes the fix','It suggests which definition each report should use.'),C('03 · A person decides','A steward approves','Changing a definition affects every report, so a steward approves it.')]}],
+    [{box:[50,252,640,188],note:'AI: a model learned from past rows and forecast December at about 41 · sample',tools:'Machine learning.',
+      cards:[C('01 · AI assists','A model finds the pattern','Machine learning learns from past rows and forecasts December, picking up patterns too subtle to spot by eye.'),C('02 · Why it helps','It tests itself','It is checked on rows it never saw, so its error is known before anyone relies on it.'),C('03 · A person','A data scientist reviews it','The data scientist checks the result and decides whether to trust the forecast.')]},
+     {box:[50,500,890,112],note:'Agent: compared 12 past forecasts with what happened · accuracy slipping · sample',chip:'Agent proposes: retrain the model',tools:TG,
+      cards:[C('01 · The agent','An agent watches the forecast','Each month it compares past forecasts with what actually happened.'),C('02 · Why it scales','It catches drift early','When accuracy starts to slip, it notices before people do.'),C('03 · A person decides','A person approves retraining','It proposes retraining the model. A person approves it.')]}],
+    [{box:[50,252,890,136],note:'AI: compared 3 options with the goal and projected each one · sample',tools:TA,
+      cards:[C('01 · AI assists','AI projects each option','Machine learning compares the options with the goal and projects the result of each.'),C('02 · Why it helps','More options, weighed fairly','It can weigh far more options than a person could by hand.'),C('03 · A person','Stakeholders choose','They know the constraints and costs the model does not.')]},
+     {box:[50,252,890,136],note:'Agent: explored 3 options and recommended one · sample',chip:'Agent recommends: faster lab results',tools:TG,
+      cards:[C('01 · The agent','An agent explores options','It tries different actions on its own and recommends the one closest to the goal.'),C('02 · Within set rules','It stays inside limits','People set what it may recommend, such as budget and safety limits.'),C('03 · A person decides','A person decides','It recommends. A person decides, because acting on the advice has real effects.')]}]
+  ];
+  SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
+    a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
+    a.start=[0];a.dur.forEach(function(x,k){a.start.push(a.start[k]+x)});a.total=a.start[a.dur.length];
+  })});
+
+  var cur=0,mode=0,elapsed=0,last=null,playing=!reduce,shown='',xfading=false;
+  function curAI(){var S=SCENES[cur];return (mode&&S.ai)?S.ai[mode-1]:null}
+  function curTL(){var a=curAI();return a||SCENES[cur]}
+  function stepOf(T){var n=T.dur.length,e=Math.min(elapsed,T.total-1),s=0;while(s<n-1&&e>=T.start[s+1])s++;return {step:s,u:(e-T.start[s])/T.dur[s]}}
+  function setCards(S,step){for(var i=0;i<5;i++)$(S.cards+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setAICards(step){for(var i=0;i<3;i++)$('aic'+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBandList(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('hr'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function fillAI(a){
+    for(var i=0;i<3;i++){var c=$('aic'+i);c.querySelector('.k').textContent=a.cards[i][0];c.querySelector('h3').textContent=a.cards[i][1];c.querySelector('.bd').textContent=a.cards[i][2];c.querySelector('.tl p').innerHTML='<strong>Tools:</strong> '+a.tools}
+  }
+  function updateView(){
+    var a=curAI(),S=SCENES[cur];
+    SCENES.forEach(function(x,i){$(x.g).setAttribute('display',i===cur?'inline':'none');$(x.box).className='cards'+(i===cur&&!a?' act':'');for(var j=0;j<5;j++)$(x.cards+j).className='card'});
+    $('cardsAI').className='cards ai'+(a?' act':'');
+    for(var q=0;q<3;q++)$('aic'+q).className='card';
+    if(a)fillAI(a);
+    elapsed=0;shown='';
+  }
+  var NAMES=['Overview','What happened','Why','One definition','What will happen','What to do'];
+  (function(){
+    var nav=$('secs');
+    SCENES.forEach(function(S,i){
+      if(i===0||S.part!==SCENES[i-1].part){var l=document.createElement('span');l.className='pt';l.textContent='Part '+(S.part+1);nav.appendChild(l)}
+      var b=document.createElement('button');b.type='button';b.id='sec'+i;b.textContent=(i+1)+' · '+NAMES[i];
+      b.addEventListener('click',function(){if(i!==cur)crossTo(i)});nav.appendChild(b);
+    });
+  })();
+  function showScene(n){
+    cur=n;var S=SCENES[n];
+    for(var q=0;q<SCENES.length;q++)$('sec'+q).setAttribute('aria-current',q===n?'true':'false');
+    $('eyebrow').textContent=S.head[0]+' · Section '+(n+1)+' of '+SCENES.length;$('h1').innerHTML=S.head[1];$('lede').textContent=S.head[2];
+    for(var k=0;k<3;k++)$('l'+k).textContent=S.labels[k];
+    $('part').textContent='Part '+(S.part+1)+' of 2: show Part '+(2-S.part);
+    updateView();
+  }
+  function crossTo(n){
+    if(xfading)return;
+    xfading=true;document.body.classList.add('out');
+    setTimeout(function(){showScene(n);document.body.classList.add('out');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){document.body.classList.remove('out');xfading=false})})},700);
+  }
+
+  // ---------- AI layer: drawing ----------
+  function aiHide(){op($('aiL'),0)}
+  function aiDraw(a,step,u){
+    op($('aiL'),1);
+    var bx=a.box,box=$('ai_box'),agent=(mode===2);
+    box.setAttribute('x',bx[0]);box.setAttribute('y',bx[1]);box.setAttribute('width',bx[2]);box.setAttribute('height',bx[3]);
+    op(box,.55+.45*Math.abs(Math.sin(elapsed/450)));
+    $('ai_lab').textContent=agent?'AI AGENT · WATCHING':'AI · ASSISTING';
+    // a scan line sweeps the marked area while the AI works
+    var sc=$('ai_scan'),sy=bx[1]+bx[3]*((elapsed/2200)%1);
+    if(step<2){sc.setAttribute('x1',bx[0]+4);sc.setAttribute('x2',bx[0]+bx[2]-4);sc.setAttribute('y1',sy);sc.setAttribute('y2',sy);op(sc,.8)}else op(sc,0);
+    var note=$('ai_note');note.textContent=a.note;
+    note.setAttribute('y',agent?632:654);
+    op(note,step===0?ease((u-.3)/.3):1);
+    // the checkpoint: a person icon, with the agent's proposal beside it
+    var stn=$('ai_stn'),ring=$('ai_ring'),prop=$('ai_prop');
+    var sx,sy2;
+    if(agent){sx=486;sy2=655;$('ai_proptxt').textContent=a.chip}else{sx=bx[0]+bx[2]-24;sy2=bx[1]+24}
+    op(prop,agent&&step>=2?ease(u/.25):0);
+    if(step>=2){
+      stn.setAttribute('transform','translate('+sx+','+sy2+') scale(.55)');op(stn,ease(u/.25));
+      var rp=(elapsed/1500)%1;ring.setAttribute('cx',sx);ring.setAttribute('cy',sy2);ring.setAttribute('r',(10+rp*34).toFixed(1));op(ring,(1-rp)*.8);
+    }else{op(stn,0);op(ring,0)}
+  }
+
+  function frame(){
+    var S=SCENES[cur],a=curAI(),T=curTL(),nxt=(cur+1)%SCENES.length;
+    if(!xfading){
+      if(elapsed>=T.total){elapsed=T.total-1;crossTo(nxt)}
+      else if(elapsed>T.total-800&&SCENES.length>1)crossTo(nxt);
+    }
+    var s=stepOf(T),key=cur+':'+mode+':'+s.step;
+    if(shown!==key){shown=key;if(a){setAICards(s.step);setBandList([])}else{setCards(S,s.step);setBandList(S.bands[s.step])}}
+    if(a){S.draw(3,1);aiDraw(a,s.step,s.u)}else{S.draw(s.step,s.u);aiHide()}
+  }
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing&&!xfading)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var T=curTL(),s=stepOf(T),n=T.dur.length;
+    if(s.step<n-1)elapsed=T.start[s.step+1]+10;else if(!xfading)crossTo((cur+1)%SCENES.length);
+  });
+  $('part').addEventListener('click',function(){var want=1-SCENES[cur].part,n=0;for(var i=0;i<SCENES.length;i++)if(SCENES[i].part===want){n=i;break}crossTo(n)});
+  $('sect').addEventListener('click',function(){crossTo((cur+1)%SCENES.length)});
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    mode=(mode+1)%3;
+    this.textContent='Show AI: '+['Off','AI assists','Agent'][mode];
+    this.setAttribute('aria-pressed',mode!==0);
+    this.className='btn'+(mode?' on':'');
+    updateView();
+  });
+  showScene(0);
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
