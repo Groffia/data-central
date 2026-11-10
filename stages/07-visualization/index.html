@@ -129,7 +129,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
               <text id="atrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: Stage 6 has an answer that a person must act on.</text>
 
               <g id="qc"></g>
-              <text id="qfoot" class="s-ink" x="60" y="436" font-size="14" opacity="0">One chart, one question. Every chart is built to serve a single decision.</text>
+              <text id="qfoot" class="s-ink" x="60" y="420" font-size="14" opacity="0">One chart, one question. Every chart is built to serve a single decision.</text>
 
               <text id="w1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A chart exists to support one decision.</text>
               <text id="w2" class="s-muted" x="60" y="546" font-size="13" opacity="0">If nobody can say what a chart is for, it is noise.</text>
@@ -399,31 +399,31 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
           ['LIMIT LINE','Is it past its limit?','Reader: whoever acts']];
   QS.forEach(function(q,i){
     var x=QX[i],g=el('g',{opacity:0});
-    g.appendChild(el('rect',{x:x,y:252,width:205,height:168,rx:10,'class':'s-fill s-line','stroke-width':2}));
+    g.appendChild(el('rect',{x:x,y:252,width:205,height:140,rx:10,'class':'s-fill s-line','stroke-width':2}));
     g.appendChild(tx(x+16,278,11,'s-acc',q[0])).setAttribute('letter-spacing','2');
     g.appendChild(tx(x+16,304,16,'s-ink',q[1]));
     // the chart glyph, drawn small
     if(i===0){
-      g.appendChild(tx(x+16,372,40,'s-acc','34'));
-      g.appendChild(tx(x+76,372,13,'s-muted','minutes'));
+      g.appendChild(tx(x+16,352,40,'s-acc','34'));
+      g.appendChild(tx(x+76,352,13,'s-muted','minutes'));
     }else if(i===1){
-      var V=[27,29,28,30,28,34],pts=V.map(function(v,k){return (x+16+k*34)+' '+(380-(v-26)*6)}).join(' L');
+      var V=[27,29,28,30,28,34],pts=V.map(function(v,k){return (x+16+k*34)+' '+(360-(v-26)*5)}).join(' L');
       g.appendChild(el('path',{d:'M'+pts,fill:'none',stroke:'var(--slate-300)','stroke-width':2}));
-      g.appendChild(el('circle',{cx:x+16+5*34,cy:380-(34-26)*6,r:5,'class':'s-acc'}));
+      g.appendChild(el('circle',{cx:x+16+5*34,cy:360-(34-26)*5,r:5,'class':'s-acc'}));
     }else if(i===2){
       [['A',28],['B',45],['C',29]].forEach(function(c,k){
-        var y=322+k*20,w=c[1]*2.5;
+        var y=318+k*18,w=c[1]*2.5;
         g.appendChild(tx(x+16,y+11,11,'s-muted',c[0]));
         g.appendChild(el('rect',{x:x+30,y:y,width:w,height:14,rx:2,'class':c[0]==='B'?'s-acc':'s-sl'}));
       });
     }else{
-      g.appendChild(el('line',{x1:x+16,y1:344,x2:x+189,y2:344,stroke:'var(--tertiary-text)','stroke-width':1.5,'stroke-dasharray':'5 4'}));
-      g.appendChild(tx(x+189,338,11,'s-muted','limit 32','end'));
-      var W=[27,29,28,30,28,34],p2=W.map(function(v,k){return (x+16+k*34)+' '+(392-(v-26)*6)}).join(' L');
+      g.appendChild(el('line',{x1:x+16,y1:336,x2:x+189,y2:336,stroke:'var(--tertiary-text)','stroke-width':1.5,'stroke-dasharray':'5 4'}));
+      g.appendChild(tx(x+16,329,11,'s-muted','limit 32'));
+      var W=[27,29,28,30,28,34],p2=W.map(function(v,k){return (x+16+k*34)+' '+(368-(v-26)*5)}).join(' L');
       g.appendChild(el('path',{d:'M'+p2,fill:'none',stroke:'var(--slate-300)','stroke-width':2}));
-      g.appendChild(el('circle',{cx:x+16+5*34,cy:392-(34-26)*6,r:6,fill:'none',stroke:'var(--accent)','stroke-width':2.5}));
+      g.appendChild(el('circle',{cx:x+16+5*34,cy:368-(34-26)*5,r:6,fill:'none',stroke:'var(--accent)','stroke-width':2.5}));
     }
-    g.appendChild(tx(x+16,408,12,'s-muted',q[2]));
+    g.appendChild(tx(x+16,380,12,'s-muted',q[2]));
     $('qc').appendChild(g);qR.push(g);
   });
 
@@ -642,9 +642,9 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
   var TA='Machine learning and language models.',TG='Agentic AI within set rules and approvals.';
   function C(k,h,p){return [k,h,p]}
   var AIDATA=[
-    [{box:[50,244,900,184],note:'AI: suggested a chart type for each of 4 questions · sample',tools:TA,
+    [{box:[50,244,900,152],note:'AI: suggested a chart type for each of 4 questions · sample',tools:TA,
       cards:[C('01 · AI assists','AI recommends the chart','Given a question and the data, AI suggests a chart type and writes a plain summary beside it.'),C('02 · Why it helps','More people can ask','Anyone can ask in plain words, which widens self-service analytics.'),C('03 · A person','An analyst checks it','The analyst confirms the chart shows what the data says.')]},
-     {box:[500,244,235,184],note:'Agent: matched 4 questions to chart types · sample',chip:'Agent proposes: bars for the clinic split',tools:TG,
+     {box:[500,244,235,152],note:'Agent: matched 4 questions to chart types · sample',chip:'Agent proposes: bars for the clinic split',tools:TG,
       cards:[C('01 · The agent','An agent builds the view','It picks a chart for each question and lays them out.'),C('02 · Within set rules','It follows rules people set','People set which data it may chart and who may see it.'),C('03 · A person decides','A person approves','The agent proposes the view. A person approves it before anyone relies on it.')]}],
     [{box:[50,244,560,184],note:'AI: wrote “Wait is above range and rising” under the trend · sample',tools:TA,
       cards:[C('01 · AI assists','AI writes the story','AI drafts a plain sentence beside each chart, such as what changed and by how much.'),C('02 · Why it helps','Readers get the point faster','A chart with a sentence is clearer than a chart alone, and anyone can ask a follow-up.'),C('03 · A person','An analyst checks it','The analyst confirms the sentence matches the numbers.')]},
