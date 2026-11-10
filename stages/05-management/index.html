@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 5: Data Management</title>
+<style>
+/* Tokens: WARMING STRIPES design system (project/tokens.json), same as Stages 2 to 4 */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:none;flex-direction:column;gap:.85rem}
+body.p1.m0 #stepcards,body.p1.m1 #aicards,body.p1.m2 #bicards,body.p2.m0 #stepcards2,body.p2.m1 #aicards2,body.p2.m2 #bicards2{display:flex}
+header.top,.stage,.cards{transition:opacity 700ms ease}
+body.out header.top,body.out .stage,body.out .cards{opacity:0}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+#aicards .card.now .k,#bicards .card.now .k,#aicards2 .card.now .k,#bicards2 .card.now .k{color:var(--ai)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+#aicards .tl strong,#bicards .tl strong,#aicards2 .tl strong,#bicards2 .tl strong{color:var(--ai)}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-ai{fill:var(--ai)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body class="p1 m0">
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag" id="eyebrow">Stage 5 of 8 · Data management · Part 1 of 2</p>
+    <h1 id="h1">Who may see data, and what it <em class="hl">means</em>.</h1>
+    <p class="lede" id="lede">Management keeps stored data accurate, private and trusted. At Tamsworth Health, the clean Silver row from Stage 4 gets a description, rules about who may read it, and a record of every read.</p>
+  </header>
+
+  <section class="scene" aria-label="Governing one stored row">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation, top to bottom: a catalog describes each field of the Silver row and marks five as sensitive; three roles, a clinician, an analyst and an outside party, each see a different amount of the row; an audit log records every read and a trace shows where the row came from.">
+            <line id="hr0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="hr1" class="hair" x1="60" y1="215" x2="940" y2="215"/>
+            <line id="hr2" class="hair" x1="60" y1="445" x2="940" y2="445"/>
+            <text id="l0" class="bl" x="60" y="24"></text>
+            <text id="l1" class="bl" x="60" y="236"></text>
+            <text id="l2" class="bl" x="60" y="466"></text>
+
+            <!-- ===== base scene ===== -->
+            <g id="sceneBase">
+              <text id="leg1" class="s-muted" x="230" y="186" font-size="11" text-anchor="middle">V vitals · L lab results · S survey</text>
+              <text id="rawtag" class="s-muted" x="230" y="170" font-size="12" text-anchor="middle">clean Silver row from Stage 4</text>
+              <text id="cathead" class="s-acc" x="440" y="46" font-size="11" letter-spacing="2">THE CATALOG: WHAT EACH FIELD MEANS</text>
+              <g id="gcat"></g>
+              <text id="catfoot" class="s-muted" x="440" y="204" font-size="12" opacity="0">Vitals, lab and survey fields are described too, but not marked sensitive.</text>
+
+              <g id="groles"></g>
+
+              <text id="loghead" class="s-muted" x="60" y="492" font-size="11" letter-spacing="2" opacity="0">THE AUDIT LOG: WHO READ WHAT</text>
+              <g id="glog"></g>
+              <text id="tracehead" class="s-muted" x="650" y="492" font-size="11" letter-spacing="2" opacity="0">THE TRACE: WHERE THE ROW CAME FROM</text>
+              <g id="gtrace"></g>
+              <text id="qual" class="s-ink" x="60" y="620" font-size="13" opacity="0">✓ Quality check: no missing or out-of-range values (sample)</text>
+              <g id="gprops"></g>
+
+              <g id="next" opacity="0">
+                <path class="s-accl" d="M700 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Part 2 · Keep and archive</text>
+              </g>
+            </g>
+
+            <!-- ===== AI-data scene ===== -->
+            <g id="sceneB" opacity="0">
+              <g id="bdb" opacity="0">
+                <ellipse cx="170" cy="84" rx="90" ry="13" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <path d="M80 84 V138 a90 13 0 0 0 180 0 V84" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <circle cx="130" cy="98" r="4" class="s-sl" opacity=".7"/><circle cx="170" cy="110" r="4" class="s-sl" opacity=".7"/><circle cx="212" cy="96" r="4" class="s-sl" opacity=".7"/><circle cx="150" cy="124" r="4" class="s-sl" opacity=".7"/><circle cx="196" cy="126" r="4" class="s-sl" opacity=".7"/>
+                <text class="s-muted" x="170" y="174" font-size="11" letter-spacing="2" text-anchor="middle">VECTOR DATABASE</text>
+              </g>
+              <text id="bcathead" class="s-ai" x="440" y="46" font-size="11" letter-spacing="2" opacity="0">THE CATALOG ENTRY FOR THE STORE</text>
+              <g id="gbcat"></g>
+
+              <g id="bq" opacity="0">
+                <rect x="60" y="262" width="300" height="44" rx="8" fill="none" stroke="var(--ai)" stroke-width="2"/>
+                <text class="s-ink" x="210" y="289" font-size="14" text-anchor="middle">Analyst asks: “How was the wait?”</text>
+                <ellipse cx="760" cy="268" rx="150" ry="13" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <path d="M610 268 V322 a150 13 0 0 0 300 0 V268" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <g id="bdots"></g>
+                <text class="s-muted" x="760" y="354" font-size="11" letter-spacing="2" text-anchor="middle">VECTOR DATABASE · THE NUMBERS</text>
+              </g>
+              <text id="bnoteA" class="s-ink" x="60" y="410" font-size="15" opacity="0">Only chunks this role may read come back.</text>
+              <text id="bnoteB" class="s-muted" x="60" y="432" font-size="13" opacity="0">A blocked chunk is never shown, even when it is the closest match.</text>
+
+              <text id="bloghead" class="s-muted" x="60" y="492" font-size="11" letter-spacing="2" opacity="0">THE AUDIT LOG: WHO SEARCHED, WHAT CAME BACK</text>
+              <g id="gblog"></g>
+              <text id="btrace" class="s-ink" x="60" y="604" font-size="14" opacity="0">Each answer points back to its chunk, and the chunk to the Silver row it came from.</text>
+              <g id="bnext" opacity="0">
+                <path class="s-accl" d="M700 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Part 2 · Keep and archive</text>
+              </g>
+            </g>
+
+            <!-- ===== Part 2 scene ===== -->
+            <g id="sceneP2" opacity="0">
+              <g id="tl0" opacity="0">
+                <text class="s-muted" x="940" y="42" font-size="11" text-anchor="end">V vitals · L lab results · S survey</text>
+                <text class="s-muted" x="60" y="56" font-size="11" letter-spacing="2">ONE ROW, FROM DAY ZERO</text>
+                <rect x="60" y="84" width="140" height="34" rx="4" class="s-acc"/>
+                <rect x="202" y="84" width="218" height="34" rx="4" class="s-sl"/>
+                <rect x="422" y="84" width="358" height="34" rx="4" fill="#5a6577"/>
+                <rect x="782" y="84" width="158" height="34" rx="4" fill="none" stroke="var(--tertiary-text)" stroke-width="2" stroke-dasharray="5 4"/>
+                <text x="72" y="106" font-size="14" font-weight="700" fill="var(--ground)">Hot</text>
+                <text x="214" y="106" font-size="14" font-weight="700" fill="var(--ground)">Warm</text>
+                <text x="434" y="106" font-size="14" font-weight="700" fill="var(--ink)">Cold</text>
+                <text x="794" y="106" font-size="14" font-weight="700" class="s-ink">Archive</text>
+                <text class="s-muted" x="60" y="140" font-size="12">day 0</text>
+                <text class="s-muted" x="202" y="140" font-size="12">30 days</text>
+                <text class="s-muted" x="422" y="140" font-size="12">180 days</text>
+                <text class="s-muted" x="782" y="140" font-size="12">7 years</text>
+              </g>
+              <text id="p2rule" class="s-ink" x="60" y="190" font-size="14" opacity="0">Retention rule: warm after 30 days, cold after 180, archived after 7 years.</text>
+
+              <text id="p2leg" class="s-muted" x="60" y="360" font-size="11" opacity="0">V vitals · L lab results · S survey</text>
+              <g id="p2store" opacity="0">
+                <rect x="60" y="258" width="300" height="74" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-ink" x="80" y="288" font-size="17">The store</text>
+                <text class="s-muted" x="80" y="310" font-size="12">hot, warm and cold tiers</text>
+              </g>
+              <g id="p2arch" opacity="0">
+                <rect x="640" y="258" width="300" height="74" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-ink" x="660" y="288" font-size="17">The archive</text>
+                <text class="s-muted" x="660" y="310" font-size="12">kept for audits and the law</text>
+              </g>
+              <g id="p2arrow" opacity="0">
+                <path class="s-accl" d="M380 295 H620" stroke-width="2.5"/>
+                <path class="s-accl" d="M608 285 L621 295 L608 305" stroke-width="2.5"/>
+                <text class="s-muted" x="500" y="282" font-size="12" text-anchor="middle">after 7 years</text>
+              </g>
+
+              <g id="p2cmp" opacity="0">
+                <rect x="60" y="488" width="400" height="84" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="80" y="514" font-size="11" letter-spacing="2">ARCHIVED</text>
+                <text class="s-ink" x="80" y="540" font-size="15">Kept, cheap, can be restored.</text>
+                <text class="s-muted" x="80" y="560" font-size="12">Right for audits and the law.</text>
+                <rect x="540" y="488" width="400" height="84" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="560" y="514" font-size="11" letter-spacing="2">DELETED</text>
+                <text class="s-ink" x="560" y="540" font-size="15">Gone for good.</text>
+                <text class="s-muted" x="560" y="560" font-size="12">Used only when there is a reason.</text>
+              </g>
+              <g id="p2trig" opacity="0">
+                <text class="s-muted" x="60" y="496" font-size="11" letter-spacing="2">A TRIGGER STARTS IT</text>
+                <text class="s-ink" x="60" y="524" font-size="13">• A person asks to be erased</text>
+                <text class="s-ink" x="60" y="548" font-size="13">• A security concern</text>
+                <text class="s-ink" x="60" y="572" font-size="13">• A data-integrity concern</text>
+              </g>
+              <g id="p2foot" opacity="0">
+                <text class="s-muted" x="340" y="496" font-size="11" letter-spacing="2">THEN EVERY COPY IS FOUND, REMOVED AND CHECKED</text>
+              </g>
+              <text id="p2done" class="s-ink" x="340" y="596" font-size="14" opacity="0">Logged: 1 person erased · 4 places checked · no copy left (sample)</text>
+              <g id="p2next" opacity="0">
+                <path class="s-accl" d="M700 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Stage 6 · Analysis</text>
+              </g>
+            </g>
+
+            <!-- ===== Part 2, AI data scene ===== -->
+            <g id="sceneP2B" opacity="0">
+              <g id="p2bdb0" opacity="0">
+                <ellipse cx="170" cy="84" rx="90" ry="13" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <path d="M80 84 V138 a90 13 0 0 0 180 0 V84" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <circle cx="130" cy="98" r="4" class="s-sl" opacity=".7"/><circle cx="170" cy="110" r="4" class="s-sl" opacity=".7"/><circle cx="212" cy="96" r="4" class="s-sl" opacity=".7"/><circle cx="150" cy="124" r="4" class="s-sl" opacity=".7"/><circle cx="196" cy="126" r="4" class="s-sl" opacity=".7"/>
+                <text class="s-muted" x="170" y="174" font-size="11" letter-spacing="2" text-anchor="middle">VECTOR DATABASE</text>
+              </g>
+              <text id="p2bt0" class="s-ink" x="440" y="78" font-size="14" opacity="0">A chunk is a piece of a survey answer, plus its numbers.</text>
+              <text id="p2bt1" class="s-ink" x="440" y="106" font-size="14" opacity="0">It carries the age and the owner of the row it came from.</text>
+              <text id="p2bt2" class="s-muted" x="440" y="134" font-size="13" opacity="0">So the row's rules can follow it into the store.</text>
+              <g id="p2bdb1" opacity="0">
+                <ellipse cx="210" cy="268" rx="140" ry="13" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <path d="M70 268 V322 a140 13 0 0 0 280 0 V268" fill="none" stroke="var(--tertiary-text)" stroke-width="2"/>
+                <text class="s-muted" x="210" y="354" font-size="11" letter-spacing="2" text-anchor="middle">VECTOR DATABASE · THE NUMBERS</text>
+                <rect x="640" y="258" width="300" height="74" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-ink" x="660" y="288" font-size="17">The archive</text>
+                <text class="s-muted" x="660" y="310" font-size="12">kept with their row</text>
+                <g id="p2bdots"></g>
+              </g>
+              <text id="p2bn1" class="s-ink" x="60" y="410" font-size="14" opacity="0">Chunks past 7 years are archived with their row, not deleted.</text>
+              <text id="p2bn2" class="s-ink" x="60" y="410" font-size="14" opacity="0">A person asked to be erased: their chunks go too, not just the row.</text>
+              <g id="p2bq" opacity="0">
+                <rect x="60" y="488" width="380" height="40" rx="8" fill="none" stroke="var(--ai)" stroke-width="2"/>
+                <text class="s-ink" x="250" y="513" font-size="13" text-anchor="middle">Ask: “What did this patient say about the wait?”</text>
+                <path d="M450 508 H480 M470 500 L481 508 L470 516" fill="none" stroke="var(--ai)" stroke-width="2"/>
+                <rect x="490" y="488" width="450" height="40" rx="8" fill="none" stroke="var(--ai)" stroke-width="2"/>
+                <text class="s-ink" x="715" y="513" font-size="13" text-anchor="middle">No match. Their chunks are gone.</text>
+              </g>
+              <text id="p2blog" class="s-ink" x="60" y="566" font-size="14" opacity="0">Logged: 3 chunks erased · store, backup and archive checked (sample)</text>
+              <g id="p2bnext" opacity="0">
+                <path class="s-accl" d="M700 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Stage 6 · Analysis</text>
+              </g>
+            </g>
+
+            <g id="chips"></g>
+            <g id="fx"></g>
+
+            <!-- AI layer -->
+            <rect id="markA1" x="50" y="30" width="890" height="178" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <rect id="markA2" x="50" y="476" width="890" height="130" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <text id="agentlabel" class="s-ai" x="940" y="24" font-size="11" letter-spacing="3" text-anchor="end" opacity="0">AI AGENT · WATCHING</text>
+            <rect id="markBox" x="0" y="0" width="0" height="0" rx="8" fill="none" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+            <text id="anote" class="s-ai" x="500" y="438" font-size="14" text-anchor="middle" opacity="0"></text>
+            <g id="proposal" opacity="0">
+              <rect x="440" y="190" width="500" height="22" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text id="proptext" class="s-ai" x="690" y="205" font-size="13" text-anchor="middle"></text>
+            </g>
+            <g id="dstation" opacity="0" transform="translate(908,562) scale(.55)">
+              <circle r="26" fill="none" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <circle cy="-8" r="7" fill="var(--ai)"/>
+              <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <button class="btn" id="part" type="button">Part 1 of 2: show Part 2</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards" id="stepcards" aria-live="polite">
+        <div class="card" id="c0"><p class="k">01 · What</p><h3>Set the rules for the row</h3><p>Governance decides who may see data and what it means. Data stewards, security and compliance own it. Five fields in the Silver row identify a patient, so they are marked sensitive.</p><div class="tl"><p><strong>Tools:</strong> Governance and catalog tools.</p></div></div>
+        <div class="card" id="c1"><p class="k">02 · How</p><h3>Describe, restrict, record</h3><p>A catalog says what each field means. Access control gives each role only what it needs and hides the rest. Every read is written to an audit log.</p><div class="tl"><p><strong>Tools:</strong> A catalog, access control and an audit log.</p></div></div>
+        <div class="card" id="c2"><p class="k">03 · Why</p><h3>So the data can be trusted</h3><p>Rules make data findable, understandable and trustworthy, so it is usable at speed. The log and the trace show where the row came from and who has read it.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c3"><p class="k">04 · When</p><h3>At every request</h3><p>Each time someone asks to read the row, the rules are checked, the answer is shaped to their role, and the request is logged. Quality is checked all the time, not once.</p><div class="tl"><p><strong>Tools:</strong> Access control and continuous quality checks.</p></div></div>
+        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Part 2: how long it lives</h3><p>Next come the rules about time. The row is archived after 7 years, and deleted only when there is a reason, such as a request to be erased.</p><div class="tl"><p><strong>Tools:</strong> Retention and deletion policies.</p></div></div>
+      </div>
+
+      <div class="cards" id="aicards" aria-live="polite">
+        <div class="card" id="a0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>Inside governance, where AI labels and describes data. Around it, where an agent watches every read.</p></div>
+        <div class="card" id="a1"><p class="k">02 · What</p><h3>It labels and describes fields</h3><p>AI reads each field, suggests whether it is sensitive, and writes a plain description for the catalog. This is metadata enrichment.</p><div class="tl"><p><strong>Tools:</strong> Classification and metadata enrichment.</p></div></div>
+        <div class="card" id="a2"><p class="k">03 · Why it matters</p><h3>A steward confirms</h3><p>A suggestion is not a change. A person confirms each label before it counts.</p></div>
+        <div class="card" id="a3"><p class="k">04 · Why it scales</p><h3>An agent watches every read</h3><p>It checks reads against the sharing policy all day and flags any that break it, such as a sensitive field shown to the wrong role.</p></div>
+        <div class="card" id="a4"><p class="k">05 · Next</p><h3>People approve the fix</h3><p>The agent proposes a fix and waits. A person approves it. Sources keep humans in control of key decisions.</p></div>
+      </div>
+
+      <div class="cards" id="bicards" aria-live="polite">
+        <div class="card" id="b0"><p class="k">01 · Where</p><h3>The vector store needs rules too</h3><p>The store from Stage 4 holds numbers for survey answers. It is governed like any other data.</p></div>
+        <div class="card" id="b1"><p class="k">02 · Describe</p><h3>Say what it holds</h3><p>The catalog records what the store holds, where it came from and who owns it, so people can find and trust it.</p><div class="tl"><p><strong>Tools:</strong> Catalog tools.</p></div></div>
+        <div class="card" id="b2"><p class="k">03 · Restrict</p><h3>Retrieval follows access</h3><p>When someone asks a question, the search returns only the chunks that person may read. A blocked chunk is never shown, even if it is the closest match.</p><div class="tl"><p><strong>Tools:</strong> Access control on the vector database.</p></div></div>
+        <div class="card" id="b3"><p class="k">04 · Record</p><h3>Every search is logged</h3><p>The log notes who asked and which chunks came back, so an answer can be traced to its source.</p></div>
+        <div class="card" id="b4"><p class="k">05 · Next</p><h3>Part 2: how long it lives</h3><p>Next: how long chunks are kept, and removing a person's chunks when they ask to be erased.</p></div>
+      </div>
+
+      <div class="cards" id="stepcards2" aria-live="polite">
+        <div class="card" id="d0"><p class="k">01 · What</p><h3>Decide how long data lives</h3><p>Retention sets how long data is kept and where. Archive keeps it for rare use; deletion removes it for good. Compliance and data stewards own the rules.</p><div class="tl"><p><strong>Tools:</strong> Retention policies.</p></div></div>
+        <div class="card" id="d1"><p class="k">02 · How</p><h3>Keep, archive, delete only on cause</h3><p>The row stays in the store for 7 years, then moves to the archive. Deletion happens only when something triggers it.</p><div class="tl"><p><strong>Tools:</strong> Retention policies.</p></div></div>
+        <div class="card" id="d2"><p class="k">03 · Why</p><h3>Keeping is cheap; deleting is final</h3><p>Storage costs little, so age alone is no reason to delete. Archive keeps data for audits and the law. Deleting protects people and cuts risk, so it needs a reason.</p><div class="tl"><p><strong>Tools:</strong> An archive store.</p></div></div>
+        <div class="card" id="d3"><p class="k">04 · When</p><h3>On a trigger</h3><p>A person asks to be erased, or a security or data-integrity concern is raised. Every copy of the data is found, removed and checked, and the deletion is logged.</p><div class="tl"><p><strong>Tools:</strong> A deletion workflow and the audit log.</p></div></div>
+        <div class="card" id="d4"><p class="k">05 · Next</p><h3>Stage 6: Analysis</h3><p>Data that is described, protected and kept on rules flows on to analysis, where it is turned into answers.</p><div class="tl"><p><strong>Tools:</strong> Machine learning and language models.</p></div></div>
+      </div>
+
+      <div class="cards" id="aicards2" aria-live="polite">
+        <div class="card" id="e0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>Inside retention, where AI finds what is due and where every copy lives. Around it, where an agent watches the rules.</p></div>
+        <div class="card" id="e1"><p class="k">02 · What</p><h3>It finds what is due</h3><p>AI scans for rows that have reached 7 years and proposes archiving them.</p><div class="tl"><p><strong>Tools:</strong> Monitoring and classification.</p></div></div>
+        <div class="card" id="e2"><p class="k">03 · Why it matters</p><h3>It finds every copy</h3><p>For an erasure it searches every place the data lives, including backups and the archive. People miss copies; the search does not tire.</p></div>
+        <div class="card" id="e3"><p class="k">04 · Why it scales</p><h3>An agent watches retention</h3><p>It checks all day that nothing is kept past its rule or deleted without a trigger, and flags anything that is.</p></div>
+        <div class="card" id="e4"><p class="k">05 · Next</p><h3>People approve every deletion</h3><p>Deleting is final, so the agent proposes and a person approves each one. Sources keep humans in control of key decisions.</p></div>
+      </div>
+
+      <div class="cards" id="bicards2" aria-live="polite">
+        <div class="card" id="f0"><p class="k">01 · Where</p><h3>Chunks follow the same rules</h3><p>The vector store holds pieces of survey answers. They must age, archive and erase like the rows they came from.</p></div>
+        <div class="card" id="f1"><p class="k">02 · Archive</p><h3>Chunks are archived with their row</h3><p>When a row reaches 7 years, its chunks go to the archive with it. They are kept, not deleted.</p><div class="tl"><p><strong>Tools:</strong> A vector database.</p></div></div>
+        <div class="card" id="f2"><p class="k">03 · Erase</p><h3>Erase the chunks, not just the row</h3><p>When a person asks to be erased, their chunks must go too. A model could otherwise still answer from them.</p><div class="tl"><p><strong>Tools:</strong> A vector database and the deletion workflow.</p></div></div>
+        <div class="card" id="f3"><p class="k">04 · Check</p><h3>Ask again and prove it</h3><p>After the erasure the same question finds nothing about that person, and the log records what was removed.</p></div>
+        <div class="card" id="f4"><p class="k">05 · Next</p><h3>Stage 6: Analysis</h3><p>Governed data, and governed AI data, flows on to analysis.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function mk(d){var st=[0];d.forEach(function(x,i){st.push(st[i]+x)});return {DUR:d,START:st,TOTAL:st[d.length],N:d.length}}
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  function readDur(prefix){var d=[];for(var i=0;i<5;i++){var w=$(prefix+i).textContent.trim().split(/\s+/).length;d.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}return d}
+  var PFX=[['c','a','b'],['d','e','f']];
+  var T=[mk(readDur('c')),mk(readDur('a')),mk(readDur('b')),mk(readDur('d')),mk(readDur('e')),mk(readDur('f'))];
+  var BANDS=[[[0],[1],[2],[1,2],[2]],[[0,2],[0],[0],[2],[2]],[[0],[0],[1],[2],[2]]];
+  var LABELS=[
+    ['01 · DESCRIBE THE ROW · OWNERS: DATA STEWARDS, COMPLIANCE','02 · CONTROL ACCESS · OWNERS: SECURITY, DATA STEWARDS','03 · RECORD AND TRACE · OWNERS: SECURITY, COMPLIANCE'],
+    ['01 · DESCRIBE THE ROW · OWNERS: DATA STEWARDS, COMPLIANCE','02 · CONTROL ACCESS · OWNERS: SECURITY, DATA STEWARDS','03 · RECORD AND TRACE · OWNERS: SECURITY, COMPLIANCE'],
+    ['01 · DESCRIBE THE VECTOR STORE · OWNERS: DATA STEWARDS, DATABASE ADMINISTRATORS','02 · CONTROL RETRIEVAL · OWNER: SECURITY','03 · RECORD AND TRACE · OWNERS: SECURITY, COMPLIANCE']
+  ];
+
+  var BANDS2=[[[0],[1],[1],[2],[2]],[[0,2],[0],[2],[0],[2]],[[0],[1],[1],[2],[2]]];
+  var LABELS2=[
+    ['01 · SET THE RULE · OWNERS: COMPLIANCE, DATA STEWARDS','02 · KEEP AND ARCHIVE · OWNERS: DATABASE ADMINISTRATORS, COMPLIANCE','03 · DELETE ONLY ON A TRIGGER · OWNERS: SECURITY, COMPLIANCE, DATA STEWARDS'],
+    ['01 · SET THE RULE · OWNERS: COMPLIANCE, DATA STEWARDS','02 · KEEP AND ARCHIVE · OWNERS: DATABASE ADMINISTRATORS, COMPLIANCE','03 · DELETE ONLY ON A TRIGGER · OWNERS: SECURITY, COMPLIANCE, DATA STEWARDS'],
+    ['01 · CHUNKS CARRY THEIR ROW’S RULES · OWNERS: DATA STEWARDS','02 · ARCHIVE AND ERASE CHUNKS · OWNERS: DATABASE ADMINISTRATORS, COMPLIANCE','03 · CHECK AND RECORD · OWNERS: SECURITY, COMPLIANCE']
+  ];
+  var PBANDS=[BANDS,BANDS2],PL=[LABELS,LABELS2];
+  var HEAD=[['Stage 5 of 8 · Data management · Part 1 of 2','Who may see data, and what it <em class="hl">means</em>.','Management keeps stored data accurate, private and trusted. At Tamsworth Health, the clean Silver row from Stage 4 gets a description, rules about who may read it, and a record of every read.'],
+            ['Stage 5 of 8 · Data management · Part 2 of 2','How long data <em class="hl">lives</em>.','Management also decides how long data is kept. At Tamsworth Health, the Silver row is archived after 7 years, and deleted only when there is a reason, such as a person asking to be erased.']];
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function tx(x,y,size,cls,txt,anchor){var e=el('text',{x:x,y:y,'font-size':size,'class':cls});if(anchor)e.setAttribute('text-anchor',anchor);e.textContent=txt;return e}
+  function ease(t){t=Math.max(0,Math.min(1,t));return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function lerp(a,b,t){return a+(b-a)*ease(t)}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // ---------- the Silver row chip: V vitals, L lab, S survey ----------
+  function mkMerged(){
+    var g=el('g',{opacity:0});
+    [['s-acc','V',-46],['s-ink','L',-15],['s-sl','S',16]].forEach(function(s){
+      g.appendChild(el('rect',{x:s[2],y:-17,width:30,height:34,rx:4,'class':s[0]}));
+      var t=el('text',{x:s[2]+15,y:5,'font-size':13,'font-weight':700,'text-anchor':'middle',fill:'var(--ground)'});t.textContent=s[1];g.appendChild(t);
+    });
+    $('chips').appendChild(g);
+    return g;
+  }
+  var M=mkMerged();
+  function put(c,o,x,y,s){op(c,o);c.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') scale('+s.toFixed(2)+')')}
+
+  // ---------- band 1: the catalog ----------
+  var CAT=[['patient_id','who the patient is'],['patient_name','the patient’s name'],['patient_zip5','home area'],['birth_date','date of birth'],['encounter_epoch','when the visit happened']];
+  var catR=[];
+  CAT.forEach(function(r,i){
+    var y=74+i*26,g=el('g',{opacity:0});
+    g.appendChild(tx(440,y,13,'s-ink',r[0]));
+    g.appendChild(tx(600,y,13,'s-muted',r[1]));
+    var t=tx(820,y,12,'s-acc','● Sensitive');g.appendChild(t);
+    $('gcat').appendChild(g);catR.push({g:g,t:t});
+  });
+  function setTag(i,cls,txt,o){var t=catR[i].t;t.setAttribute('class',cls);t.textContent=txt;op(t,o)}
+
+  // ---------- band 2: three roles ----------
+  var ROLES=[
+    ['Clinician','cares for the patient','Sees the full row',[1,1,1,1]],
+    ['Analyst','studies trends','Sensitive fields hidden',[0,0,1,1]],
+    ['Outside party','not on the approved list','Blocked',[0,0,0,0]]
+  ];
+  var CELLS=['ID','NAME','VITALS','LAB'];
+  var RX=[60,360,660],roleR=[];
+  ROLES.forEach(function(r,k){
+    var bx=RX[k],g=el('g',{opacity:0}),box=el('rect',{x:bx,y:252,width:280,height:76,rx:10,'class':'s-fill s-line','stroke-width':2});
+    g.appendChild(box);
+    g.appendChild(tx(bx+16,280,17,'s-ink',r[0]));
+    g.appendChild(tx(bx+16,304,12,'s-muted',r[1]));
+    var cg=el('g',{opacity:0});
+    r[3].forEach(function(v,i){
+      var cx=bx+8+i*68;
+      if(v){cg.appendChild(el('rect',{x:cx,y:340,width:60,height:28,rx:4,fill:'none',stroke:'var(--accent)','stroke-width':1.5}));cg.appendChild(tx(cx+30,358,11,'s-ink',CELLS[i],'middle'))}
+      else{cg.appendChild(el('rect',{x:cx,y:340,width:60,height:28,rx:4,fill:'none',stroke:'var(--tertiary-text)','stroke-width':1.5,'stroke-dasharray':'4 4'}));cg.appendChild(tx(cx+30,358,11,'s-muted','hidden','middle'))}
+    });
+    var res=tx(bx+8,396,13,k===2?'s-acc':'s-ink',r[2]);op(res,0);
+    $('groles').appendChild(g);$('groles').appendChild(cg);$('groles').appendChild(res);
+    roleR.push({g:g,box:box,cg:cg,res:res});
+  });
+
+  // ---------- band 3: log, trace, properties ----------
+  var LOG=[['1','Clinician','READ','Patient care'],['2','Analyst','READ, sensitive fields hidden','Monthly report'],['3','Outside party','BLOCKED','Not on the approved list'],['4','Analyst','READ, sensitive fields hidden','Wait-time study']];
+  var logR=[];
+  LOG.forEach(function(r,i){
+    var y=516+i*24,g=el('g',{opacity:0});
+    g.appendChild(tx(60,y,12,'s-muted',r[0]));
+    g.appendChild(tx(80,y,12,'s-ink',r[1]));
+    var a=tx(190,y,12,r[2]==='BLOCKED'?'s-acc':'s-ink',r[2]);g.appendChild(a);
+    g.appendChild(tx(400,y,12,'s-muted',r[3]));
+    $('glog').appendChild(g);logR.push({g:g,a:a});
+  });
+  var TRACE=['Silver row (now)','← cleaned in Stage 3','← collected in Stage 2','← created in Stage 1'],traceR=[];
+  TRACE.forEach(function(t,i){var e=tx(650,516+i*24,13,i?'s-muted':'s-ink',t);op(e,0);$('gtrace').appendChild(e);traceR.push(e)});
+  var PROPS=['Findable','Understandable','Trustworthy','Usable at speed'],PX=[60,160,310,430],propR=[];
+  PROPS.forEach(function(p,i){var e=tx(PX[i],650,12,'s-muted',p);e.setAttribute('letter-spacing','1');op(e,0);$('gprops').appendChild(e);propR.push(e)});
+
+  // ---------- AI-data scene pieces ----------
+  var BCAT=['What it holds: the numbers for survey answers','Where it came from: Stage 3 chunks, sensitive text removed','Kind: derived from the Silver row','Owner: database administrators'],bcatR=[];
+  BCAT.forEach(function(t,i){var e=tx(440,78+i*28,14,'s-ink',t);op(e,0);$('gbcat').appendChild(e);bcatR.push(e)});
+  var DOTP=[[690,280],[725,294],[770,276],[810,298],[850,282],[700,306],[760,308],[830,310],[880,292]],BLOCKED=[1,5,7],bdotR=[];
+  DOTP.forEach(function(p,i){var c=el('circle',{cx:p[0],cy:p[1],r:4.5,'class':'s-sl',opacity:.7});$('bdots').appendChild(c);bdotR.push(c)});
+  var BLOG=[['1','Analyst','SEARCH','3 chunks returned, 3 blocked from view'],['2','Clinician','SEARCH','6 chunks returned']],blogR=[];
+  BLOG.forEach(function(r,i){
+    var y=516+i*24,g=el('g',{opacity:0});
+    g.appendChild(tx(60,y,12,'s-muted',r[0]));g.appendChild(tx(80,y,12,'s-ink',r[1]));
+    g.appendChild(tx(190,y,12,'s-ink',r[2]));g.appendChild(tx(270,y,12,'s-muted',r[3]));
+    $('gblog').appendChild(g);blogR.push(g);
+  });
+
+  // ---------- effects pools (AI modes) ----------
+  var FXC=[],FXL=[],NC=0,NL=0;
+  function fxBegin(){NC=0;NL=0}
+  function fxEnd(){var i;for(i=NC;i<FXC.length;i++)op(FXC[i],0);for(i=NL;i<FXL.length;i++)op(FXL[i],0)}
+  function fc(x,y,r,fill,stroke,sw,o,dash){
+    var e=FXC[NC];if(!e){e=el('circle',{});$('fx').appendChild(e);FXC[NC]=e}NC++;
+    e.setAttribute('cx',x.toFixed(1));e.setAttribute('cy',y.toFixed(1));e.setAttribute('r',Math.max(0,r).toFixed(1));
+    e.setAttribute('fill',fill||'none');e.setAttribute('stroke',stroke||'none');e.setAttribute('stroke-width',sw||0);e.setAttribute('opacity',o);
+    if(dash){e.setAttribute('stroke-dasharray',dash);e.setAttribute('stroke-dashoffset',-(elapsed/12))}else e.removeAttribute('stroke-dasharray');
+  }
+  function fl(x1,y1,x2,y2,stroke,sw,o,dash){
+    var e=FXL[NL];if(!e){e=el('line',{});$('fx').appendChild(e);FXL[NL]=e}NL++;
+    e.setAttribute('x1',x1.toFixed(1));e.setAttribute('y1',y1.toFixed(1));e.setAttribute('x2',x2.toFixed(1));e.setAttribute('y2',y2.toFixed(1));
+    e.setAttribute('stroke',stroke);e.setAttribute('stroke-width',sw);e.setAttribute('opacity',o);
+    if(dash)e.setAttribute('stroke-dasharray',dash);else e.removeAttribute('stroke-dasharray');
+  }
+  var AIC='var(--ai)',ACC='var(--accent)';
+
+  var mode=0,part=0,playing=!reduce,elapsed=0,last=null,shown='';
+  function setCards(prefix,n,step){for(var i=0;i<n;i++)$(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBands(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('hr'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function setLabels(m){for(var k=0;k<3;k++)$('l'+k).textContent=PL[part][m][k]}
+  function stepOf(t){var cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,s=0;while(s<t.N-1&&e>=t.START[s+1])s++;return {cyc:cyc,step:s,u:(e-t.START[s])/t.DUR[s]}}
+  function hideAIlayer(){['markA1','markA2','agentlabel','markBox','anote','proposal','dstation'].forEach(function(id){op($(id),0)})}
+
+  // ---------- the base scene, up to a given step ----------
+  // opts.ai: true when the AI overlay draws on top (everything already in place)
+  function baseScene(step,u,ai){
+    $('sceneBase').setAttribute('opacity',1);op($('sceneB'),0);
+    var full=step>=2,i;
+    op($('rawtag'),step===0?1:(step===1?clamp01(1-u*6):0));
+    put(M,1,230,115,step===0?1.5:1);
+    op($('cathead'),1);
+    for(i=0;i<5;i++){
+      op(catR[i].g,step===0?ease((u-.08-i*.1)/.14):1);
+      if(!ai){setTag(i,'s-acc','● Sensitive',step===0?ease((u-.55-i*.07)/.1):1)}
+    }
+    op($('catfoot'),step===0?ease((u-.9)/.08):1);
+    // roles
+    for(i=0;i<3;i++){
+      var bo=step===0?0:(step===1?ease((u-.05-i*.12)/.15):1),rv=step<1?0:(step===1?ease((u-.35-i*.18)/.12):1);
+      op(roleR[i].g,bo);op(roleR[i].cg,rv);op(roleR[i].res,rv);
+      roleR[i].box.style.stroke=(step===3&&i===1)?'var(--accent)':'var(--tertiary-text)';
+    }
+    // log, trace, quality, properties
+    var show3=step>=2;
+    op($('loghead'),show3?1:0);op($('tracehead'),show3?ease((u-.45)/.1):0);
+    for(i=0;i<3;i++)op(logR[i].g,step===2?ease((u-.05-i*.13)/.13):(step>2?1:0));
+    for(i=0;i<4;i++)op(traceR[i],step===2?ease((u-.5-i*.08)/.1):(step>2?1:0));
+    if(step===2)op($('tracehead'),ease((u-.45)/.1));else if(step>2)op($('tracehead'),1);
+    op($('qual'),step===2?ease((u-.75)/.12):(step>2?1:0));
+    for(i=0;i<4;i++)op(propR[i],step<2?0:(step===2?.3+.7*ease((u-.5-i*.1)/.1):1));
+    for(i=0;i<4;i++)propR[i].setAttribute('class',(step>2||(step===2&&u>.5+i*.1))?'s-acc':'s-muted');
+    // step 4: the new request reaches the log
+    var r4=0;
+    if(step===3){
+      var p=ease((u-.1)/.5);
+      if(u>.1&&u<.65){fc(lerp(500,70,(u-.1)/.5),lerp(342,584,(u-.1)/.5),7,ACC,null,0,1)}
+      r4=ease((u-.6)/.15);
+      if(ai)r4=0;
+    }else if(step>3)r4=1;
+    if(ai)r4=(step>=3)?1:0;
+    op(logR[3].g,r4);
+    logR[3].a.textContent=ai?'READ, ID shown':'READ, sensitive fields hidden';
+    op($('next'),step===4&&!ai?ease((u-.4)/.2):0);
+  }
+
+  function frameBase(s){
+    hideAIlayer();baseScene(s.step,s.u,false);
+  }
+
+  function frameAI(s){
+    var step=s.step,u=s.u,pulse=.35+.65*Math.abs(Math.sin(elapsed/450)),i;
+    hideAIlayer();
+    baseScene(9,1,true);op($('rawtag'),0);
+    op($('next'),0);op($('catfoot'),0);op($('qual'),0);for(i=0;i<4;i++)op(propR[i],0);
+    op($('agentlabel'),1);
+    var mb=$('markBox');
+    function box(x,y,w,h){mb.setAttribute('x',x);mb.setAttribute('y',y);mb.setAttribute('width',w);mb.setAttribute('height',h);op(mb,.6+.4*Math.abs(Math.sin(elapsed/350)))}
+    // tags: in AI mode they start as suggestions and become confirmed labels
+    for(i=0;i<5;i++)setTag(i,'s-ai','AI suggests: sensitive',0);
+    if(step===0){op($('markA1'),pulse);op($('markA2'),pulse);for(i=0;i<5;i++)setTag(i,'s-acc','● Sensitive',1);op(logR[3].g,0)}
+    else if(step===1){
+      op(logR[3].g,0);
+      var sy=60+130*((elapsed/2400)%1);
+      fl(430,sy-4,940,sy-4,AIC,2.5,.95);
+      fl(430,sy-4,940,sy-4,AIC,18,.18);
+      for(i=0;i<5;i++){var ty=74+i*26,got=sy>ty-6;setTag(i,'s-ai','AI suggests: sensitive',got?1:0);if(got&&Math.abs(sy-ty)<14)fc(430,ty-4,10,'none',AIC,2,1-Math.abs(sy-ty)/14)}
+      for(var k=0;k<14;k++){var ph=(elapsed/1300+k*.19)%1;fc(440+(k*61)%480,70+ph*-0+((k*37)%110),3.5,AIC,null,0,(1-ph)*.9)}
+      $('anote').textContent=Math.round(5*ease((u-.05)/.6))+' fields read · a label and a description suggested for each · sample';
+      op($('anote'),u>.05?1:0);$('anote').setAttribute('y',204);
+    }else if(step===2){
+      op(logR[3].g,0);
+      $('proptext').textContent='AI suggests: mark encounter_epoch sensitive';op($('proposal'),u>.1?1:0);
+      var done=Math.floor(5*clamp01((u-.25)/.6));
+      for(i=0;i<5;i++){if(i<done)setTag(i,'s-acc','✓ confirmed',1);else setTag(i,'s-ai','AI suggests: sensitive',1)}
+      op($('dstation'),u>.2?1:0);$('dstation').setAttribute('transform','translate(912,120) scale(.55)');
+      if(u>.2)for(var j=0;j<3;j++){var p3=((elapsed/1800)+j/3)%1;fc(912,120,10+p3*50,'none',AIC,2,(1-p3)*.8)}
+      for(i=0;i<5;i++)setTag(i,i<done?'s-acc':'s-ai',i<done?'✓ confirmed':'AI suggests: sensitive',1);
+      $('proptext').textContent='AI suggests: mark encounter_epoch sensitive · a person confirms';op($('anote'),0);
+    }else if(step===3){
+      for(i=0;i<5;i++)setTag(i,'s-acc','✓ confirmed',1);
+      box(52,500,888,98);
+      var ay=512+Math.floor((elapsed/650)%4)*24;
+      fl(60,ay,640,ay,AIC,2,.8);
+      var flag=ease((u-.35)/.2);
+      fc(52+0,576,0,null,null,0,0);
+      if(flag>0){box(52,574,570,22);fc(700,585,8+3*Math.sin(elapsed/200),AIC,null,0,flag)}
+      $('anote').textContent='Agent: checked '+Math.round(1240*ease((u-.1)/.6)).toLocaleString('en-US')+' reads against the sharing policy · '+(u>.5?'1':'0')+' outside it · sample';
+      op($('anote'),u>.15?1:0);$('anote').setAttribute('y',628);
+      $('anote').setAttribute('text-anchor','start');$('anote').setAttribute('x',60);
+    }else{
+      for(i=0;i<5;i++)setTag(i,'s-acc','✓ confirmed',1);
+      box(52,574,570,22);
+      $('proptext').textContent='Agent proposes: hide the ID from the Analyst again';op($('proposal'),0);
+      op($('dstation'),u>.1?1:0);$('dstation').setAttribute('transform','translate(908,562) scale(.55)');
+      if(u>.1)for(var q=0;q<3;q++){var p4=((elapsed/1800)+q/3)%1;fc(908,562,10+p4*70,'none',AIC,2,(1-p4)*.8)}
+      $('anote').textContent='Agent proposes: hide the ID again. A person approves, then it applies.';
+      $('anote').setAttribute('text-anchor','start');$('anote').setAttribute('x',60);$('anote').setAttribute('y',628);
+      op($('anote'),u>.3?1:0);
+      op($('next'),u>.7?1:0);
+    }
+    if(step<3){$('anote').setAttribute('text-anchor','middle');$('anote').setAttribute('x',500)}
+  }
+
+  function frameB(s){
+    var step=s.step,u=s.u,i;
+    op($('sceneBase'),0);hideAIlayer();put(M,0,0,0,1);
+    $('sceneB').setAttribute('opacity',1);op($('agentlabel'),0);
+    op($('bdb'),1);
+    // band 1: the catalog entry
+    op($('bcathead'),step===0?0:1);
+    for(i=0;i<4;i++)op(bcatR[i],step===0?0:(step===1?ease((u-.1-i*.15)/.15):1));
+    // band 2: retrieval
+    var showQ=step>=2;
+    op($('bq'),step===2?ease(u/.15):(step>2?1:0));
+    var open=[];for(i=0;i<9;i++)if(BLOCKED.indexOf(i)<0)open.push(i);
+    for(i=0;i<9;i++){var bl=BLOCKED.indexOf(i)>=0&&step>=2&&u>.3||BLOCKED.indexOf(i)>=0&&step>2;
+      bdotR[i].setAttribute('class',bl?'s-acc':'s-sl');bdotR[i].setAttribute('r',bl?6:4.5);bdotR[i].setAttribute('opacity',bl?1:.7)}
+    if(step===2){
+      var rp=(elapsed/1200)%1;fc(360,284,rp*60,'none',AIC,2,(1-rp)*.7);
+      open.forEach(function(di,n){var on=u>.3+n*.06;if(on){var d=DOTP[di];fl(360,284,d[0],d[1],AIC,1.5,.7);fc(d[0],d[1],8,'none',AIC,2,.9)}});
+      BLOCKED.forEach(function(di,n){if(u>.3){var d=DOTP[di];fl(360,284,360+(d[0]-360)*.35,284+(d[1]-284)*.35,ACC,2,.9,'4 4');fc(d[0],d[1],9,'none',ACC,2,.9)}});
+    }
+    op($('bnoteA'),step===2?ease((u-.55)/.1):(step>2?1:0));
+    op($('bnoteB'),step===2?ease((u-.7)/.1):(step>2?1:0));
+    // band 3: the log
+    op($('bloghead'),step>=3?1:0);
+    for(i=0;i<2;i++)op(blogR[i],step===3?ease((u-.1-i*.2)/.15):(step>3?1:0));
+    op($('btrace'),step===3?ease((u-.6)/.15):(step>3?1:0));
+    if(step===3){var lp=(elapsed/1500)%1;fl(60,516+lp*40,640,516+lp*40,AIC,2,.6)}
+    op($('bnext'),step===4&&u>.4?1:0);
+  }
+
+  // ---------- Part 2 pieces ----------
+  var M2=mkMerged();
+  var P2FOOT=['Store','Backup','Archive','Vector store'],p2ck=[];
+  P2FOOT.forEach(function(n,i){
+    var x=340+i*150,g=el('g',{});
+    g.appendChild(el('rect',{x:x,y:508,width:140,height:48,rx:8,'class':'s-fill s-line','stroke-width':2}));
+    g.appendChild(tx(x+14,538,14,'s-ink',n));
+    var ck=tx(x+118,536,18,'s-acc','✓');op(ck,0);g.appendChild(ck);
+    $('p2foot').appendChild(g);p2ck.push(ck);
+  });
+  var DP2=[[110,280],[150,298],[190,276],[230,302],[270,284],[130,312],[250,316]],OLD=[0,2,5],SUBJ=[1,3,6],AR=[[850,280],[895,296],[850,312]],p2dR=[];
+  DP2.forEach(function(p,i){var c=el('circle',{cx:p[0],cy:p[1],r:5,'class':'s-sl',opacity:.8});$('p2bdots').appendChild(c);p2dR.push(c)});
+
+  function note(txt,x,y,anchor,o){var n=$('anote');n.textContent=txt;n.setAttribute('x',x);n.setAttribute('y',y);n.setAttribute('text-anchor',anchor);op(n,o)}
+
+  // ---------- Part 2, base scene up to a given step (ai: everything in place) ----------
+  function p2Scene(step,u,ai){
+    op($('sceneP2'),1);
+    var i;
+    op($('tl0'),step===0?ease(u/.15):1);
+    op($('p2rule'),step===0?ease((u-.8)/.15):1);
+    op(M,0);op(M2,0);
+    if(step===0&&u>.2&&!ai)put(M,1,lerp(110,860,clamp01((u-.2)/.6)),62,.8);
+    var sv=step===1?ease(u/.12):(step>1?1:0);
+    op($('p2store'),sv);op($('p2leg'),sv);op($('p2arch'),sv);
+    op($('p2arrow'),step===1?ease((u-.2)/.1):(step>1?1:0));
+    var hv=0;
+    if(ai||step>1){put(M,1,890,295,.8);hv=1}
+    else if(step===1){
+      if(u>=.12){var mx=u<.3?300:lerp(300,890,(u-.3)/.35);put(M,1,mx,295,u<.3?1:lerp(1,.8,(u-.3)/.35))}
+    }
+    op($('p2cmp'),(!ai&&step===2)?ease(u/.2):0);
+    op($('p2trig'),ai?1:(step===3?ease(u/.15):(step>3?1:0)));
+    op($('p2foot'),ai?1:(step===3?ease((u-.2)/.15):(step>3?1:0)));
+    for(i=0;i<4;i++)op(p2ck[i],ai?1:(step===3?ease((u-.4-i*.12)/.08):(step>3?1:0)));
+    op($('p2done'),ai?1:(step===3?ease((u-.85)/.1):(step>3?1:0)));
+    op($('p2next'),(!ai&&step===4)?ease((u-.4)/.2):0);
+  }
+  function frameP2(s){hideAIlayer();p2Scene(s.step,s.u,false)}
+
+  function frameP2AI(s){
+    var step=s.step,u=s.u,pulse=.35+.65*Math.abs(Math.sin(elapsed/450)),i;
+    hideAIlayer();p2Scene(9,1,true);op($('agentlabel'),1);
+    var mb=$('markBox');
+    function box(x,y,w,h){mb.setAttribute('x',x);mb.setAttribute('y',y);mb.setAttribute('width',w);mb.setAttribute('height',h);op(mb,.6+.4*Math.abs(Math.sin(elapsed/350)))}
+    if(step===0){op($('markA1'),pulse);op($('markA2'),pulse)}
+    else if(step===1){
+      var sx=60+880*((elapsed/3000)%1);
+      fl(sx,70,sx,160,AIC,2.5,.95);
+      for(i=0;i<16;i++){var ph=(elapsed/1400+i*.2)%1;fc(70+(i*59)%860,128-ph*34,3.5,AIC,null,0,(1-ph)*.9)}
+      box(777,79,168,44);
+      note('AI found '+Math.round(3*ease((u-.1)/.5))+' rows at 7 years · proposed for the archive · sample',500,166,'middle',u>.1?1:0);
+    }else if(step===2){
+      var lines=ease(u/.5);
+      var bw=340+590*clamp01(u/.6);
+      fl(bw,508,bw,556,AIC,2.5,.95);
+      for(i=0;i<4;i++){var bx=340+i*150;
+        if(bw>bx+70)fc(bx+70,532,22+3*Math.sin(elapsed/250+i),'none',AIC,2,.8)}
+      box(334,502,602,60);
+      note('AI searched 4 places for this person’s data · found it in all 4 · sample',640,628,'middle',u>.5?1:0);
+    }else if(step===3){
+      var wx=58+(elapsed/9)%450;
+      fl(wx,176,wx,196,AIC,2.5,.95);
+      box(52,174,462,24);
+      note('Agent: checked '+Math.round(1240*ease((u-.1)/.6)).toLocaleString('en-US')+' rows against the rule · 0 kept past it · 0 deleted without a trigger · sample',500,158,'middle',u>.15?1:0);
+    }else{
+      op($('dstation'),u>.1?1:0);$('dstation').setAttribute('transform','translate(900,604) scale(.55)');
+      if(u>.1)for(var j=0;j<3;j++){var p4=((elapsed/1800)+j/3)%1;fc(900,604,10+p4*60,'none',AIC,2,(1-p4)*.8)}
+      note('Deleting is final. The agent proposes; a person approves each erasure first.',60,628,'start',u>.3?1:0);
+      op($('p2next'),u>.7?1:0);
+    }
+  }
+
+  function frameP2B(s){
+    var step=s.step,u=s.u,i;
+    hideAIlayer();op(M,0);op(M2,0);op($('agentlabel'),0);
+    $('sceneP2B').setAttribute('opacity',1);
+    op($('p2bdb0'),step===0?ease(u/.2):1);
+    for(i=0;i<3;i++)op($('p2bt'+i),step===0?ease((u-.2-i*.18)/.15):1);
+    op($('p2bdb1'),step===0?0:(step===1?ease(u/.15):1));
+    for(i=0;i<7;i++){
+      var c=p2dR[i],x=DP2[i][0],y=DP2[i][1],o=step===0?0:.8,r=5,cls='s-sl',oi=OLD.indexOf(i),si=SUBJ.indexOf(i);
+      if(oi>=0){
+        var t=step===1?ease((u-.3)/.4):(step>1?1:0);
+        x=lerp(x,AR[oi][0],t);y=lerp(y,AR[oi][1],t);
+        if(step===1)cls='s-ai';
+        if(step===1&&t>0&&t<1)fc(x,y,9+3*Math.sin(elapsed/200),'none',AIC,2,.9);
+      }
+      if(si>=0&&step>=2){
+        cls='s-acc';
+        if(step===2){var e=ease((u-.4)/.3);r=5*(1-e);if(u>.4&&u<.75)fc(x,y,6+e*34,'none',ACC,2,1-e);if(e>=1)o=0}
+        else o=0;
+      }
+      c.setAttribute('class',cls);c.setAttribute('cx',x.toFixed(1));c.setAttribute('cy',y.toFixed(1));c.setAttribute('r',Math.max(0,r).toFixed(1));c.setAttribute('opacity',o);
+    }
+    op($('p2bn1'),step===1?ease((u-.7)/.1):0);
+    op($('p2bn2'),step===2?ease((u-.6)/.1):0);
+    op($('p2bq'),step===3?ease(u/.2):(step>3?1:0));
+    op($('p2blog'),step===3?ease((u-.5)/.15):(step>3?1:0));
+    op($('p2bnext'),step===4&&u>.4?1:0);
+  }
+
+  function frame(){
+    var t=T[part*3+mode],s=stepOf(t);
+    if(!xfading){
+      if(s.cyc>=1){elapsed=t.TOTAL-1;s=stepOf(t);crossTo()}
+      else if(elapsed%t.TOTAL>t.TOTAL-800)crossTo();
+    }
+    var key=part+':'+mode+':'+s.step+'/'+s.cyc;
+    if(shown!==key){
+      shown=key;
+      setCards(PFX[part][mode],5,s.step);setBands(PBANDS[part][mode][s.step]);
+    }
+    ['sceneBase','sceneB','sceneP2','sceneP2B'].forEach(function(id){op($(id),0)});
+    op(M2,0);
+    fxBegin();
+    if(part===0){if(mode===0)frameBase(s);else if(mode===1)frameAI(s);else frameB(s)}
+    else{if(mode===0)frameP2(s);else if(mode===1)frameP2AI(s);else frameP2B(s)}
+    fxEnd();
+  }
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing&&!xfading)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+  function resetCards(){PFX.forEach(function(a){a.forEach(function(p){for(var i=0;i<5;i++)$(p+i).className='card'})})}
+
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var t=T[part*3+mode],cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,step=0;
+    while(step<t.N-1&&e>=t.START[step+1])step++;
+    elapsed=step<t.N-1?cyc*t.TOTAL+t.START[step+1]+10:(cyc+1)*t.TOTAL+10;
+  });
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    mode=(mode+1)%3;
+    this.textContent='Show AI: '+['Off','Governance','AI data'][mode];
+    this.setAttribute('aria-pressed',mode!==0);
+    this.className='btn'+(mode?' on':'');
+    document.body.className='p'+(part+1)+' m'+mode;
+    setLabels(mode);
+    elapsed=0;shown='';resetCards();
+  });
+  function goPart(p){
+    part=p;
+    $('part').textContent='Part '+(part+1)+' of 2: show Part '+(2-part);
+    var h=HEAD[part];$('eyebrow').textContent=h[0];$('h1').innerHTML=h[1];$('lede').textContent=h[2];
+    document.body.className='p'+(part+1)+' m'+mode;
+    setLabels(mode);elapsed=0;shown='';resetCards();
+  }
+  var xfading=false;
+  function crossTo(){
+    if(xfading)return;
+    xfading=true;document.body.classList.add('out');
+    setTimeout(function(){goPart(1-part);document.body.classList.add('out');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){document.body.classList.remove('out');xfading=false})})},700);
+  }
+  $('part').addEventListener('click',crossTo);
+  setLabels(0);
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
