@@ -250,7 +250,7 @@ test('writeStages copies each stage page and writes a landing page linking them 
   assert.strictEqual(b.writeStages(out, src), 2);
   assert.ok(fs.existsSync(path.join(out, 'stages', '01-a', 'index.html')));
   const land = fs.readFileSync(path.join(out, 'stages', 'index.html'), 'utf8');
-  assert.ok(land.indexOf('01-a/') < land.indexOf('02-b/'));
+  assert.ok(land.indexOf('01-a/index.html') < land.indexOf('02-b/index.html'));
 });
 
 test('writeStages does nothing without a stages folder, and rejects external resources', () => {

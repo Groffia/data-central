@@ -153,8 +153,8 @@ function writeStages(out, stagesDir) {
     '<h1>Data Central: the eight stages</h1>',
     '<p>One data story, Tamsworth Health, followed from creation to decision. Open them in order.</p>',
     '<ol>'
-  ].concat(stages.map(function (s) { return '<li><a href="' + s.dir + '/">' + esc(s.title) + '</a></li>'; }),
-    ['</ol>', '<p><a href="../hq/">Original demo (HQ)</a></p>', '</body>', '</html>', '']).join('\n');
+  ].concat(stages.map(function (s) { return '<li><a href="' + s.dir + '/index.html">' + esc(s.title) + '</a></li>'; }),
+    ['</ol>', '<p><a href="../hq/index.html">Original demo (HQ)</a></p>', '</body>', '</html>', '']).join('\n');
   fs.writeFileSync(path.join(dest, 'index.html'), page);
   return stages.length;
 }
