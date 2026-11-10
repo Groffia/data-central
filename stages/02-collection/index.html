@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 2: Data Collection</title>
+<style>
+/* Tokens: WARMING STRIPES design system (project/tokens.json) */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:flex;flex-direction:column;gap:.85rem}
+body.ai-on #stepcards{display:none}
+body:not(.ai-on) #aicards{display:none}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+#aicards .card.now .k{color:var(--ai)}
+#aicards .card h3{color:var(--ink)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+#aicards .tl strong{color:var(--ai)}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-ai{fill:var(--ai)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+#aiGen,#agentlabel,#flagnote,#schip,#stag,#stopnote,#safenote,#scalenote{transition:opacity 500ms ease}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag">Stage 2 of 8 · Data collection</p>
+    <h1>Where data is <em class="hl">gathered</em>.</h1>
+    <p class="lede">Collection brings data in from many places without losing any of it. At Tamsworth Health, the vitals row from Stage 1 meets lab results and patient feedback, and lands in a raw copy called Bronze.</p>
+  </header>
+
+  <section class="scene" aria-label="Gathering one row from three sources">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation, top to bottom: three sources send records; they are extracted and matched into one row, tested against the four V's; the row lands unchanged in Bronze, ready for Stage 3.">
+            <line id="h0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="h1" class="hair" x1="60" y1="245" x2="940" y2="245"/>
+            <line id="h2" class="hair" x1="60" y1="495" x2="940" y2="495"/>
+            <text id="l0" class="bl" x="60" y="24">01 · NEED + SOURCES · OWNERS: STAKEHOLDERS, DATA ENGINEERS</text>
+            <text id="l1" class="bl" x="60" y="266">02 · COLLECT · OWNER: DATA ENGINEERS</text>
+            <text id="l2" class="bl" x="60" y="516">03 · LAND RAW · OWNER: DATA ENGINEERS</text>
+            <line class="s-line" x1="500" y1="336" x2="500" y2="394" stroke-width="2" stroke-dasharray="3 6"/>
+            <line class="s-line" x1="500" y1="478" x2="500" y2="540" stroke-width="2" stroke-dasharray="3 6"/>
+
+            <!-- sources -->
+            <!-- funnel lines from each source to the match point -->
+            <g id="funnel" fill="none" stroke="var(--tertiary-text)" stroke-width="1.5" stroke-dasharray="2 5" opacity=".45">
+              <path d="M180 122 C180 200 500 200 500 306"/>
+              <path d="M500 122 V306"/>
+              <path d="M820 122 C820 200 500 200 500 306"/>
+            </g>
+            <g id="src0"><rect class="s-fill s-line" x="70" y="36" width="220" height="84" rx="10" stroke-width="2"/>
+              <path d="M82 80 h8 l5 -16 l7 32 l5 -16 h12" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <text class="s-ink" x="200" y="64" font-size="17" text-anchor="middle">EHR vitals export</text>
+              <text class="s-muted" x="200" y="86" font-size="12" text-anchor="middle">from Stage 1 · FHIR-style</text>
+              <text class="s-acc" x="200" y="104" font-size="11" text-anchor="middle" letter-spacing="2">STRUCTURED</text></g>
+            <g id="src1"><rect class="s-fill s-line" x="390" y="36" width="220" height="84" rx="10" stroke-width="2"/>
+              <path d="M406 62 v26 a9 9 0 0 0 18 0 v-26 M402 62 h26" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="408" y="76" width="14" height="12" fill="var(--accent)" opacity=".5"/>
+              <text class="s-ink" x="520" y="64" font-size="17" text-anchor="middle">Lab results</text>
+              <text class="s-muted" x="520" y="86" font-size="12" text-anchor="middle">lab system · HL7 messages</text>
+              <text class="s-acc" x="520" y="104" font-size="11" text-anchor="middle" letter-spacing="2">SEMI-STRUCTURED</text></g>
+            <g id="src2"><rect class="s-fill s-line" x="710" y="36" width="220" height="84" rx="10" stroke-width="2"/>
+              <rect x="722" y="62" width="36" height="28" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              <path d="M729 72 h22 M729 79 h22 M729 86 h12" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+              <text class="s-ink" x="840" y="64" font-size="17" text-anchor="middle">Patient survey</text>
+              <text class="s-muted" x="840" y="86" font-size="12" text-anchor="middle">web form · free text</text>
+              <text class="s-acc" x="840" y="104" font-size="11" text-anchor="middle" letter-spacing="2">UNSTRUCTURED</text></g>
+
+            <!-- collect -->
+            <text class="s-ink" x="60" y="298" font-size="19">Extract, then match</text>
+            <text class="s-muted" x="60" y="319" font-size="13">on patient and time</text>
+            <text id="mtag" class="s-muted" x="568" y="325" font-size="14" opacity="0">one row</text>
+            <text id="mleg" class="s-muted" x="568" y="343" font-size="12" opacity="0">V vitals · L lab results · S survey</text>
+            <g id="tiles"></g>
+
+            <!-- bronze tray -->
+            <path class="s-line" d="M60 540 V650 H940 V540" stroke-width="2" stroke-linejoin="round"/>
+            <text class="s-ink" x="80" y="576" font-size="19">Bronze · the raw copy</text>
+            <text class="s-muted" x="80" y="598" font-size="13">kept exactly as received · can be replayed</text>
+            <g transform="translate(906,630)"><rect x="-8" y="-6" width="16" height="12" rx="2" fill="var(--accent)" opacity=".8"/><path d="M-5 -6 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
+            <text class="s-muted" x="890" y="634" font-size="11" letter-spacing="2" text-anchor="end">RAW · NEVER EDITED</text>
+            <text id="count" class="s-acc" x="80" y="630" font-size="14"></text>
+            <text class="s-muted" x="500" y="668" font-size="12" text-anchor="middle">V vitals · L lab results · S survey</text>
+            <g id="stack"></g>
+            <g id="next" opacity="0">
+              <path class="s-accl" d="M780 600 H920" stroke-width="2.5"/>
+              <path class="s-accl" d="M908 590 L921 600 L908 610" stroke-width="2.5"/>
+              <text class="s-ink" x="920" y="578" font-size="16" text-anchor="end">Next: Stage 3 · Processing</text>
+            </g>
+
+            <!-- chips -->
+            <g id="chips"></g>
+
+            <!-- AI layer -->
+            <rect id="markSrc" x="50" y="28" width="900" height="100" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <rect id="markMrg" x="150" y="276" width="700" height="74" rx="14" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5" opacity="0"/>
+            <text id="agentlabel" class="s-ai" x="940" y="266" font-size="11" letter-spacing="3" text-anchor="end" opacity="0">AI AGENT · WATCHING</text>
+            <text id="readlabel" class="s-ai" x="930" y="146" font-size="12" text-anchor="end" opacity="0">AI reads the text into fields</text>
+            <rect id="markBox" x="65" y="31" width="230" height="94" rx="13" fill="none" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+            <text id="note" class="s-ai" x="500" y="368" font-size="14" text-anchor="middle" opacity="0"></text>
+            <g id="proposal" opacity="0">
+              <rect x="280" y="170" width="440" height="40" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text class="s-ai" x="500" y="195" font-size="14" text-anchor="middle">Agent proposes: add pharmacy dispensing data</text>
+            </g>
+            <g id="dstation" opacity="0" transform="translate(770,190) scale(.75)">
+              <circle r="26" fill="none" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+              <circle cy="-8" r="7" fill="var(--ai)"/>
+              <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards" id="stepcards" aria-live="polite">
+        <div class="card" id="c0"><p class="k">01 · What</p><h3>Gather from many places</h3><p>Tamsworth needs vitals, lab results and patient feedback together. Business stakeholders ask; data engineers connect each source.</p><div class="tl"><p><strong>Tools:</strong> FHIR APIs for the EHR; HL7 feeds from the lab system; Qualtrics or SurveyMonkey for surveys.</p></div></div>
+        <div class="card" id="c1"><p class="k">02 · How</p><h3>Extract, then match</h3><p>Each source is read in its own format, then matched on patient and time into one row.</p><div class="tl"><p><strong>Tools:</strong> Fivetran or Airbyte connectors; Apache Spark for the matching.</p></div></div>
+        <div class="card" id="c2"><p class="k">03 · Why</p><h3>Nothing may be lost</h3><p>Four things threaten that: volume, velocity, variety and veracity. Anything lost here is gone for good.</p><div class="tl"><p><strong>Tools:</strong> Apache Kafka or Azure Event Hubs for velocity; cloud object storage such as Amazon S3 for volume.</p></div></div>
+        <div class="card" id="c3"><p class="k">04 · When</p><h3>Every 15 minutes, as received</h3><p>The row lands unchanged in Bronze, a raw copy that can be replayed.</p><div class="tl"><p><strong>Tools:</strong> Apache Airflow, Databricks Lakeflow Jobs or Microsoft Fabric Data Factory; Delta Lake for Bronze.</p></div></div>
+        <div class="card" id="c4"><p class="k">05 · Next</p><h3>Processing</h3><p>Stage 3 cleans and standardizes the raw row. Collection never edits it.</p><div class="tl"><p><strong>Tools:</strong> dbt or Apache Spark, reading from Bronze.</p></div></div>
+      </div>
+
+      <div class="cards" id="aicards" aria-live="polite">
+        <div class="card" id="a0"><p class="k">01 · Where</p><h3>Two places AI helps</h3><p>At the start, where someone decides what to collect. At extraction, where messy inputs are read.</p></div>
+        <div class="card" id="a1"><p class="k">02 · What</p><h3>It reads and flags repeats</h3><p>A model turns survey text into fields. It flags repeated records so they stay out of the merge.</p><div class="tl"><p><strong>Tools:</strong> LLMs for unstructured extraction; Apache Spark or dbt for deduplication.</p></div></div>
+        <div class="card" id="a2"><p class="k">03 · Why it matters</p><h3>Repeats stop here</h3><p>A repeat is caught before it is counted twice. Bronze still holds exactly what arrived.</p></div>
+        <div class="card" id="a3"><p class="k">04 · Why it scales</p><h3>Every record, every source</h3><p>People can check a sample. An agent reads every record, all day. People see only what it flags.</p></div>
+        <div class="card" id="a4"><p class="k">05 · Next</p><h3>People approve the plan</h3><p>An agent can propose a new source to collect. A business stakeholder decides. Approved data flows on to Stage 3.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function mk(d){var st=[0];d.forEach(function(x,i){st.push(st[i]+x)});return {DUR:d,START:st,TOTAL:st[d.length],N:d.length}}
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  function readDur(prefix){var d=[];for(var i=0;i<5;i++){var w=$(prefix+i).textContent.trim().split(/\s+/).length;d.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}return d}
+  var BASE=mk(readDur('c'));
+  var AIT=mk(readDur('a'));
+  var BASEBANDS=[[0],[0,1],[1],[1,2],[2]];
+  var AIBANDS=[[0,1],[0,1],[1,2],[1],[0,2]];
+  var SX=[180,500,820];
+  // sample placeholders, not engine values
+  var VT=[['VOLUME','7,536 rows','a day, at rest'],['VELOCITY','every 15 min','data in motion'],['VARIETY','3 formats','table, messages, text'],['VERACITY','2 in doubt','1 late, 1 repeat']];
+
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function ease(t){t=Math.max(0,Math.min(1,t));return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function lerp(a,b,t){return a+(b-a)*ease(t)}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // four V tiles
+  var tiles=[];
+  VT.forEach(function(v,i){
+    var x=60+i*225,y=395,g=$('tiles');
+    var r=el('rect',{x:x,y:y,width:205,height:80,rx:8,'class':'s-ink','fill-opacity':.05});
+    var a=el('text',{x:x+14,y:y+22,'font-size':10,'letter-spacing':2,'class':'s-acc',opacity:.55});a.textContent=v[0];
+    var b=el('text',{x:x+14,y:y+48,'font-size':20,'class':'s-muted'});b.textContent=v[1];
+    var c=el('text',{x:x+14,y:y+68,'font-size':12,'class':'s-muted',opacity:.7});c.textContent=v[2];
+    g.appendChild(r);g.appendChild(a);g.appendChild(b);g.appendChild(c);
+    // small picture for each V, at the tile's right
+    var vz=el('g',{transform:'translate('+(x+152)+','+(y+16)+')',fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.35});
+    if(i===0){[0,1,2,3,4].forEach(function(k){vz.appendChild(el('rect',{x:k*9,y:46-(k+1)*8,width:6,height:(k+1)*8,rx:1,fill:'var(--accent)',stroke:'none'}))})}
+    else if(i===1){vz.appendChild(el('path',{d:'M0 30 h8 l5 -22 l7 40 l5 -18 h20'}))}
+    else if(i===2){vz.appendChild(el('rect',{x:0,y:2,width:16,height:16,rx:2}));vz.appendChild(el('circle',{cx:30,cy:10,r:8}));vz.appendChild(el('path',{d:'M0 30 h40 M0 38 h40 M0 46 h26'}))}
+    else{vz.appendChild(el('circle',{cx:8,cy:10,r:7}));vz.appendChild(el('circle',{cx:30,cy:10,r:7,'stroke-dasharray':'3 3'}));vz.appendChild(el('circle',{cx:8,cy:36,r:7,'stroke-dasharray':'3 3'}));vz.appendChild(el('circle',{cx:30,cy:36,r:7}))}
+    g.appendChild(vz);
+    tiles.push({r:r,a:a,b:b,c:c,vz:vz});
+  });
+  function lightTiles(gp){
+    tiles.forEach(function(t,i){
+      var lit=gp>(i+.3)/4.3;
+      t.r.setAttribute('fill-opacity',lit?.14:.05);
+      t.a.setAttribute('opacity',lit?1:.55);
+      t.b.setAttribute('class',lit?'s-ink':'s-muted');
+      t.vz.setAttribute('opacity',lit?1:.35);
+    });
+  }
+
+  // chips: 0-2 sources, 3 repeat, 4 merged
+  function mkChip(cls){
+    var g=el('g',{opacity:0});
+    g.appendChild(el('rect',{x:-34,y:-17,width:68,height:34,rx:6,'class':cls}));
+    [[-7,24],[0,24],[7,12]].forEach(function(l){g.appendChild(el('line',{x1:-24,y1:l[0],x2:l[1],y2:l[0],stroke:'var(--ground)','stroke-width':2}))});
+    var xm=el('g',{opacity:0});
+    xm.appendChild(el('line',{x1:-14,y1:-12,x2:14,y2:12,stroke:'var(--ground)','stroke-width':4}));
+    xm.appendChild(el('line',{x1:14,y1:-12,x2:-14,y2:12,stroke:'var(--ground)','stroke-width':4}));
+    g.appendChild(xm);
+    $('chips').appendChild(g);
+    return {g:g,r:g.firstChild,x:xm};
+  }
+  // the merged row: three segments, one from each source (V vitals, L lab, S survey)
+  function mkMerged(){
+    var g=el('g',{opacity:0});
+    [['s-acc','V',-46],['s-ink','L',-15],['s-sl','S',16]].forEach(function(s){
+      g.appendChild(el('rect',{x:s[2],y:-17,width:30,height:34,rx:4,'class':s[0]}));
+      var t=el('text',{x:s[2]+15,y:5,'font-size':13,'font-weight':700,'text-anchor':'middle',fill:'var(--ground)'});t.textContent=s[1];g.appendChild(t);
+    });
+    var xm=el('g',{opacity:0});g.appendChild(xm);
+    $('chips').appendChild(g);
+    return {g:g,r:g.firstChild,x:xm,merged:true};
+  }
+  var C=[mkChip('s-acc'),mkChip('s-acc'),mkChip('s-acc'),mkChip('s-acc'),mkMerged()];
+  function put(c,o,x,y,s,cls,xm){
+    op(c.g,o);c.g.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') scale('+s.toFixed(2)+')');
+    if(!c.merged)c.r.setAttribute('class',cls||'s-acc');
+    op(c.x,xm?1:0);
+  }
+  function hideChips(){C.forEach(function(c){op(c.g,0);op(c.x,0)})}
+  // merged chip fades while it passes behind the four V tiles
+  function dropFade(y){return y<330?1:(y<345?1-(y-330)/15:(y<480?0:clamp01((y-480)/15)))}
+
+  var mleg=$('mleg');var src=[$('src0'),$('src1'),$('src2')],mtag=$('mtag'),stack=$('stack'),count=$('count'),next=$('next');
+  var markSrc=$('markSrc'),markMrg=$('markMrg'),agentlabel=$('agentlabel'),readlabel=$('readlabel'),markBox=$('markBox'),funnel=$('funnel'),
+      note=$('note'),proposal=$('proposal'),dstation=$('dstation');
+  var aiOn=false,rows=0,playing=!reduce,elapsed=0,last=null,counted=-1,shown='';
+
+  function clearTray(){rows=0;counted=-1;while(stack.firstChild)stack.removeChild(stack.firstChild);count.textContent=''}
+  function addRow(){
+    rows++;var i=(rows-1)%4;
+    if(i===0)while(stack.firstChild)stack.removeChild(stack.firstChild);
+    ['s-acc','s-ink','s-sl'].forEach(function(cl,k){
+      stack.appendChild(el('rect',{x:330+k*115,y:632-i*14,width:110,height:9,rx:3,'class':cl,opacity:1-i*.15}));
+    });
+    count.textContent=rows+(rows===1?' row':' rows')+' landed (sample)';
+  }
+  function setCards(prefix,n,step){for(var i=0;i<n;i++)$(prefix+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBands(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('h'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function hideAI(){op(markSrc,0);op(markMrg,0);op(agentlabel,0);op(readlabel,0);op(markBox,0);op(note,0);op(proposal,0);op(dstation,0)}
+  function hideBase(){op(next,0);op(mtag,0);op(mleg,0)}
+  function stepOf(T){var cyc=Math.floor(elapsed/T.TOTAL),e=elapsed%T.TOTAL,s=0;while(s<T.N-1&&e>=T.START[s+1])s++;return {cyc:cyc,step:s,u:(e-T.START[s])/T.DUR[s]}}
+
+  // three source chips travel to the match point
+  function travel(u,t0,span,cls2){
+    for(var k=0;k<3;k++){
+      var q=clamp01((u-(t0+k*.08))/span);
+      put(C[k],q>0?1:0,lerp(SX[k],500,q),lerp(150,320,q),.8+.2*ease(q),(k===2&&cls2)?'s-ai':'s-acc');
+    }
+  }
+
+  function frameBase(){
+    var s=stepOf(BASE),step=s.step,u=s.u,cyc=s.cyc;
+    var key='b'+step+'/'+cyc;
+    if(shown!==key){shown=key;setCards('c',5,step);setBands(BASEBANDS[step]);}
+    hideAI();hideChips();op(mtag,0);op(mleg,0);
+    for(var k=0;k<3;k++)op(src[k],step===0?ease((u-.08-k*.18)/.2):1);
+    var gp=step<2?0:(step===2?(u-.1)/.7:1);lightTiles(gp);
+    if(step===1){
+      if(u<.6){travel(u,.05,.35,false)}
+      else{put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1)}
+    }else if(step===2){
+      put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1);
+    }else if(step===3){
+      if(u<.3){put(C[4],1,500,320,1.2);mtag.textContent='one row · matched on patient and time';op(mtag,1);op(mleg,1)}
+      else{var q=clamp01((u-.3)/.5),y=lerp(320,600,q);
+        if(q<1)put(C[4],dropFade(y),500,y,lerp(1.2,1,q));
+        else if(counted!==cyc){counted=cyc;addRow()}}
+    }
+    op(next,step===4?1:0);
+  }
+
+  function frameAI(){
+    var s=stepOf(AIT),step=s.step,u=s.u,cyc=s.cyc;
+    var key='a'+step+'/'+cyc;
+    if(shown!==key){shown=key;setCards('a',5,step);setBands(AIBANDS[step]);if(step===0)clearTray();}
+    hideBase();hideAI();hideChips();lightTiles(0);
+    for(var k=0;k<3;k++)op(src[k],1);
+    var pulseV=.35+.65*Math.abs(Math.sin(elapsed/450));
+    if(step===0){op(markSrc,pulseV);op(markMrg,pulseV);op(agentlabel,1);}
+    else if(step===1){
+      op(agentlabel,1);
+      if(u<.55)travel(u,.05,.35,u>.15);
+      op(readlabel,(u>.1&&u<.55)?1:0);
+      var q=clamp01((u-.2)/.35);
+      if(u>.2)put(C[3],1,lerp(540,610,q),lerp(150,305,q),.8+.2*ease(q),'s-acc',u>.62);
+      if(u>=.55){put(C[4],1,500,320,1.2);op(mleg,1)}
+      note.textContent='Repeat flagged and kept out of the merge.';op(note,u>.68?1:0);
+    }else if(step===2){
+      op(agentlabel,1);
+      put(C[3],1,610,305,1,'s-acc',true);
+      note.textContent='Repeat flagged. Bronze still holds exactly what arrived.';op(note,1);
+      if(u<.2){put(C[4],1,500,320,1.2);op(mleg,1)}
+      else{var q2=clamp01((u-.2)/.6),y=lerp(320,600,q2);
+        if(q2<1)put(C[4],dropFade(y),500,y,lerp(1.2,1,q2));
+        else if(counted!==cyc){counted=cyc;addRow()}}
+    }else if(step===3){
+      op(agentlabel,1);
+      var bi=Math.min(2,Math.floor(u*3));
+      markBox.setAttribute('x',[65,385,705][bi]);op(markBox,.6+.4*Math.abs(Math.sin(elapsed/350)));
+      var n=Math.round(7536*ease((u-.1)/.7));
+      var fl=u>.8?41:Math.round(41*ease((u-.1)/.7));
+      note.textContent=n.toLocaleString('en-US')+' records read · '+fl+' repeats flagged · sample day';
+      op(note,u>.05?1:0);
+    }else{
+      op(agentlabel,1);
+      op(proposal,u>.1?1:0);
+      op(dstation,u>.4?1:0);
+      note.textContent='A business stakeholder decides. Approved data flows on to Stage 3.';op(note,u>.5?1:0);
+      op(next,u>.88?1:0);
+    }
+  }
+
+  function frame(){if(aiOn)frameAI();else frameBase()}
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var t=aiOn?AIT:BASE,cyc=Math.floor(elapsed/t.TOTAL),e=elapsed%t.TOTAL,step=0;
+    while(step<t.N-1&&e>=t.START[step+1])step++;
+    elapsed=step<t.N-1?cyc*t.TOTAL+t.START[step+1]+10:(cyc+1)*t.TOTAL+10;
+  });
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';clearTray();playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    aiOn=!aiOn;
+    this.textContent='Show AI: '+(aiOn?'On':'Off');
+    this.setAttribute('aria-pressed',aiOn);
+    this.className='btn'+(aiOn?' on':'');
+    document.body.className=aiOn?'ai-on':'';
+    elapsed=0;shown='';clearTray();
+    for(var i=0;i<5;i++){$('c'+i).className='card';$('a'+i).className='card'}
+  });
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
