@@ -206,6 +206,69 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
               </g>
             </g>
 
+            <!-- ===== section 3: tell the story and decide ===== -->
+            <g id="s2" display="none">
+              <g id="t0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">WHAT WE SAW</text>
+                <text class="s-ink" x="76" y="118" font-size="16">Clinic B at 45 min</text>
+                <text class="s-muted" x="76" y="140" font-size="12">rising since October</text>
+              </g>
+              <g id="t1" opacity="0">
+                <rect x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">WHAT WE RECOMMEND</text>
+                <text class="s-acc" x="301" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="301" y="140" font-size="12">option 1</text>
+              </g>
+              <g id="t2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">WHAT TO EXPECT</text>
+                <text class="s-ink" x="526" y="118" font-size="16">About 33 in December</text>
+                <text class="s-muted" x="526" y="140" font-size="12">down from 41 (sample)</text>
+              </g>
+              <g id="t3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">WHAT IT COSTS</text>
+                <text class="s-ink" x="751" y="118" font-size="16">About $6k a month</text>
+                <text class="s-muted" x="751" y="140" font-size="12">sample</text>
+              </g>
+              <text id="t4" class="s-muted" x="60" y="184" font-size="12" opacity="0">One page for the people who approve: what we saw, what we recommend, what to expect, what it costs.</text>
+              <text id="ttrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: an option is ready to put in front of the people who approve.</text>
+
+              <g id="d0" opacity="0">
+                <rect x="60" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="288" font-size="11" letter-spacing="2">BUSINESS ANALYST</text>
+                <text class="s-ink" x="76" y="316" font-size="15">Drafts the story</text>
+                <text class="s-muted" x="76" y="338" font-size="12">and answers questions</text>
+              </g>
+              <g id="d1" opacity="0">
+                <path class="s-accl" d="M316 310 H366" stroke-width="2.5"/>
+                <path class="s-accl" d="M354 300 L367 310 L354 320" stroke-width="2.5"/>
+                <rect id="d1box" x="375" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="391" y="288" font-size="11" letter-spacing="2">EXECUTIVE</text>
+                <text class="s-ink" x="391" y="316" font-size="15">Decides</text>
+                <text class="s-muted" x="391" y="338" font-size="12">approve, change or decline</text>
+              </g>
+              <g id="d2" opacity="0">
+                <path class="s-accl" d="M631 310 H681" stroke-width="2.5"/>
+                <path class="s-accl" d="M669 300 L682 310 L669 320" stroke-width="2.5"/>
+                <rect id="d2box" x="690" y="262" width="250" height="96" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="706" y="288" font-size="11" letter-spacing="2">DECISION RECORDED</text>
+                <text class="s-ink" x="706" y="316" font-size="15">Approve option 1</text>
+                <text class="s-muted" x="706" y="338" font-size="12">by the operations director (sample)</text>
+              </g>
+              <text id="dfoot" class="s-muted" x="60" y="400" font-size="13" opacity="0">The decision and who made it are written down, so anyone can trace it later.</text>
+
+              <text id="y1" class="s-ink" x="60" y="520" font-size="15" opacity="0">People decide on a story they can follow.</text>
+              <text id="y2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Plain words, the evidence beside them, one clear ask.</text>
+              <text id="y3" class="s-ink" x="60" y="592" font-size="14" opacity="0">A person approves. A model can write the story, but it cannot own the decision.</text>
+              <g id="next2" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Act and close the loop · after yes</text>
+              </g>
+            </g>
+
             <!-- ===== AI layer ===== -->
             <g id="aiL" opacity="0">
               <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
@@ -249,6 +312,14 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
         <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>Money and staff are limited</h3><p>The best-looking number may not be worth its cost. Comparing with and without an action shows what each one buys.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
         <div class="card" id="c1_3"><p class="k">04 · When</p><h3>Before anyone commits resources</h3><p>After a conclusion says something must change, and before an option is chosen.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
         <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Tell the story</h3><p>Options are weighed. Next: how the choice is explained to the people who must approve it, and who signs off.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with what-if features, such as Power BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards2" aria-live="polite">
+        <div class="card" id="c2_0"><p class="k">01 · What</p><h3>Explain it, then decide</h3><p>The recommended option is told as a short story for the people who approve it, and one of them makes the call. Business analysts tell it. Executives decide.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Draft the story, then an executive decides</h3><p>The story covers what we saw, what we recommend, what to expect and what it costs. The executive approves, changes or declines, and the choice is recorded.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>Every decision needs an owner</h3><p>Where accuracy must be total, a person has to stand behind the choice. A recorded decision can be traced and questioned later.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When an option is ready for approval</h3><p>After the options are weighed, and before any money or staff are committed.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Act and close the loop</h3><p>Once a person says yes, the action has to happen, and the next month’s data shows whether it worked.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
       </div>
 
       <div class="cards ai" id="cardsAI" aria-live="polite">
@@ -327,6 +398,24 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     op($('next1'),step===4?ease((u-.4)/.2):0);
   }
 
+  // ---------- section 3: tell the story and decide ----------
+  function draw2(step,u){
+    var i,ids=['t0','t1','t2','t3'];
+    for(i=0;i<4;i++)op($(ids[i]),step===0?ease((u-i*.15)/.18):1);
+    op($('t4'),step===0?ease((u-.75)/.15):1);
+    op($('ttrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('d0'),ease((bu-.05)/.18));
+    op($('d1'),ease((bu-.3)/.18));
+    op($('d2'),ease((bu-.6)/.18));
+    op($('dfoot'),ease((bu-.85)/.1));
+    $('d1box').style.stroke=(step>=2)?'var(--accent)':'var(--tertiary-text)';
+    op($('y1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('y2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('y3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next2'),step===4?ease((u-.4)/.2):0);
+  }
+
   // ---------- scene table ----------
   var SCENES=[
     {head:['Stage 8 of 8 · Data interpretation','Say what it <em class="hl">means</em>.','Interpretation turns analysis and visuals into business decisions. At Tamsworth Health, the Stage 7 dashboard is open on an executive’s screen. The numbers are right. Someone must say what they mean.'],
@@ -336,6 +425,10 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     {head:['Stage 8 of 8 · Data interpretation','Weigh the <em class="hl">options</em>.','A conclusion says what is wrong. At Tamsworth Health, three actions could bring Clinic B’s December wait back toward its goal. Each is compared on what it would change and what it would cost.'],
      g:'s1',cards:'c1_',box:'cards1',draw:draw1,
      labels:['01 · THE GOAL AND THE OPTIONS · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','02 · SIMULATE EACH OPTION · OWNERS: BUSINESS ANALYSTS','03 · WHAT THE MONEY BUYS · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Tell the story, then <em class="hl">decide</em>.','Numbers rarely move people. A short story does. At Tamsworth Health, the analyst tells the executive team what was seen, what is recommended and what it costs. Then a person decides.'],
+     g:'s2',cards:'c2_',box:'cards2',draw:draw2,
+     labels:['01 · ONE PAGE FOR THE PEOPLE WHO APPROVE · OWNERS: BUSINESS ANALYSTS','02 · FROM STORY TO DECISION · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','03 · A PERSON OWNS THE DECISION · OWNERS: EXECUTIVES'],
      bands:[[0],[1],[2],[0],[2]]}
   ];
   // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
@@ -355,7 +448,11 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     [{box:[50,252,890,170],note:'AI: simulated December wait for 3 options from past rows · sample',tools:TA,
       cards:[C('01 · AI assists','AI simulates the outcomes','Given past rows and each option’s assumptions, AI estimates what December’s wait would be.'),C('02 · Why it helps','Options compared before money is spent','Several what-if cases can be tried quickly, and shown beside each other.'),C('03 · A person','An analyst checks the assumptions','A simulation is only as good as its assumptions, and its output is probabilistic.')]},
      {box:[50,52,890,112],note:'Agent: re-ran the comparison when week 6 arrived · ranking unchanged · sample',chip:'Agent proposes: keep option 1 on top',tools:TG,
-      cards:[C('01 · The agent','An agent keeps the comparison fresh','It re-runs the simulation as new data arrives and flags when the ranking changes.'),C('02 · Within set rules','It recommends, it does not commit','It may refresh and recommend. Spending money or changing staffing needs approval.'),C('03 · A person decides','A person chooses','People weigh the cost and choose which option to try.')]}]
+      cards:[C('01 · The agent','An agent keeps the comparison fresh','It re-runs the simulation as new data arrives and flags when the ranking changes.'),C('02 · Within set rules','It recommends, it does not commit','It may refresh and recommend. Spending money or changing staffing needs approval.'),C('03 · A person decides','A person chooses','People weigh the cost and choose which option to try.')]}],
+    [{box:[50,52,890,112],note:'AI: drafted the one-page story from the numbers and option 1 · sample',tools:TA,
+      cards:[C('01 · AI assists','AI drafts the story','It turns the numbers and the chosen option into plain narrative: what we saw, what we recommend, what to expect.'),C('02 · Why it helps','The analyst starts from a draft','Less time writing, more time checking and answering questions.'),C('03 · A person','A person checks every claim','AI output is probabilistic and can be wrong. Where accuracy must be total, a person signs off.')]},
+     {box:[50,252,890,110],note:'Agent: sent the story to the approver and asked for a decision · sample',chip:'Agent proposes: ask the operations director',tools:TG,
+      cards:[C('01 · The agent','An agent prepares and routes it','It assembles the story and sends it to the approver, with the evidence beside it.'),C('02 · Within set rules','It routes, it does not approve','People set who must approve what. The agent never approves for them.'),C('03 · A person decides','Only a person says yes','The executive approves, changes or declines. The decision is recorded.')]}]
   ];
   SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
     a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
@@ -380,7 +477,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     if(a)fillAI(a);
     elapsed=0;shown='';
   }
-  var NAMES=['Say what it means','Weigh the options'];
+  var NAMES=['Say what it means','Weigh the options','Tell the story'];
   (function(){
     var nav=$('secs');
     SCENES.forEach(function(S,i){
