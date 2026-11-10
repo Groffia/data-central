@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 7: Data Visualization</title>
+<style>
+/* Tokens: WARMING STRIPES design system, same as Stages 2 to 6 */
+:root{
+  --primary:#0d1117; --secondary:#d8dee9; --tertiary:#7a8699; --tertiary-text:#7a8699;
+  --accent:#ff8a5c; --ai:#4fd8eb; --slate-300:#9aa7bb; --slate-500:#5a6577;
+  --ground:#0d1117; --ink:#d8dee9; --muted:#9aa7bb;
+  --space-sm:1rem; --space-md:2rem; --space-lg:4rem;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:16px;
+  --font-serif:Georgia, Gelasio, serif; --font-system:system-ui, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-serif);font-size:1rem;line-height:1.5;overflow:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-md);height:100vh;display:flex;flex-direction:column}
+.eyebrow{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text)}
+.hl{color:var(--accent);font-style:normal}
+.stage-tag{font-size:13px;color:var(--accent)}
+header.top{padding:1.25rem 0 .5rem}
+h1{margin:.4rem 0 .25rem;font-size:clamp(1.8rem,6vh,3.25rem);font-weight:400;line-height:1.05}
+.lede{margin:0;max-width:52em;color:var(--muted);font-size:1rem}
+section.scene{flex:1;min-height:0;padding:0 0 .75rem}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--space-md);align-items:center;height:100%}
+.left{display:flex;flex-direction:column;height:100%;min-height:0}
+.stage{flex:1;min-height:0;overflow:hidden}
+svg{display:block;width:100%;height:100%;margin:0 auto}
+.cards{align-self:start;padding-top:1.25rem;display:none;flex-direction:column;gap:.85rem}
+.cards.act{display:flex}
+header.top,.stage,.cards{transition:opacity 700ms ease}
+body.out header.top,body.out .stage,body.out .cards{opacity:0}
+.card{opacity:0;transform:translateY(14px);transition:opacity 800ms ease,transform 800ms ease}
+.card.on{opacity:.32;transform:none}
+.card.now{opacity:1}
+.card:not(.now)>p:not(.k),.card:not(.now)>.tl{display:none}
+.card .k{margin:0;font-family:var(--font-system);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--tertiary-text);transition:color 400ms ease}
+.card.now .k{color:var(--accent)}
+.card h3{margin:.3rem 0 .3rem;font-size:clamp(1.25rem,2vw,1.6rem);font-weight:400;line-height:1.15}
+.card p{margin:0;color:var(--muted);font-size:1rem;max-width:24em}
+.tl{display:grid;grid-template-rows:0fr;transition:grid-template-rows 500ms ease}
+.tl>p{overflow:hidden;min-height:0;margin:0;padding-top:0;font-size:.8125rem;color:var(--tertiary-text)}
+.tl strong{color:var(--ink);font-weight:700}
+.card.now .tl{grid-template-rows:1fr}
+.card.now .tl>p{padding-top:.4rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.btn{min-height:44px;padding:0 var(--space-sm);border:1px solid var(--tertiary-text);border-radius:var(--radius-sm);background:transparent;color:var(--ink);font:400 1rem var(--font-serif);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,color 150ms ease}
+.btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.note{color:var(--tertiary-text);font-size:.875rem;font-family:var(--font-system)}
+.hair{stroke:var(--tertiary-text);stroke-width:1;opacity:.5;transition:stroke 400ms,opacity 400ms}
+.hair.on{stroke:var(--accent);opacity:1}
+.bl{font-size:11px;letter-spacing:.3em;fill:var(--tertiary-text);transition:fill 400ms}
+.bl.on{fill:var(--accent)}
+.s-line{stroke:var(--tertiary-text);fill:none}
+.s-fill{fill:var(--ground)}
+.s-ink{fill:var(--ink)}
+.s-muted{fill:var(--muted)}
+.s-acc{fill:var(--accent)}
+.s-sl{fill:var(--slate-300)}
+.s-accl{stroke:var(--accent);fill:none}
+text{font-family:var(--font-system)}
+.cards.ai .card.now .k{color:var(--ai)}
+.cards.ai .tl strong{color:var(--ai)}
+.btn.on{border-color:var(--ai);color:var(--ai)}
+.s-ai{fill:var(--ai)}
+nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding:.35rem 0 .6rem;font-family:var(--font-system)}
+.secs button{min-height:32px;padding:0 .75rem;border:1px solid var(--tertiary-text);border-radius:999px;background:transparent;color:var(--muted);font:400 .8125rem var(--font-system);cursor:pointer;transition:border-color 150ms ease,color 150ms ease}
+.secs button:hover{border-color:var(--accent);color:var(--accent)}
+.secs button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.secs button[aria-current="true"]{border-color:var(--accent);background:var(--accent);color:var(--ground);font-weight:700}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);height:auto}body{overflow:auto}.wrap{height:auto}section.scene{flex:none}.left{height:auto}.stage{height:auto}svg{height:auto}}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow stage-tag" id="eyebrow"></p>
+    <h1 id="h1"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+  <nav class="secs" id="secs" aria-label="Sections of this stage"></nav>
+
+  <section class="scene" aria-label="Visualization of Stage 6's answers">
+    <div class="grid">
+      <div class="left">
+        <div class="stage">
+          <svg id="svg" viewBox="0 0 1000 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animation of data visualization at Tamsworth Health, one section at a time.">
+            <line id="hr0" class="hair" x1="60" y1="4" x2="940" y2="4"/>
+            <line id="hr1" class="hair" x1="60" y1="215" x2="940" y2="215"/>
+            <line id="hr2" class="hair" x1="60" y1="445" x2="940" y2="445"/>
+            <text id="l0" class="bl" x="60" y="24"></text>
+            <text id="l1" class="bl" x="60" y="236"></text>
+            <text id="l2" class="bl" x="60" y="466"></text>
+
+            <!-- ===== section 1: from answer to picture ===== -->
+            <g id="s0" display="none">
+              <g id="a0" opacity="0">
+                <rect x="60" y="62" width="170" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">NOVEMBER WAIT</text>
+                <text class="s-ink" x="76" y="118" font-size="16">34 minutes</text>
+                <text class="s-muted" x="76" y="140" font-size="12">range is 24 to 32</text>
+              </g>
+              <g id="a1" opacity="0">
+                <rect x="250" y="62" width="170" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="266" y="90" font-size="11" letter-spacing="2">BY CLINIC</text>
+                <text class="s-ink" x="266" y="118" font-size="16">Clinic B: 45 min</text>
+                <text class="s-muted" x="266" y="140" font-size="12">others about 28</text>
+              </g>
+              <g id="a2" opacity="0">
+                <rect x="440" y="62" width="170" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="456" y="90" font-size="11" letter-spacing="2">FORECAST</text>
+                <text class="s-ink" x="456" y="118" font-size="16">December: 41 min</text>
+                <text class="s-muted" x="456" y="140" font-size="12">if nothing changes</text>
+              </g>
+              <g id="a3" opacity="0">
+                <path class="s-accl" d="M630 108 H690" stroke-width="2.5"/>
+                <path class="s-accl" d="M678 98 L691 108 L678 118" stroke-width="2.5"/>
+                <rect id="a3box" x="710" y="62" width="230" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="726" y="90" font-size="11" letter-spacing="2">THE READER</text>
+                <text class="s-ink" x="726" y="118" font-size="16">Operations director</text>
+                <text class="s-muted" x="726" y="140" font-size="12">decides where to act (sample)</text>
+              </g>
+              <text id="a4" class="s-muted" x="60" y="184" font-size="12" opacity="0">Answers from Stage 6, as numbers in a report. The reader has no time to dig.</text>
+              <text id="atrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: Stage 6 has an answer that a person must act on.</text>
+
+              <g id="qc"></g>
+              <text id="qfoot" class="s-ink" x="60" y="436" font-size="14" opacity="0">One chart, one question. Every chart is built to serve a single decision.</text>
+
+              <text id="w1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A chart exists to support one decision.</text>
+              <text id="w2" class="s-muted" x="60" y="546" font-size="13" opacity="0">If nobody can say what a chart is for, it is noise.</text>
+              <text id="w3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Analysts also chart while exploring, in Stage 6. This stage is the finished version, made for the people who decide.</text>
+              <g id="next0" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: The dashboard · one view for the reader</text>
+              </g>
+            </g>
+
+            <!-- ===== section 2: the dashboard ===== -->
+            <g id="s1" display="none">
+              <g id="tiles"></g>
+              <text id="b0" class="s-muted" x="60" y="184" font-size="12" opacity="0">Four numbers, read in one glance. Orange means look here.</text>
+              <text id="b0t" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: the reader opens it, or new data arrives.</text>
+
+              <g id="d1" opacity="0">
+                <rect x="60" y="252" width="540" height="170" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="278" font-size="11" letter-spacing="2">THE TREND</text>
+                <text class="s-ink" x="76" y="304" font-size="16">Is it getting worse?</text>
+                <text class="s-muted" x="584" y="278" font-size="12" text-anchor="end">Decision: act before December?</text>
+                <rect id="tband" x="80" y="365" width="500" height="40" fill="var(--slate-500)" opacity=".35"/>
+                <text class="s-muted" x="580" y="360" font-size="10" text-anchor="end">expected range</text>
+                <g id="tpts"></g>
+                <path id="tline" d="" fill="none" stroke="var(--slate-300)" stroke-width="2"/>
+                <path id="tfc" d="" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5"/>
+              </g>
+              <g id="d2" opacity="0">
+                <rect x="620" y="252" width="320" height="170" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="636" y="278" font-size="11" letter-spacing="2">THE SPLIT</text>
+                <text class="s-ink" x="636" y="304" font-size="16">Which clinic?</text>
+                <line x1="828" y1="316" x2="828" y2="394" stroke="var(--tertiary-text)" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <text class="s-muted" x="828" y="311" font-size="10" text-anchor="middle">limit</text>
+                <g id="dbars"></g>
+                <text class="s-muted" x="636" y="414" font-size="12">Decision: where to send help</text>
+              </g>
+
+              <text id="e1" class="s-ink" x="60" y="520" font-size="15" opacity="0">Tiles tell the reader how things stand. Charts tell them why and where.</text>
+              <text id="e2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Together, one look is enough to decide.</text>
+              <text id="e3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Each tile and chart answers one question for one reader. If it does neither, it is removed.</text>
+              <g id="next1" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Trace a number · where did 34 come from?</text>
+              </g>
+            </g>
+
+            <!-- ===== section 3: trace a number back ===== -->
+            <g id="s2" display="none">
+              <g id="t0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill" stroke="var(--accent)" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">WAIT, NOVEMBER</text>
+                <text class="s-acc" x="76" y="122" font-size="26">34 min</text>
+                <text class="s-muted" x="76" y="142" font-size="12">the reader clicks it</text>
+              </g>
+              <g id="t1" opacity="0">
+                <path class="s-accl" d="M285 108 H345" stroke-width="2.5"/>
+                <path class="s-accl" d="M333 98 L346 108 L333 118" stroke-width="2.5"/>
+                <rect id="t1box" x="365" y="62" width="575" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="381" y="90" font-size="11" letter-spacing="2">THE READER ASKS</text>
+                <text class="s-ink" x="381" y="118" font-size="16">Where did 34 minutes come from?</text>
+                <text class="s-muted" x="381" y="140" font-size="12">Can I trust it enough to act on it?</text>
+              </g>
+              <text id="t2trig" class="s-ink" x="60" y="184" font-size="13" opacity="0">Trigger: a reader doubts or questions a number.</text>
+
+              <g id="chain"></g>
+              <text id="cleg" class="s-muted" x="510" y="420" font-size="11" opacity="0">V vitals &#183; L lab results &#183; S survey</text>
+
+              <text id="y1" class="s-ink" x="60" y="520" font-size="15" opacity="0">Anyone can follow a number back to the row it began as.</text>
+              <text id="y2" class="s-muted" x="60" y="546" font-size="13" opacity="0">A number that cannot be traced cannot be trusted.</text>
+              <g id="ylog" opacity="0">
+                <text class="s-muted" x="60" y="590" font-size="11" letter-spacing="2">FROM STAGE 5'S AUDIT LOG</text>
+                <text class="s-muted" x="60" y="614" font-size="12">6</text>
+                <text class="s-ink" x="80" y="614" font-size="12">Operations director</text>
+                <text class="s-ink" x="230" y="614" font-size="12">READ, sensitive fields hidden</text>
+                <text class="s-muted" x="440" y="614" font-size="12">Wait dashboard</text>
+              </g>
+              <g id="next2" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Gate vs no gate · what a quality check changes</text>
+              </g>
+            </g>
+
+            <!-- ===== section 4: gate vs no gate ===== -->
+            <g id="s3" display="none">
+              <g id="p0" opacity="0">
+                <rect x="60" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">WITHOUT THE GATE</text>
+                <text class="s-acc" x="76" y="122" font-size="26">58 min</text>
+                <text class="s-muted" x="76" y="142" font-size="12">6 bad rows are counted (sample)</text>
+              </g>
+              <g id="p1" opacity="0">
+                <rect id="p1box" x="520" y="62" width="420" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="536" y="90" font-size="11" letter-spacing="2">WITH THE GATE</text>
+                <text class="s-ink" x="536" y="122" font-size="26">34 min</text>
+                <text class="s-muted" x="536" y="142" font-size="12">6 bad rows held in the repair queue</text>
+              </g>
+              <text id="p2" class="s-muted" x="60" y="184" font-size="12" opacity="0">The same November data, shown twice.</text>
+              <text id="p3" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: every refresh, before rows reach a chart.</text>
+
+              <g id="gc0" opacity="0">
+                <rect x="60" y="252" width="420" height="170" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="278" font-size="11" letter-spacing="2">WITHOUT THE GATE</text>
+                <text class="s-ink" x="76" y="298" font-size="13">Bad rows are counted</text>
+              </g>
+              <g id="gc1" opacity="0">
+                <rect x="520" y="252" width="420" height="170" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="536" y="278" font-size="11" letter-spacing="2">WITH THE GATE</text>
+                <text class="s-ink" x="536" y="298" font-size="13">Bad rows wait for a person</text>
+              </g>
+              <g id="gbL"></g>
+              <g id="gbR"></g>
+
+              <text id="r1" class="s-ink" x="60" y="520" font-size="15" opacity="0">Without the gate, six bad rows make November look like a crisis.</text>
+              <text id="r2" class="s-muted" x="60" y="546" font-size="13" opacity="0">The gate does not hide them. They wait in a repair queue for a person to fix or discard.</text>
+              <text id="r3" class="s-ink" x="60" y="592" font-size="14" opacity="0">The gate runs in Stage 3. This stage only shows what it protects.</text>
+              <g id="next3" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Keep it current · refresh and alerts</text>
+              </g>
+            </g>
+
+            <!-- ===== section 5: keep it current ===== -->
+            <g id="s4" display="none">
+              <g id="k0" opacity="0">
+                <rect x="60" y="62" width="570" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">THE RULE, SET BY PEOPLE</text>
+                <text class="s-ink" x="76" y="118" font-size="16">Tell the clinic lead when a clinic</text>
+                <text class="s-ink" x="76" y="140" font-size="16">passes 32 minutes (sample)</text>
+              </g>
+              <g id="k1" opacity="0">
+                <rect id="k1box" x="650" y="62" width="290" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="666" y="90" font-size="11" letter-spacing="2">THE REFRESH</text>
+                <text class="s-ink" x="666" y="118" font-size="16">After every data check</text>
+                <text class="s-muted" x="666" y="140" font-size="12">or live, for a real-time view</text>
+              </g>
+              <text id="k2" class="s-muted" x="60" y="184" font-size="12" opacity="0">A refresh adds new rows that passed the gate. The rule watches them.</text>
+              <text id="k3" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: new data arrives, or a number crosses its limit.</text>
+
+              <g id="kc" opacity="0">
+                <rect x="60" y="252" width="580" height="170" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="278" font-size="11" letter-spacing="2">CLINIC B, WEEKLY WAIT (SAMPLE)</text>
+                <line x1="80" y1="368" x2="620" y2="368" stroke="var(--tertiary-text)" stroke-width="1.5" stroke-dasharray="5 4"/>
+                <text class="s-muted" x="620" y="362" font-size="10" text-anchor="end">limit 32</text>
+                <g id="kpts"></g>
+                <path id="kline" d="" fill="none" stroke="var(--slate-300)" stroke-width="2"/>
+                <circle id="kring" cx="0" cy="0" r="10" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity="0"/>
+              </g>
+              <g id="ka" opacity="0">
+                <rect id="kabox" x="660" y="252" width="280" height="170" rx="10" class="s-fill" stroke="var(--accent)" stroke-width="2"/>
+                <text class="s-acc" x="676" y="278" font-size="11" letter-spacing="2">THE ALERT</text>
+                <text class="s-ink" x="676" y="306" font-size="16">Clinic B passed 32 minutes</text>
+                <text class="s-muted" x="676" y="332" font-size="12">Week 5 · 33 minutes</text>
+                <text class="s-muted" x="676" y="352" font-size="12">Sent to: Clinic B lead</text>
+                <text class="s-muted" x="676" y="372" font-size="12">Written to the audit log</text>
+                <text class="s-acc" x="676" y="404" font-size="12">A person decides what to do</text>
+              </g>
+
+              <text id="m1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A dashboard that is not refreshed shows yesterday's problem.</text>
+              <text id="m2" class="s-muted" x="60" y="546" font-size="13" opacity="0">People set what is worth an alert and who is told. The system does the watching.</text>
+              <text id="m3" class="s-ink" x="60" y="592" font-size="14" opacity="0">An alert starts a person's decision. It does not make the decision.</text>
+              <g id="next4" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Next: Stage 8 · Interpretation</text>
+              </g>
+            </g>
+
+            <!-- ===== AI layer ===== -->
+            <g id="aiL" opacity="0">
+              <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
+              <line id="ai_scan" x1="0" y1="0" x2="0" y2="0" stroke="var(--ai)" stroke-width="2.5" opacity="0"/>
+              <text id="ai_lab" class="s-ai" x="940" y="24" font-size="11" letter-spacing="3" text-anchor="end"></text>
+              <text id="ai_note" class="s-ai" x="60" y="654" font-size="13" opacity="0"></text>
+              <g id="ai_prop" opacity="0">
+                <rect x="60" y="642" width="400" height="26" rx="8" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <text id="ai_proptxt" class="s-ai" x="260" y="660" font-size="13" text-anchor="middle"></text>
+              </g>
+              <circle id="ai_ring" cx="0" cy="0" r="0" fill="none" stroke="var(--ai)" stroke-width="2" opacity="0"/>
+              <g id="ai_stn" opacity="0" transform="translate(0,0) scale(.55)">
+                <circle r="26" fill="var(--ground)" stroke="var(--ai)" stroke-width="2" stroke-dasharray="5 4"/>
+                <circle cy="-8" r="7" fill="var(--ai)"/>
+                <path d="M-13 12 Q-13 0 0 0 Q13 0 13 12 Z" fill="var(--ai)"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="controls">
+          <button class="btn" id="play" type="button">Pause</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="sect" type="button">Next section</button>
+          <button class="btn" id="restart" type="button">Restart</button>
+          <button class="btn" id="ai" type="button" aria-pressed="false">Show AI: Off</button>
+          <span class="note">Sample data for design review.</span>
+        </div>
+      </div>
+
+      <div class="cards act" id="cards0" aria-live="polite">
+        <div class="card" id="c0_0"><p class="k">01 · What</p><h3>Show the answer so people can act</h3><p>Visualization makes complex data understandable so stakeholders can act. Data scientists build the charts, and business analysts present them.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_1"><p class="k">02 · How</p><h3>Match the chart to the question</h3><p>Each question has a chart that suits it: a number for how much, a line for change, bars for which is worst, and a limit line for when to act. Sample: Stage 6's answers go to an operations director.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_2"><p class="k">03 · Why</p><h3>A chart is for a decision</h3><p>People grasp a picture faster than a table. A chart that no decision depends on is noise. Analysts also chart while exploring, before this formal stage.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_3"><p class="k">04 · When</p><h3>When an answer needs a decision</h3><p>A chart is built once Stage 6 has an answer that people must act on, and it is refreshed as new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c0_4"><p class="k">05 · Next</p><h3>The dashboard</h3><p>One view brings the charts together for a reader. Next: what each tile is for, and who reads it.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards1" aria-live="polite">
+        <div class="card" id="c1_0"><p class="k">01 · What</p><h3>One view for the reader</h3><p>A dashboard brings the key numbers and charts together in one place, built for the person who decides. It refreshes as new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c1_1"><p class="k">02 · How</p><h3>Tiles first, then the detail</h3><p>Tiles show the key numbers at a glance. Below them, a trend line shows whether it is getting worse and bars show which clinic. Sample: Clinic B is the one over the limit.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c1_2"><p class="k">03 · Why</p><h3>So one look is enough</h3><p>A reader should not have to dig. Every tile and chart answers one question for one reader, and anything that does not is left out.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c1_3"><p class="k">04 · When</p><h3>When the reader opens it, or data changes</h3><p>A dashboard is read on demand and refreshed as new data arrives. A real-time view updates continuously.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+        <div class="card" id="c1_4"><p class="k">05 · Next</p><h3>Trace a number</h3><p>A reader who sees 34 minutes will ask where it came from. Next: how any number on a dashboard can be traced back to its source.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards2" aria-live="polite">
+        <div class="card" id="c2_0"><p class="k">01 · What</p><h3>Follow a number back</h3><p>Traceability lets a reader follow any number on a dashboard back through the stages to the row it began as. Data stewards keep that record.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c2_1"><p class="k">02 · How</p><h3>Click, then walk back</h3><p>Click a tile and see its path: the definition that calculates it, the governed Silver rows, and the source the rows were collected from. Sample: 34 minutes traces to survey rows from Stages 1 and 2.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>Trust needs a trail</h3><p>An answer nobody can trace back cannot be trusted. A trail also lets anyone check how a number was calculated before they act on it.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When a reader doubts a number</h3><p>The trail is there whenever someone questions a figure, and every look is written to the audit log.</p><div class="tl"><p><strong>Tools:</strong> Lineage and audit trail tools.</p></div></div>
+        <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Gate vs no gate</h3><p>A trail shows where a number came from. Next: what a quality check does to the number a dashboard shows.</p><div class="tl"><p><strong>Tools:</strong> Data quality and dashboard tools.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards3" aria-live="polite">
+        <div class="card" id="c3_0"><p class="k">01 · What</p><h3>A gate protects the picture</h3><p>A quality gate checks rows before they reach a chart. Rows that fail are held back, so the dashboard shows a real number, not a bad one.</p><div class="tl"><p><strong>Tools:</strong> Data quality tools.</p></div></div>
+        <div class="card" id="c3_1"><p class="k">02 · How</p><h3>Same data, two views</h3><p>Both dashboards read the same November data. Without the gate, six bad rows are counted. With it, they wait in a repair queue. Sample: 58 minutes against 34.</p><div class="tl"><p><strong>Tools:</strong> Data quality tools.</p></div></div>
+        <div class="card" id="c3_2"><p class="k">03 · Why</p><h3>Garbage in, garbage out</h3><p>A chart is only as good as the rows behind it. A bad number sends people to fix a problem that is not there.</p><div class="tl"><p><strong>Tools:</strong> Data quality tools.</p></div></div>
+        <div class="card" id="c3_3"><p class="k">04 · When</p><h3>Every time data refreshes</h3><p>The gate runs each time new rows arrive, before anything reaches a dashboard. A person works through the repair queue.</p><div class="tl"><p><strong>Tools:</strong> Data quality tools.</p></div></div>
+        <div class="card" id="c3_4"><p class="k">05 · Next</p><h3>Keep it current</h3><p>A trusted number goes stale. Next: how a dashboard refreshes and sends alerts, under rules people set.</p><div class="tl"><p><strong>Tools:</strong> Orchestration tools, such as Airflow.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards4" aria-live="polite">
+        <div class="card" id="c4_0"><p class="k">01 · What</p><h3>Keep the picture current</h3><p>A dashboard goes stale unless it refreshes. Refreshing on a schedule or live, and alerting when a number crosses a limit, keep readers acting on today's facts.</p><div class="tl"><p><strong>Tools:</strong> Orchestration and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c4_1"><p class="k">02 · How</p><h3>Refresh, compare, alert</h3><p>Each refresh adds new points. A rule compares them with the limit, and a crossing sends an alert. Sample: Clinic B passes 32 minutes in week 5 and its lead is told.</p><div class="tl"><p><strong>Tools:</strong> Orchestration and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c4_2"><p class="k">03 · Why</p><h3>So nobody acts on yesterday</h3><p>A stale view sends people after old problems. An alert reaches the right person without waiting for someone to open the dashboard.</p><div class="tl"><p><strong>Tools:</strong> Orchestration and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c4_3"><p class="k">04 · When</p><h3>On a schedule, or when a limit is crossed</h3><p>Views refresh after each data check, or continuously for a real-time view. An alert fires the moment a rule's limit is crossed.</p><div class="tl"><p><strong>Tools:</strong> Orchestration and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c4_4"><p class="k">05 · Next</p><h3>Interpretation</h3><p>Charts and alerts show what is happening. The last stage turns them into decisions and the story told to the business.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards ai" id="cardsAI" aria-live="polite">
+        <div class="card" id="aic0"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic1"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+        <div class="card" id="aic2"><p class="k"></p><h3></h3><p class="bd"></p><div class="tl"><p></p></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
+  function tx(x,y,size,cls,txt,anchor){var e=el('text',{x:x,y:y,'font-size':size,'class':cls});if(anchor)e.setAttribute('text-anchor',anchor);e.textContent=txt;return e}
+  function clamp01(t){return Math.max(0,Math.min(1,t))}
+  function ease(t){t=clamp01(t);return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+  function op(e,v){e.setAttribute('opacity',v)}
+
+  // ---------- section 1: from answer to picture ----------
+  // four questions, each with the chart that suits it
+  var QX=[60,285,510,735],qR=[];
+  var QS=[['NUMBER TILE','How much, right now?','Reader: executives'],
+          ['LINE','How is it changing?','Reader: managers'],
+          ['BARS','Which is worst?','Reader: clinic leads'],
+          ['LIMIT LINE','Is it past its limit?','Reader: whoever acts']];
+  QS.forEach(function(q,i){
+    var x=QX[i],g=el('g',{opacity:0});
+    g.appendChild(el('rect',{x:x,y:252,width:205,height:168,rx:10,'class':'s-fill s-line','stroke-width':2}));
+    g.appendChild(tx(x+16,278,11,'s-acc',q[0])).setAttribute('letter-spacing','2');
+    g.appendChild(tx(x+16,304,16,'s-ink',q[1]));
+    // the chart glyph, drawn small
+    if(i===0){
+      g.appendChild(tx(x+16,372,40,'s-acc','34'));
+      g.appendChild(tx(x+76,372,13,'s-muted','minutes'));
+    }else if(i===1){
+      var V=[27,29,28,30,28,34],pts=V.map(function(v,k){return (x+16+k*34)+' '+(380-(v-26)*6)}).join(' L');
+      g.appendChild(el('path',{d:'M'+pts,fill:'none',stroke:'var(--slate-300)','stroke-width':2}));
+      g.appendChild(el('circle',{cx:x+16+5*34,cy:380-(34-26)*6,r:5,'class':'s-acc'}));
+    }else if(i===2){
+      [['A',28],['B',45],['C',29]].forEach(function(c,k){
+        var y=322+k*20,w=c[1]*2.5;
+        g.appendChild(tx(x+16,y+11,11,'s-muted',c[0]));
+        g.appendChild(el('rect',{x:x+30,y:y,width:w,height:14,rx:2,'class':c[0]==='B'?'s-acc':'s-sl'}));
+      });
+    }else{
+      g.appendChild(el('line',{x1:x+16,y1:344,x2:x+189,y2:344,stroke:'var(--tertiary-text)','stroke-width':1.5,'stroke-dasharray':'5 4'}));
+      g.appendChild(tx(x+189,338,11,'s-muted','limit 32','end'));
+      var W=[27,29,28,30,28,34],p2=W.map(function(v,k){return (x+16+k*34)+' '+(392-(v-26)*6)}).join(' L');
+      g.appendChild(el('path',{d:'M'+p2,fill:'none',stroke:'var(--slate-300)','stroke-width':2}));
+      g.appendChild(el('circle',{cx:x+16+5*34,cy:392-(34-26)*6,r:6,fill:'none',stroke:'var(--accent)','stroke-width':2.5}));
+    }
+    g.appendChild(tx(x+16,408,12,'s-muted',q[2]));
+    $('qc').appendChild(g);qR.push(g);
+  });
+
+  function draw0(step,u){
+    var i;
+    // band 1: Stage 6's answers arrive, and the reader who needs them
+    op($('a0'),step===0?ease(u/.18):1);
+    op($('a1'),step===0?ease((u-.15)/.18):1);
+    op($('a2'),step===0?ease((u-.3)/.18):1);
+    op($('a3'),step===0?ease((u-.5)/.2):1);
+    op($('a4'),step===0?ease((u-.75)/.15):1);
+    $('a3box').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('atrig'),step<3?0:(step===3?ease(u/.2):1));
+    // band 2: one chart for each question
+    for(i=0;i<4;i++)op(qR[i],step<1?0:(step===1?ease((u-.05-i*.17)/.15):1));
+    op($('qfoot'),step<1?0:(step===1?ease((u-.8)/.12):1));
+    // band 3: why
+    op($('w1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('w2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('w3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next0'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 2: the dashboard ----------
+  var TL=[['WAIT, NOVEMBER','34 min','above range 24 to 32',1],['WORST CLINIC','B · 45 min','others about 28',1],['DECEMBER FORECAST','41 min','if nothing changes',0],['OPEN ALERTS','1','Clinic B is over the limit',1]],tlR=[];
+  TL.forEach(function(t,i){
+    var x=QX[i],g=el('g',{opacity:0});
+    g.appendChild(el('rect',{x:x,y:62,width:205,height:92,rx:10,'class':'s-fill s-line','stroke-width':2}));
+    g.appendChild(tx(x+16,90,11,'s-muted',t[0])).setAttribute('letter-spacing','2');
+    g.appendChild(tx(x+16,122,26,t[3]?'s-acc':'s-ink',t[1]));
+    g.appendChild(tx(x+16,142,12,'s-muted',t[2]));
+    $('tiles').appendChild(g);tlR.push(g);
+  });
+  var TV=[27,29,28,30,28,34],TYY=function(v){return 405-(v-24)*5},TXX=function(k){return 100+k*70};
+  ['Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach(function(m,k){
+    $('tpts').appendChild(tx(TXX(k),418,10,k===6?'s-acc':'s-muted',m,'middle'));
+    if(k<6)$('tpts').appendChild(el('circle',{cx:TXX(k),cy:TYY(TV[k]),r:4,'class':k===5?'s-acc':'s-sl'}));
+  });
+  $('tline').setAttribute('d','M'+TV.map(function(v,k){return TXX(k)+' '+TYY(v)}).join(' L'));
+  $('tfc').setAttribute('d','M'+TXX(5)+' '+TYY(34)+' L'+TXX(6)+' '+TYY(41));
+  var DB=[['Clinic A',28],['Clinic B',45],['Clinic C',29]],dbR=[];
+  DB.forEach(function(c,k){
+    var y=324+k*26,w=c[1]*4,hot=c[1]>32,g=el('g',{opacity:0});
+    g.appendChild(tx(636,y+14,12,'s-muted',c[0]));
+    g.appendChild(el('rect',{x:700,y:y,width:w,height:18,rx:2,'class':hot?'s-acc':'s-sl'}));
+    g.appendChild(tx(700+w+8,y+14,12,hot?'s-acc':'s-ink',c[1]+' min'));
+    $('dbars').appendChild(g);dbR.push(g);
+  });
+  function draw1(step,u){
+    var i;
+    for(i=0;i<4;i++)op(tlR[i],step===0?ease((u-i*.15)/.18):1);
+    op($('b0'),step===0?ease((u-.7)/.15):1);
+    op($('b0t'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('d1'),ease(bu/.15));op($('d2'),ease((bu-.35)/.15));
+    $('tline').style.opacity=ease((bu-.1)/.3);
+    $('tfc').style.opacity=ease((bu-.55)/.15);
+    for(i=0;i<3;i++)op(dbR[i],ease((bu-.4-i*.1)/.12));
+    op($('e1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('e2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('e3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next1'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 3: trace a number back ----------
+  function mkChip(parent){
+    var g=el('g',{opacity:1});
+    [['s-acc','V',-46],['s-ink','L',-15],['s-sl','S',16]].forEach(function(s){
+      g.appendChild(el('rect',{x:s[2],y:-17,width:30,height:34,rx:4,'class':s[0]}));
+      var t=el('text',{x:s[2]+15,y:5,'font-size':13,'font-weight':700,'text-anchor':'middle',fill:'var(--ground)'});t.textContent=s[1];g.appendChild(t);
+    });
+    parent.appendChild(g);return g;
+  }
+  var HOPS=[['THE TILE','34 min','Stage 7 · the dashboard'],
+            ['THE DEFINITION','Wait = check-in to','seeing a clinician','Stage 6 · set by stewards'],
+            ['THE SILVER ROWS','','','Stages 3 to 5 · cleaned, stored, governed'],
+            ['THE SOURCE','Survey, vitals, labs','','Stages 1 and 2 · generated, collected']],hopR=[],hopBox=[];
+  HOPS.forEach(function(h,i){
+    var x=QX[i],g=el('g',{opacity:0}),box=el('rect',{x:x,y:262,width:205,height:136,rx:10,'class':'s-fill s-line','stroke-width':2});
+    g.appendChild(box);
+    g.appendChild(tx(x+16,288,11,i?'s-muted':'s-acc',h[0])).setAttribute('letter-spacing','2');
+    if(i===0)g.appendChild(tx(x+16,332,34,'s-acc',h[1]));
+    else if(i===2){var c=el('g',{transform:'translate('+(x+62)+',326)'});mkChip(c);g.appendChild(c)}
+    else{g.appendChild(tx(x+16,320,15,'s-ink',h[1]));if(h[2])g.appendChild(tx(x+16,340,15,'s-ink',h[2]))}
+    var sub=h[h.length-1].split(' · ');
+    g.appendChild(tx(x+16,368,12,'s-ink',sub[0]));
+    g.appendChild(tx(x+16,386,12,'s-muted',sub[1]));
+    $('chain').appendChild(g);hopR.push(g);hopBox.push(box);
+    if(i<3){
+      var a=el('g',{opacity:0});
+      a.appendChild(el('path',{d:'M'+(x+209)+' 327 H'+(x+221),stroke:'var(--accent)','stroke-width':2.5,fill:'none'}));
+      a.appendChild(el('path',{d:'M'+(x+215)+' 321 L'+(x+222)+' 327 L'+(x+215)+' 333',stroke:'var(--accent)','stroke-width':2.5,fill:'none'}));
+      $('chain').appendChild(a);hopR.push(a);
+    }
+  });
+  function draw2(step,u){
+    var i;
+    op($('t0'),step===0?ease(u/.2):1);
+    op($('t1'),step===0?ease((u-.4)/.25):1);
+    $('t1box').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('t2trig'),step<3?0:(step===3?ease(u/.2):1));
+    // the chain: tile, then each hop back, one at a time
+    var bu=step<1?0:(step===1?u:1);
+    // order in hopR: box0, box1, arrow, box2, arrow, box3, arrow ... build by index
+    var seq=[0,1,2,3,4,5,6];
+    // hopR holds: [box0, arrow0, box1, arrow1, box2, arrow2, box3]
+    for(i=0;i<7;i++)op(hopR[i],ease((bu-i*.12)/.12));
+    var cur=Math.min(3,Math.floor(Math.max(0,bu-.05)/.2));
+    for(i=0;i<4;i++)hopBox[i].style.stroke=(step===1&&i===cur&&bu<.95)||(step>=1&&i===0&&step!==1)?'var(--accent)':'var(--tertiary-text)';
+    op($('cleg'),ease((bu-.45)/.12));
+    op($('y1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('y2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('ylog'),step<3?0:(step===3?ease(u/.2):1));
+    op($('next2'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 4: gate vs no gate ----------
+  var GB=[['Jun',27],['Jul',29],['Aug',28],['Sep',30],['Oct',28],['Nov',null]],gbs=[[],[]];
+  [[$('gbL'),60,58],[$('gbR'),520,34]].forEach(function(P,pi){
+    var g=P[0],x0=P[1],nov=P[2],base=404,K=1.6;
+    g.appendChild(el('rect',{x:x0+16,y:base-32*K,width:388,height:(32-24)*K,fill:'var(--slate-500)',opacity:.35}));
+    g.appendChild(tx(x0+404,278,10,'s-muted','grey band: expected range','end'));
+    g.appendChild(el('line',{x1:x0+16,y1:base,x2:x0+404,y2:base,stroke:'var(--tertiary-text)','stroke-width':1}));
+    GB.forEach(function(b,i){
+      var v=b[1]===null?nov:b[1],h=v*K,x=x0+30+i*62,hot=v>32,bg=el('g',{opacity:0});
+      var r=el('rect',{x:x,y:base-h,width:38,height:h,rx:2,'class':hot?'s-acc':'s-sl'});bg.appendChild(r);
+      bg.appendChild(tx(x+19,base-h-5,11,hot?'s-acc':'s-ink',String(v),'middle'));
+      bg.appendChild(tx(x+19,base+14,10,'s-muted',b[0],'middle'));
+      g.appendChild(bg);gbs[pi].push({g:bg,r:r,h:h});
+    });
+  });
+  function draw3(step,u){
+    var i;
+    op($('p0'),step===0?ease(u/.2):1);
+    op($('p1'),step===0?ease((u-.35)/.2):1);
+    $('p1box').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('p2'),step===0?ease((u-.75)/.15):1);
+    op($('p3'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('gc0'),ease(bu/.1));op($('gc1'),ease((bu-.05)/.1));
+    [0,1].forEach(function(pi){
+      for(i=0;i<6;i++){
+        var t=ease((bu-.15-i*.07-pi*.0)/.12),B=gbs[pi][i];
+        op(B.g,t);B.r.setAttribute('y',(404-B.h*t).toFixed(1));B.r.setAttribute('height',(B.h*t).toFixed(1));
+      }
+    });
+    op($('r1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('r2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('r3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next3'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- section 5: keep it current ----------
+  var KV=[30,29,31,30,33,38,41,45],KX=function(k){return 100+k*70},KY=function(v){return 404-(v-24)*4.5},kpR=[];
+  KV.forEach(function(v,k){
+    var g=el('g',{opacity:0});
+    g.appendChild(el('circle',{cx:KX(k),cy:KY(v),r:4.5,'class':v>32?'s-acc':'s-sl'}));
+    g.appendChild(tx(KX(k),418,10,'s-muted','W'+(k+1),'middle'));
+    $('kpts').appendChild(g);kpR.push(g);
+  });
+  $('kline').setAttribute('d','M'+KV.map(function(v,k){return KX(k)+' '+KY(v).toFixed(1)}).join(' L'));
+  var KLEN=0;KV.forEach(function(v,k){if(k)KLEN+=Math.hypot(70,KY(v)-KY(KV[k-1]))});KLEN=Math.ceil(KLEN)+2;
+  function draw4(step,u){
+    var i;
+    op($('k0'),step===0?ease(u/.2):1);
+    op($('k1'),step===0?ease((u-.35)/.2):1);
+    $('k1box').style.stroke=(step===3)?'var(--accent)':'var(--tertiary-text)';
+    op($('k2'),step===0?ease((u-.75)/.15):1);
+    op($('k3'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('kc'),ease(bu/.1));
+    var frac=clamp01((bu-.1)/.65);
+    $('kline').setAttribute('stroke-dasharray',KLEN);$('kline').setAttribute('stroke-dashoffset',(KLEN*(1-frac)).toFixed(1));
+    for(i=0;i<8;i++)op(kpR[i],ease((bu-.1-i*.09)/.08));
+    var al=ease((bu-.55)/.15);
+    op($('ka'),al);
+    var rp=(elapsed/1200)%1;
+    $('kring').setAttribute('cx',KX(4));$('kring').setAttribute('cy',KY(33));$('kring').setAttribute('r',(8+rp*10).toFixed(1));
+    op($('kring'),al>.5?(1-rp)*.9:0);
+    op($('m1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('m2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('m3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next4'),step===4?ease((u-.4)/.2):0);
+  }
+
+  // ---------- scene table ----------
+  var SCENES=[
+    {head:['Stage 7 of 8 · Data visualization','Make the answer <em class="hl">visible</em>.','Visualization makes complex data understandable so people can act. At Tamsworth Health, Stage 6 found that Clinic B’s wait is rising. This stage turns those answers into charts an operations director can read at a glance.'],
+     g:'s0',cards:'c0_',box:'cards0',draw:draw0,
+     labels:['01 · STAGE 6 HANDS OVER ITS ANSWERS · OWNERS: DATA SCIENTISTS','02 · MATCH THE CHART TO THE QUESTION · OWNERS: DATA SCIENTISTS BUILD','03 · SERVE ONE DECISION · OWNERS: BUSINESS ANALYSTS PRESENT'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 7 of 8 · Data visualization','One view for the <em class="hl">reader</em>.','A dashboard puts the key numbers and charts in one place. At Tamsworth Health, an operations director opens it to see how waits stand and where to send help.'],
+     g:'s1',cards:'c1_',box:'cards1',draw:draw1,
+     labels:['01 · THE KEY NUMBERS · OWNERS: DATA SCIENTISTS BUILD','02 · THE DETAIL BEHIND THEM · OWNERS: DATA SCIENTISTS BUILD','03 · ONE QUESTION, ONE READER · OWNERS: BUSINESS ANALYSTS PRESENT'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 7 of 8 · Data visualization','Follow any number <em class="hl">back</em>.','A dashboard number is only useful if the reader can trust it. At Tamsworth Health, a reader clicks 34 minutes and follows it back through the stages to the row it began as.'],
+     g:'s2',cards:'c2_',box:'cards2',draw:draw2,
+     labels:['01 · A READER QUESTIONS A NUMBER · OWNERS: BUSINESS ANALYSTS','02 · WALK IT BACK THROUGH THE STAGES · OWNERS: DATA STEWARDS KEEP THE RECORD','03 · TRUST IT, AND LOG THE LOOK · OWNERS: DATA STEWARDS'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 7 of 8 · Data visualization','What the <em class="hl">gate</em> protects.','A chart is only as good as the rows behind it. At Tamsworth Health, the same November data is charted twice: once with bad rows counted, once with the quality gate from Stage 3.'],
+     g:'s3',cards:'c3_',box:'cards3',draw:draw3,
+     labels:['01 · SAME DATA, TWO DASHBOARDS · OWNERS: DATA ENGINEERS BUILD THE GATE','02 · COMPARE THE CHARTS · OWNERS: DATA SCIENTISTS BUILD','03 · SHOW THE REAL NUMBER · OWNERS: DATA ENGINEERS, ANALYSTS'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 7 of 8 · Data visualization','Keep it <em class="hl">current</em>.','A dashboard is only useful while it is up to date. At Tamsworth Health, views refresh after each data check, and an alert tells Clinic B’s lead the moment the wait passes its limit.'],
+     g:'s4',cards:'c4_',box:'cards4',draw:draw4,
+     labels:['01 · SET THE RULE AND THE REFRESH · OWNERS: DATA SCIENTISTS, BUSINESS ANALYSTS','02 · WATCH, COMPARE, ALERT · OWNERS: DATA SCIENTISTS BUILD','03 · A PERSON DECIDES · OWNERS: BUSINESS ANALYSTS'],
+     bands:[[0],[1],[2],[0],[2]]}
+  ];
+  // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
+  SCENES.forEach(function(S){
+    S.dur=[];for(var d=0;d<5;d++){var w=$(S.cards+d).textContent.trim().split(/\s+/).length;S.dur.push(Math.max(5000,Math.min(16000,Math.round(2000+w*280))))}
+    S.start=[0];S.dur.forEach(function(x,i){S.start.push(S.start[i]+x)});S.total=S.start[5];
+  });
+
+  // ---------- AI layer: data (assist, agent) per section ----------
+  var TA='Machine learning and language models.',TG='Agentic AI within set rules and approvals.';
+  function C(k,h,p){return [k,h,p]}
+  var AIDATA=[
+    [{box:[50,244,900,184],note:'AI: suggested a chart type for each of 4 questions · sample',tools:TA,
+      cards:[C('01 · AI assists','AI recommends the chart','Given a question and the data, AI suggests a chart type and writes a plain summary beside it.'),C('02 · Why it helps','More people can ask','Anyone can ask in plain words, which widens self-service analytics.'),C('03 · A person','An analyst checks it','The analyst confirms the chart shows what the data says.')]},
+     {box:[500,244,235,184],note:'Agent: matched 4 questions to chart types · sample',chip:'Agent proposes: bars for the clinic split',tools:TG,
+      cards:[C('01 · The agent','An agent builds the view','It picks a chart for each question and lays them out.'),C('02 · Within set rules','It follows rules people set','People set which data it may chart and who may see it.'),C('03 · A person decides','A person approves','The agent proposes the view. A person approves it before anyone relies on it.')]}],
+    [{box:[50,244,560,184],note:'AI: wrote “Wait is above range and rising” under the trend · sample',tools:TA,
+      cards:[C('01 · AI assists','AI writes the story','AI drafts a plain sentence beside each chart, such as what changed and by how much.'),C('02 · Why it helps','Readers get the point faster','A chart with a sentence is clearer than a chart alone, and anyone can ask a follow-up.'),C('03 · A person','An analyst checks it','The analyst confirms the sentence matches the numbers.')]},
+     {box:[725,52,225,112],note:'Agent: refreshed the view with new data · opened 1 alert · sample',chip:'Agent proposes: alert the Clinic B lead',tools:TG,
+      cards:[C('01 · The agent','An agent keeps it fresh','It refreshes the view as new data arrives and sends an alert when a number crosses its limit.'),C('02 · Within set rules','People set the limits','People set the limit and who is told. The agent does not change them.'),C('03 · A person decides','A person acts','The agent alerts the Clinic B lead. A person decides what to do.')]}],
+    [{box:[355,52,595,112],note:'AI: explained in plain words how 34 minutes was calculated · sample',tools:TA,
+      cards:[C('01 · AI assists','AI explains the number','Ask where a number came from and AI explains its calculation and lineage in plain words.'),C('02 · Why it helps','It answers from the record','It reads the published definition and the trail, not a guess.'),C('03 · A person','A steward owns the record','Data stewards keep the definition and the trail correct.')]},
+     {box:[50,254,890,148],note:'Agent: traced 4 dashboard numbers to their rows · 1 has no trail · sample',chip:'Agent proposes: hide a tile with no trail',tools:TG,
+      cards:[C('01 · The agent','An agent audits the trails','It traces every number on the dashboard back to its source and flags any it cannot.'),C('02 · Within set rules','It reports, it does not edit','It lists what it found. It never changes a definition or a source.'),C('03 · A person decides','A steward decides','A steward fixes the trail or removes the number.')]}],
+    [{box:[50,244,440,184],note:'AI: flagged 6 rows no clinic could produce, such as a 999-minute wait · sample',tools:TA,
+      cards:[C('01 · AI assists','AI spots the bad rows','It finds values no clinic could produce, such as a 999-minute wait, faster than a person can scan every row.'),C('02 · Why it helps','Caught before the chart','Bad rows are flagged before they reach a dashboard.'),C('03 · A person','A person repairs them','The repair queue is worked by a person, not by the AI.')]},
+     {box:[510,52,440,112],note:'Agent: held back 6 rows and refreshed the chart · sample',chip:'Agent proposes: discard 2 duplicate rows',tools:TG,
+      cards:[C('01 · The agent','An agent watches the gate','It watches for spikes in failed rows and reruns the check when a source changes.'),C('02 · Within set rules','It holds, it does not delete','It may hold rows back. Deleting or editing a row needs approval.'),C('03 · A person decides','A person clears the queue','People decide whether each held row is repaired or discarded.')]}],
+    [{box:[50,52,590,112],note:'AI: suggested a limit of 32 minutes from 6 months of waits · sample',tools:TA,
+      cards:[C('01 · AI assists','AI suggests the rule','From past data it suggests a sensible limit for an alert.'),C('02 · Why it helps','Rules start from evidence','The limit comes from the data, not a guess.'),C('03 · A person','A person sets the rule','The business decides what is worth an alert and who is told.')]},
+     {box:[650,244,300,188],note:'Agent: refreshed the view, saw week 5 pass 32, sent the alert · sample',chip:'Agent proposes: re-check Clinic B daily',tools:TG,
+      cards:[C('01 · The agent','An agent runs the loop','It refreshes the view, compares each number with its limit and sends the alert.'),C('02 · Within set rules','It stays inside the rule','It may refresh and alert. Changing a limit or who is told needs approval.'),C('03 · A person decides','A person acts','The Clinic B lead decides what to do.')]}]
+  ];
+  SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
+    a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
+    a.start=[0];a.dur.forEach(function(x,k){a.start.push(a.start[k]+x)});a.total=a.start[a.dur.length];
+  })});
+
+  var cur=0,mode=0,elapsed=0,last=null,playing=!reduce,shown='',xfading=false;
+  function curAI(){var S=SCENES[cur];return (mode&&S.ai)?S.ai[mode-1]:null}
+  function curTL(){var a=curAI();return a||SCENES[cur]}
+  function stepOf(T){var n=T.dur.length,e=Math.min(elapsed,T.total-1),s=0;while(s<n-1&&e>=T.start[s+1])s++;return {step:s,u:(e-T.start[s])/T.dur[s]}}
+  function setCards(S,step){for(var i=0;i<5;i++)$(S.cards+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setAICards(step){for(var i=0;i<3;i++)$('aic'+i).className='card'+(i<=step?' on':'')+(i===step?' now':'')}
+  function setBandList(list){for(var k=0;k<3;k++){var on=list.indexOf(k)>=0;$('hr'+k).setAttribute('class','hair'+(on?' on':''));$('l'+k).setAttribute('class','bl'+(on?' on':''))}}
+  function fillAI(a){
+    for(var i=0;i<3;i++){var c=$('aic'+i);c.querySelector('.k').textContent=a.cards[i][0];c.querySelector('h3').textContent=a.cards[i][1];c.querySelector('.bd').textContent=a.cards[i][2];c.querySelector('.tl p').innerHTML='<strong>Tools:</strong> '+a.tools}
+  }
+  function updateView(){
+    var a=curAI(),S=SCENES[cur];
+    SCENES.forEach(function(x,i){$(x.g).setAttribute('display',i===cur?'inline':'none');$(x.box).className='cards'+(i===cur&&!a?' act':'');for(var j=0;j<5;j++)$(x.cards+j).className='card'});
+    $('cardsAI').className='cards ai'+(a?' act':'');
+    for(var q=0;q<3;q++)$('aic'+q).className='card';
+    if(a)fillAI(a);
+    elapsed=0;shown='';
+  }
+  var NAMES=['From answer to picture','The dashboard','Trace a number','Gate vs no gate','Keep it current'];
+  (function(){
+    var nav=$('secs');
+    SCENES.forEach(function(S,i){
+      var b=document.createElement('button');b.type='button';b.id='sec'+i;b.textContent=(i+1)+' · '+NAMES[i];
+      b.addEventListener('click',function(){if(i!==cur)crossTo(i)});nav.appendChild(b);
+    });
+  })();
+  function showScene(n){
+    cur=n;var S=SCENES[n];
+    for(var q=0;q<SCENES.length;q++)$('sec'+q).setAttribute('aria-current',q===n?'true':'false');
+    $('eyebrow').textContent=S.head[0]+' · Section '+(n+1)+' of '+SCENES.length;$('h1').innerHTML=S.head[1];$('lede').textContent=S.head[2];
+    for(var k=0;k<3;k++)$('l'+k).textContent=S.labels[k];
+    updateView();
+  }
+  function crossTo(n){
+    if(xfading)return;
+    xfading=true;document.body.classList.add('out');
+    setTimeout(function(){showScene(n);document.body.classList.add('out');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){document.body.classList.remove('out');xfading=false})})},700);
+  }
+
+  // ---------- AI layer: drawing ----------
+  function aiHide(){op($('aiL'),0)}
+  function aiDraw(a,step,u){
+    op($('aiL'),1);
+    var bx=a.box,box=$('ai_box'),agent=(mode===2);
+    box.setAttribute('x',bx[0]);box.setAttribute('y',bx[1]);box.setAttribute('width',bx[2]);box.setAttribute('height',bx[3]);
+    op(box,.55+.45*Math.abs(Math.sin(elapsed/450)));
+    $('ai_lab').textContent=agent?'AI AGENT · WATCHING':'AI · ASSISTING';
+    // a scan line sweeps the marked area while the AI works
+    var sc=$('ai_scan'),sy=bx[1]+bx[3]*((elapsed/2200)%1);
+    if(step<2){sc.setAttribute('x1',bx[0]+4);sc.setAttribute('x2',bx[0]+bx[2]-4);sc.setAttribute('y1',sy);sc.setAttribute('y2',sy);op(sc,.8)}else op(sc,0);
+    var note=$('ai_note');note.textContent=a.note;
+    note.setAttribute('y',agent?632:654);
+    op(note,step===0?ease((u-.3)/.3):1);
+    // the checkpoint: a person icon, with the agent's proposal beside it
+    var stn=$('ai_stn'),ring=$('ai_ring'),prop=$('ai_prop');
+    var sx,sy2;
+    if(agent){sx=486;sy2=655;$('ai_proptxt').textContent=a.chip}else{sx=bx[0]+bx[2]-24;sy2=bx[1]+24}
+    op(prop,agent&&step>=2?ease(u/.25):0);
+    if(step>=2){
+      stn.setAttribute('transform','translate('+sx+','+sy2+') scale(.55)');op(stn,ease(u/.25));
+      var rp=(elapsed/1500)%1;ring.setAttribute('cx',sx);ring.setAttribute('cy',sy2);ring.setAttribute('r',(10+rp*34).toFixed(1));op(ring,(1-rp)*.8);
+    }else{op(stn,0);op(ring,0)}
+  }
+
+  function frame(){
+    var S=SCENES[cur],a=curAI(),T=curTL(),nxt=(cur+1)%SCENES.length;
+    if(!xfading){
+      if(elapsed>=T.total){elapsed=T.total-1;crossTo(nxt)}
+      else if(elapsed>T.total-800&&SCENES.length>1)crossTo(nxt);
+    }
+    var s=stepOf(T),key=cur+':'+mode+':'+s.step;
+    if(shown!==key){shown=key;if(a){setAICards(s.step);setBandList([])}else{setCards(S,s.step);setBandList(S.bands[s.step])}}
+    if(a){S.draw(3,1);aiDraw(a,s.step,s.u)}else{S.draw(s.step,s.u);aiHide()}
+  }
+  function loop(ts){
+    if(last===null)last=ts;
+    if(playing&&!xfading)elapsed+=ts-last;
+    last=ts;frame();requestAnimationFrame(loop);
+  }
+  $('play').addEventListener('click',function(){playing=!playing;this.textContent=playing?'Pause':'Play'});
+  $('step').addEventListener('click',function(){
+    var T=curTL(),s=stepOf(T),n=T.dur.length;
+    if(s.step<n-1)elapsed=T.start[s.step+1]+10;else if(!xfading)crossTo((cur+1)%SCENES.length);
+  });
+  $('sect').addEventListener('click',function(){crossTo((cur+1)%SCENES.length)});
+  $('restart').addEventListener('click',function(){elapsed=0;shown='';playing=true;$('play').textContent='Pause'});
+  $('ai').addEventListener('click',function(){
+    mode=(mode+1)%3;
+    this.textContent='Show AI: '+['Off','AI assists','Agent'][mode];
+    this.setAttribute('aria-pressed',mode!==0);
+    this.className='btn'+(mode?' on':'');
+    updateView();
+  });
+  showScene(0);
+  if(reduce)$('play').textContent='Play';
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
