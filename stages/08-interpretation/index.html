@@ -269,6 +269,69 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
               </g>
             </g>
 
+            <!-- ===== section 4: act and close the loop ===== -->
+            <g id="s3" display="none">
+              <g id="f0" opacity="0">
+                <rect x="60" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="76" y="90" font-size="11" letter-spacing="2">THE DECISION</text>
+                <text class="s-acc" x="76" y="118" font-size="16">Approve option 1</text>
+                <text class="s-muted" x="76" y="140" font-size="12">signed by the director</text>
+              </g>
+              <g id="f1" opacity="0">
+                <rect x="285" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="301" y="90" font-size="11" letter-spacing="2">THE WORKFLOW</text>
+                <text class="s-ink" x="301" y="118" font-size="16">Pre-approved steps</text>
+                <text class="s-muted" x="301" y="140" font-size="12">ask the lab for faster turnaround</text>
+              </g>
+              <g id="f2" opacity="0">
+                <rect x="510" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="526" y="90" font-size="11" letter-spacing="2">THE ACTION</text>
+                <text class="s-ink" x="526" y="118" font-size="16">Faster lab results</text>
+                <text class="s-muted" x="526" y="140" font-size="12">starts December 1 (sample)</text>
+              </g>
+              <g id="f3" opacity="0">
+                <rect x="735" y="62" width="205" height="92" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-muted" x="751" y="90" font-size="11" letter-spacing="2">THE OWNER</text>
+                <text class="s-ink" x="751" y="118" font-size="16">Clinic B lead</text>
+                <text class="s-muted" x="751" y="140" font-size="12">watches the result</text>
+              </g>
+              <text id="f4" class="s-muted" x="60" y="184" font-size="12" opacity="0">The decision becomes action. Every step was approved in advance.</text>
+              <text id="ftrig" class="s-ink" x="60" y="204" font-size="13" opacity="0">Trigger: a person has approved an option.</text>
+
+              <g id="e0" opacity="0">
+                <rect x="60" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="76" y="278" font-size="11" letter-spacing="2">RESULT</text>
+                <text class="s-ink" x="76" y="306" font-size="15">Clinic B wait: 45 to 33 min</text>
+                <text class="s-muted" x="76" y="328" font-size="12">after a month (sample)</text>
+              </g>
+              <g id="e1" opacity="0">
+                <rect x="360" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="376" y="278" font-size="11" letter-spacing="2">WATCH</text>
+                <text class="s-ink" x="376" y="306" font-size="15">The dashboard keeps alerting</text>
+                <text class="s-muted" x="376" y="328" font-size="12">if the wait drifts back</text>
+              </g>
+              <g id="e2" opacity="0">
+                <rect x="660" y="252" width="280" height="100" rx="10" class="s-fill s-line" stroke-width="2"/>
+                <text class="s-acc" x="676" y="278" font-size="11" letter-spacing="2">ASK AGAIN</text>
+                <text class="s-ink" x="676" y="306" font-size="15">Is the goal met?</text>
+                <text class="s-muted" x="676" y="328" font-size="12">if not, back to the options</text>
+              </g>
+              <g id="eloop" opacity="0">
+                <path class="s-accl" d="M800 360 V392 H200 V364" stroke-width="2.5"/>
+                <path class="s-accl" d="M190 374 L200 361 L210 374" stroke-width="2.5"/>
+                <text class="s-ink" x="500" y="414" font-size="13" text-anchor="middle">Next month’s rows are generated at Stage 1. The lifecycle never ends.</text>
+              </g>
+
+              <text id="z1" class="s-ink" x="60" y="520" font-size="15" opacity="0">A decision only counts when it changes something.</text>
+              <text id="z2" class="s-muted" x="60" y="546" font-size="13" opacity="0">Then the data shows whether it worked, and the cycle begins again.</text>
+              <text id="z3" class="s-ink" x="60" y="592" font-size="14" opacity="0">Agents may start steps that were approved in advance. A person approves anything new.</text>
+              <g id="next3" opacity="0">
+                <path class="s-accl" d="M640 656 H920" stroke-width="2.5"/>
+                <path class="s-accl" d="M908 646 L921 656 L908 666" stroke-width="2.5"/>
+                <text class="s-ink" x="920" y="642" font-size="16" text-anchor="end">Back to Stage 1 · Data generation</text>
+              </g>
+            </g>
+
             <!-- ===== AI layer ===== -->
             <g id="aiL" opacity="0">
               <rect id="ai_box" x="0" y="0" width="0" height="0" rx="12" fill="none" stroke="var(--ai)" stroke-width="2.5" stroke-dasharray="6 5"/>
@@ -320,6 +383,14 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
         <div class="card" id="c2_2"><p class="k">03 · Why</p><h3>Every decision needs an owner</h3><p>Where accuracy must be total, a person has to stand behind the choice. A recorded decision can be traced and questioned later.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c2_3"><p class="k">04 · When</p><h3>When an option is ready for approval</h3><p>After the options are weighed, and before any money or staff are committed.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
         <div class="card" id="c2_4"><p class="k">05 · Next</p><h3>Act and close the loop</h3><p>Once a person says yes, the action has to happen, and the next month’s data shows whether it worked.</p><div class="tl"><p><strong>Tools:</strong> Dashboard and BI tools with narrative summaries, such as Power BI and Databricks AI/BI.</p></div></div>
+      </div>
+
+      <div class="cards" id="cards3" aria-live="polite">
+        <div class="card" id="c3_0"><p class="k">01 · What</p><h3>Act, then learn</h3><p>An approved decision is carried out, and the result is watched. The result becomes new data, so the lifecycle starts again. Executives and business analysts own it.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_1"><p class="k">02 · How</p><h3>Run the approved steps, then watch</h3><p>Steps that were approved in advance are started, such as asking the lab for faster results. The dashboard keeps watching the wait, and a miss reopens the options.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_2"><p class="k">03 · Why</p><h3>The lifecycle never ends</h3><p>Data keeps changing and results can drift. Watching the outcome and feeding it back is how the next decision gets better.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_3"><p class="k">04 · When</p><h3>After a yes, and every month after</h3><p>The action starts when a person approves. The check repeats each time new data arrives.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
+        <div class="card" id="c3_4"><p class="k">05 · Next</p><h3>Back to Stage 1</h3><p>The new rows start the cycle again, from data generation.</p><div class="tl"><p><strong>Tools:</strong> Workflow and automation tools, such as Airflow and Power Automate.</p></div></div>
       </div>
 
       <div class="cards ai" id="cardsAI" aria-live="polite">
@@ -416,6 +487,23 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     op($('next2'),step===4?ease((u-.4)/.2):0);
   }
 
+  // ---------- section 4: act and close the loop ----------
+  function draw3(step,u){
+    var i,ids=['f0','f1','f2','f3'];
+    for(i=0;i<4;i++)op($(ids[i]),step===0?ease((u-i*.15)/.18):1);
+    op($('f4'),step===0?ease((u-.75)/.15):1);
+    op($('ftrig'),step<3?0:(step===3?ease(u/.2):1));
+    var bu=step<1?0:(step===1?u:1);
+    op($('e0'),ease((bu-.05)/.18));
+    op($('e1'),ease((bu-.3)/.18));
+    op($('e2'),ease((bu-.55)/.18));
+    op($('eloop'),ease((bu-.8)/.15));
+    op($('z1'),step<2?0:(step===2?ease(u/.2):1));
+    op($('z2'),step<2?0:(step===2?ease((u-.3)/.2):1));
+    op($('z3'),step<2?0:(step===2?ease((u-.6)/.2):1));
+    op($('next3'),step===4?ease((u-.4)/.2):0);
+  }
+
   // ---------- scene table ----------
   var SCENES=[
     {head:['Stage 8 of 8 · Data interpretation','Say what it <em class="hl">means</em>.','Interpretation turns analysis and visuals into business decisions. At Tamsworth Health, the Stage 7 dashboard is open on an executive’s screen. The numbers are right. Someone must say what they mean.'],
@@ -429,6 +517,10 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     {head:['Stage 8 of 8 · Data interpretation','Tell the story, then <em class="hl">decide</em>.','Numbers rarely move people. A short story does. At Tamsworth Health, the analyst tells the executive team what was seen, what is recommended and what it costs. Then a person decides.'],
      g:'s2',cards:'c2_',box:'cards2',draw:draw2,
      labels:['01 · ONE PAGE FOR THE PEOPLE WHO APPROVE · OWNERS: BUSINESS ANALYSTS','02 · FROM STORY TO DECISION · OWNERS: BUSINESS ANALYSTS, EXECUTIVES','03 · A PERSON OWNS THE DECISION · OWNERS: EXECUTIVES'],
+     bands:[[0],[1],[2],[0],[2]]},
+    {head:['Stage 8 of 8 · Data interpretation','Act, then <em class="hl">learn</em>.','A decision only counts when it changes something. At Tamsworth Health, the approved option is carried out, the result is watched, and the new data starts the lifecycle again.'],
+     g:'s3',cards:'c3_',box:'cards3',draw:draw3,
+     labels:['01 · FROM DECISION TO ACTION · OWNERS: EXECUTIVES, BUSINESS ANALYSTS','02 · WATCH THE RESULT, ASK AGAIN · OWNERS: BUSINESS ANALYSTS','03 · THE LIFECYCLE NEVER ENDS · OWNERS: EXECUTIVES'],
      bands:[[0],[1],[2],[0],[2]]}
   ];
   // each step lasts long enough to read its card: 2 s + 0.28 s per word, between 5 and 16 s
@@ -452,7 +544,11 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     [{box:[50,52,890,112],note:'AI: drafted the one-page story from the numbers and option 1 · sample',tools:TA,
       cards:[C('01 · AI assists','AI drafts the story','It turns the numbers and the chosen option into plain narrative: what we saw, what we recommend, what to expect.'),C('02 · Why it helps','The analyst starts from a draft','Less time writing, more time checking and answering questions.'),C('03 · A person','A person checks every claim','AI output is probabilistic and can be wrong. Where accuracy must be total, a person signs off.')]},
      {box:[50,252,890,110],note:'Agent: sent the story to the approver and asked for a decision · sample',chip:'Agent proposes: ask the operations director',tools:TG,
-      cards:[C('01 · The agent','An agent prepares and routes it','It assembles the story and sends it to the approver, with the evidence beside it.'),C('02 · Within set rules','It routes, it does not approve','People set who must approve what. The agent never approves for them.'),C('03 · A person decides','Only a person says yes','The executive approves, changes or declines. The decision is recorded.')]}]
+      cards:[C('01 · The agent','An agent prepares and routes it','It assembles the story and sends it to the approver, with the evidence beside it.'),C('02 · Within set rules','It routes, it does not approve','People set who must approve what. The agent never approves for them.'),C('03 · A person decides','Only a person says yes','The executive approves, changes or declines. The decision is recorded.')]}],
+    [{box:[50,244,890,184],note:'AI: compared the new month with the forecast · within range · sample',tools:TA,
+      cards:[C('01 · AI assists','AI checks the result','It compares the new month with the forecast and explains any gap in plain words.'),C('02 · Why it helps','Drift is caught early','A result that slips back is noticed before the next review.'),C('03 · A person','An analyst judges the gap','The analyst decides whether a miss matters. AI output is probabilistic.')]},
+     {box:[275,52,225,112],note:'Agent: started the pre-approved lab-turnaround workflow · sample',chip:'Agent proposes: re-open the options',tools:TG,
+      cards:[C('01 · The agent','An agent starts approved steps','It triggers the workflow a person approved in advance and logs what it did.'),C('02 · Within set rules','Only steps approved in advance','It cannot add steps, spend more or change the plan.'),C('03 · A person decides','A person handles anything new','If the result misses, the agent proposes. A person decides what happens next.')]}]
   ];
   SCENES.forEach(function(S,i){S.ai=AIDATA[i]||null;if(S.ai)S.ai.forEach(function(a){
     a.dur=a.cards.map(function(c){var w=(c[1]+' '+c[2]).split(/\s+/).length;return Math.max(5000,Math.min(16000,Math.round(2000+w*280)))});
@@ -477,7 +573,7 @@ nav.secs{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;padding
     if(a)fillAI(a);
     elapsed=0;shown='';
   }
-  var NAMES=['Say what it means','Weigh the options','Tell the story'];
+  var NAMES=['Say what it means','Weigh the options','Tell the story','Act and close the loop'];
   (function(){
     var nav=$('secs');
     SCENES.forEach(function(S,i){
