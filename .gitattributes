@@ -1,1 +1,4 @@
 * text=auto eol=lf
+# The journey pages are built in another repository and committed as built. Store and check them out byte for byte:
+# the shipped page is tied to its sha256, so git must never change its line endings.
+journey/** -text

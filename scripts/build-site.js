@@ -8,6 +8,7 @@ const { execFileSync } = require('node:child_process');
 const ROOT = path.join(__dirname, '..');
 const ENGINE = path.join(ROOT, 'engine', 'engine.js');
 const SHARED = path.join(ROOT, 'shared');
+const JOURNEY = path.join(ROOT, 'journey');
 
 class BuildError extends Error {}
 
@@ -113,6 +114,27 @@ function writeRoot(out) {
   fs.writeFileSync(path.join(out, '.nojekyll'), '');
 }
 
+// The journey is built in another repository and committed here as built files (journey/). It has no engine and is not in
+// pages.json. The site gets these four files, byte for byte, at /journey/; nothing else in that folder is published.
+const JOURNEY_FILES = ['index.html', 'lifecycle/overview.html', 'lifecycle/standard.html', 'lifecycle/expert.html'];
+
+function copyJourney(out, journeyDir) {
+  journeyDir = journeyDir || JOURNEY;
+  JOURNEY_FILES.forEach(function (n) {
+    const from = path.join(journeyDir, n);
+    const to = path.join(out, 'journey', n);
+    let bytes;
+    try {
+      bytes = fs.readFileSync(from);
+    } catch (e) {
+      throw new BuildError('journey: ' + from + ' is missing');
+    }
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.writeFileSync(to, bytes);
+    if (!sameBytes(fs.readFileSync(to), bytes)) throw new BuildError('journey: ' + to + ' is not byte-identical to ' + from);
+  });
+}
+
 function buildPage(page, out) {
   execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'inline.js'), page.dir, '--out', path.join(page.dir, 'dist')],
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -143,6 +165,7 @@ function main(argv) {
         throw new BuildError('page "' + p.dir + '": inline build failed: ' + detail);
       }
     });
+    copyJourney(out);
     writeRoot(out);
     process.stdout.write('site built in ' + out + '\n');
   } catch (e) {
@@ -152,6 +175,6 @@ function main(argv) {
   }
 }
 
-module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSharedCopies, checkSingleFile, checkEngineTag, writeRoot };
+module.exports = { BuildError, readPages, sameBytes, checkEngineCopy, checkSharedCopies, checkSingleFile, checkEngineTag, writeRoot, copyJourney, JOURNEY_FILES };
 
 if (require.main === module) main(process.argv.slice(2));

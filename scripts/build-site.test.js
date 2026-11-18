@@ -163,8 +163,64 @@ test('integration: real build into a temp folder', () => {
   const remote = /\b(?:src|href)\s*=\s*["']?\s*https?:\/\//i;
   walk(out).forEach((f) => {
     if (!/\.(html|js|css)$/i.test(f)) return;
-    assert.ok(!remote.test(fs.readFileSync(f, 'utf8')), 'remote src/href in ' + f);
+    let text = fs.readFileSync(f, 'utf8');
+    // The one remote reference on the site: the journey page's Three.js tag, pinned by its integrity hash. It must be
+    // there exactly once, and nothing else remote may be.
+    if (path.relative(out, f) === path.join('journey', 'index.html')) {
+      assert.strictEqual(text.split(THREE_TAG).length, 2, 'journey/index.html carries the pinned Three.js tag exactly once');
+      text = text.replace(THREE_TAG, '');
+    }
+    assert.ok(!remote.test(text), 'remote src/href in ' + f);
   });
+});
+
+// ---- The journey at /journey/ ----
+
+const THREE_TAG = '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" ' +
+  'integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" ' +
+  'crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
+
+test('copyJourney copies the four journey files byte for byte and nothing else', () => {
+  const src = tmp();
+  const out = tmp();
+  fs.mkdirSync(path.join(src, 'lifecycle'));
+  b.JOURNEY_FILES.forEach((n, i) => fs.writeFileSync(path.join(src, n), 'page ' + i + '\r\nline\n'));
+  fs.writeFileSync(path.join(src, 'notes.txt'), 'not published');
+  b.copyJourney(out, src);
+  b.JOURNEY_FILES.forEach((n) => {
+    assert.ok(fs.readFileSync(path.join(out, 'journey', n)).equals(fs.readFileSync(path.join(src, n))), n);
+  });
+  assert.deepStrictEqual(walk(path.join(out, 'journey')).map((f) => path.relative(path.join(out, 'journey'), f).split(path.sep).join('/')).sort(),
+    b.JOURNEY_FILES.slice().sort());
+});
+
+test('copyJourney fails on a missing file and names it', () => {
+  const src = tmp();
+  fs.writeFileSync(path.join(src, 'index.html'), 'x');
+  assert.throws(() => b.copyJourney(tmp(), src), (e) => e instanceof b.BuildError && /journey/.test(e.message) && /overview\.html/.test(e.message));
+});
+
+test('integration: the journey is at site/journey/ byte for byte, and the site root still goes to hq/', () => {
+  const out = path.join(tmp(), 'site');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
+    { cwd: ROOT, encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  b.JOURNEY_FILES.forEach((n) => {
+    assert.ok(fs.readFileSync(path.join(out, 'journey', n)).equals(fs.readFileSync(path.join(ROOT, 'journey', n))), 'journey/' + n);
+  });
+  assert.match(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), /<meta http-equiv="refresh" content="0; url=hq\/">/);
+  // The journey page's one link goes to the depth pages beside it; each depth page links back to the folder, not to a file name.
+  assert.match(fs.readFileSync(path.join(out, 'journey', 'index.html'), 'utf8'), /href="lifecycle\/overview\.html"/);
+  ['overview', 'standard', 'expert'].forEach((d) => {
+    const t = fs.readFileSync(path.join(out, 'journey', 'lifecycle', d + '.html'), 'utf8');
+    assert.match(t, /href="\.\.\/#stage-1"/, d);
+    assert.doesNotMatch(t, /journey-short\.html/, d);
+  });
+});
+
+test('.gitattributes stores the journey files byte for byte', () => {
+  const attrs = fs.readFileSync(path.join(ROOT, '.gitattributes'), 'utf8').split(/\r?\n/);
+  assert.ok(attrs.includes('journey/** -text'));
 });
 
 test('integration: a failed check exits 1 with a message and no stack trace', () => {
