@@ -6,6 +6,7 @@
 **Pipeline:** https://groffia.github.io/data-central/pipeline/
 **Value:** https://groffia.github.io/data-central/value/
 **Brain:** https://groffia.github.io/data-central/brain/
+**Journey:** https://groffia.github.io/data-central/journey/
 **Offline copy:** `hq-single.html` on the [Releases](../../releases) page. One file, opens from disk, no network.
 
 ## Try it in 20 seconds
@@ -56,4 +57,5 @@ Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve
 - Built by Stephen Groff ([LinkedIn](https://www.linkedin.com/in/groffstephen)).
 - Built with Claude, working from written specs, test-first plans and independent reviews of each task.
 - Licensed under the [MIT License](LICENSE).
-- Fonts are embedded so no page makes a network request: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono and Archivo, from Google Fonts, under the [SIL Open Font License 1.1](https://openfontlicense.org/). The look follows my PRAXIS.FASTI artifact.
+- Fonts are embedded so the HQ, Pipeline, Value and Brain pages make no network request: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono and Archivo, from Google Fonts, under the [SIL Open Font License 1.1](https://openfontlicense.org/). The look follows my PRAXIS.FASTI artifact.
+- The Journey page makes one network request: it loads Three.js r128 from the cdnjs CDN, pinned by its integrity hash.
