@@ -2,7 +2,7 @@
 
 **An end-to-end data platform demo that shows what happens when bad data arrives, and why running data this way protects the business.**
 
-**Live demo:** https://groffia.github.io/data-central/hq/
+**Live demo:** https://groffia.github.io/data-central/journey/
 **Pipeline:** https://groffia.github.io/data-central/pipeline/
 **Value:** https://groffia.github.io/data-central/value/
 **Brain:** https://groffia.github.io/data-central/brain/
