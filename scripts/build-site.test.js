@@ -132,8 +132,9 @@ test('writeRoot writes index.html with refresh and an empty .nojekyll', () => {
   const d = tmp();
   b.writeRoot(d);
   const html = fs.readFileSync(path.join(d, 'index.html'), 'utf8');
-  assert.match(html, /<meta http-equiv="refresh" content="0; url=hq\/">/);
-  assert.match(html, /<a href="hq\/">/);
+  assert.match(html, /<meta http-equiv="refresh" content="0; url=journey\/">/);
+  assert.match(html, /<a href="journey\/">/);
+  assert.doesNotMatch(html, /hq\//);
   assert.match(html, /<meta charset="utf-8">/i);
   assert.match(html, /<title>[^<]+<\/title>/);
   assert.strictEqual(fs.readFileSync(path.join(d, '.nojekyll')).length, 0);
@@ -149,7 +150,7 @@ test('integration: real build into a temp folder', () => {
   const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
     { cwd: ROOT, encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
-  assert.match(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), /<meta http-equiv="refresh" content="0; url=hq\/">/);
+  assert.match(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), /<meta http-equiv="refresh" content="0; url=journey\/">/);
   assert.strictEqual(fs.readFileSync(path.join(out, '.nojekyll')).length, 0);
   assert.ok(fs.existsSync(path.join(out, 'hq', 'index.html')));
   assert.ok(fs.existsSync(path.join(out, 'hq', 'engine.js')));
@@ -191,7 +192,7 @@ test('copyJourney fails on a missing file and names it', () => {
   assert.throws(() => b.copyJourney(tmp(), src), (e) => e instanceof b.BuildError && /journey/.test(e.message) && /overview\.html/.test(e.message));
 });
 
-test('integration: the journey is at site/journey/ byte for byte, and the site root still goes to hq/', () => {
+test('integration: the journey is at site/journey/ byte for byte, the site root goes to journey/, and hq/ is still built', () => {
   const out = path.join(tmp(), 'site');
   const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site.js'), '--out', out],
     { cwd: ROOT, encoding: 'utf8' });
@@ -199,7 +200,8 @@ test('integration: the journey is at site/journey/ byte for byte, and the site r
   b.JOURNEY_FILES.forEach((n) => {
     assert.ok(fs.readFileSync(path.join(out, 'journey', n)).equals(fs.readFileSync(path.join(ROOT, 'journey', n))), 'journey/' + n);
   });
-  assert.match(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), /<meta http-equiv="refresh" content="0; url=hq\/">/);
+  assert.match(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), /<meta http-equiv="refresh" content="0; url=journey\/">/);
+  assert.ok(fs.existsSync(path.join(out, 'hq', 'index.html')), 'hq/index.html is still built');
   // The journey page's one link goes to the depth pages beside it; each depth page links back to the folder, not to a file name.
   assert.match(fs.readFileSync(path.join(out, 'journey', 'index.html'), 'utf8'), /href="lifecycle\/overview\.html"/);
   ['overview', 'standard', 'expert'].forEach((d) => {

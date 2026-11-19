@@ -105,12 +105,13 @@ function checkEngineTag(page, enginePath, gitShow) {
   }
 }
 
+// The site root sends visitors to the journey. HQ and the other pages stay where they are (/hq/, /pipeline/, ...).
 function writeRoot(out) {
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'index.html'),
     '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
-    '<meta http-equiv="refresh" content="0; url=hq/">\n' +
-    '<title>Data Central</title>\n</head>\n<body>\n<p><a href="hq/">Open the HQ page</a></p>\n</body>\n</html>\n');
+    '<meta http-equiv="refresh" content="0; url=journey/">\n' +
+    '<title>Data Central</title>\n</head>\n<body>\n<p><a href="journey/">Open the journey</a></p>\n</body>\n</html>\n');
   fs.writeFileSync(path.join(out, '.nojekyll'), '');
 }
 
