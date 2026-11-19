@@ -58,4 +58,4 @@ Open `hq/dist/hq-single.html`, or serve `hq/dist/pages` with `node scripts/serve
 - Built with Claude, working from written specs, test-first plans and independent reviews of each task.
 - Licensed under the [MIT License](LICENSE).
 - Fonts are embedded so the HQ, Pipeline, Value and Brain pages make no network request: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono and Archivo, from Google Fonts, under the [SIL Open Font License 1.1](https://openfontlicense.org/). The look follows my PRAXIS.FASTI artifact.
-- The Journey page makes one network request: it loads Three.js r128 from the cdnjs CDN, pinned by its integrity hash.
+- The Journey page makes no network request either: it carries Three.js 0.187.0 inside the page, under the [MIT License](https://github.com/mrdoob/three.js/blob/dev/LICENSE).

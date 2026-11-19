@@ -161,24 +161,15 @@ test('integration: real build into a temp folder', () => {
     assert.ok(fs.readFileSync(path.join(out, 'pipeline', 'shared', n)).equals(fs.readFileSync(path.join(ROOT, 'shared', n))), 'pipeline/shared/' + n);
   });
   const remote = /\b(?:src|href)\s*=\s*["']?\s*https?:\/\//i;
+  // No remote src/href anywhere on the site, the journey page included: it carries Three.js itself (no exceptions).
   walk(out).forEach((f) => {
     if (!/\.(html|js|css)$/i.test(f)) return;
-    let text = fs.readFileSync(f, 'utf8');
-    // The one remote reference on the site: the journey page's Three.js tag, pinned by its integrity hash. It must be
-    // there exactly once, and nothing else remote may be.
-    if (path.relative(out, f) === path.join('journey', 'index.html')) {
-      assert.strictEqual(text.split(THREE_TAG).length, 2, 'journey/index.html carries the pinned Three.js tag exactly once');
-      text = text.replace(THREE_TAG, '');
-    }
+    const text = fs.readFileSync(f, 'utf8');
     assert.ok(!remote.test(text), 'remote src/href in ' + f);
   });
 });
 
 // ---- The journey at /journey/ ----
-
-const THREE_TAG = '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" ' +
-  'integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" ' +
-  'crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
 
 test('copyJourney copies the four journey files byte for byte and nothing else', () => {
   const src = tmp();
